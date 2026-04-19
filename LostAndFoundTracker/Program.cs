@@ -1,5 +1,9 @@
+using LostAndFoundTracker.Data;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
+// Add services to the container
 builder.Services.AddControllersWithViews();
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
@@ -9,8 +13,13 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
+// Register DbContext with SQL Server connection string
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 var app = builder.Build();
 
+// Configure the HTTP request pipeline
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -23,7 +32,7 @@ app.UseRouting();
 app.UseSession();
 app.UseAuthorization();
 
-// This single route handles all controllers
+// Default route (supports all controllers)
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Landing}/{id?}");
