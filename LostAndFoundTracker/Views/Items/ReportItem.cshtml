@@ -1,0 +1,104 @@
+﻿@using LostAndFoundTracker.Models.ViewModels
+@model ReportItemViewModel
+@{
+    ViewData["Title"] = "Report an Item";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="page-header">
+    <h1><i class="fas fa-plus-circle"></i> Report an Item</h1>
+    <p>Help your fellow students by reporting lost or found items.</p>
+</div>
+
+<div class="form-container">
+    <div class="form-header">
+        <h2>Item Details</h2>
+        <p>Please provide as much information as possible</p>
+    </div>
+    <div class="form-body">
+        <div class="toggle-group">
+            <button type="button" id="btnLost" class="toggle-btn" onclick="setType('lost')">
+                <i class="fas fa-frown"></i> I LOST an item
+            </button>
+            <button type="button" id="btnFound" class="toggle-btn" onclick="setType('found')">
+                <i class="fas fa-smile"></i> I FOUND an item
+            </button>
+        </div>
+
+        <form asp-action="SubmitReport" method="post" enctype="multipart/form-data">
+            <input type="hidden" asp-for="ItemType" id="itemType" />
+
+            <div class="form-group">
+                <label><i class="fas fa-tag"></i> Item Name</label>
+                <input asp-for="ItemName" placeholder="e.g., Black Wallet, iPhone 14, Student ID" required />
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-list"></i> Category</label>
+                <select asp-for="Category" required>
+                    <option value="">Select a category</option>
+                    <option>Wallet / Purse</option>
+                    <option>ID Card</option>
+                    <option>Phone / Smartphone</option>
+                    <option>Laptop / Tablet</option>
+                    <option>Keys</option>
+                    <option>Bag / Backpack</option>
+                    <option>Clothing</option>
+                    <option>Electronics</option>
+                    <option>Books</option>
+                    <option>Other</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-map-marker-alt"></i> Location</label>
+                <input asp-for="Location" placeholder="Where was it lost/found? (e.g., Library, Student Center, Gym)" required />
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-calendar"></i> Date</label>
+                <input asp-for="Date" type="date" required />
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-align-left"></i> Description</label>
+                <textarea asp-for="Description" rows="4" placeholder="Describe the item in detail (color, brand, distinguishing features, etc.)"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-camera"></i> Upload Photo (Optional)</label>
+                <input type="file" name="Photo" accept="image/*" />
+                <small style="color: #6B7280;">Uploading a photo increases chances of recovery by 70%</small>
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-phone"></i> Contact Number (Required)</label>
+                <input asp-for="ContactNumber" placeholder="Your phone number" required />
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-envelope"></i> Email</label>
+                <input asp-for="Email" readonly value="@Context.Session.GetString("UserEmail") ?? " student@campus.edu"" />
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">
+                <i class="fas fa-paper-plane"></i> Submit Report
+            </button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function setType(type) {
+            document.getElementById('itemType').value = type;
+            document.getElementById('btnLost').classList.remove('active-lost');
+            document.getElementById('btnFound').classList.remove('active-found');
+            if (type === 'lost') {
+                document.getElementById('btnLost').classList.add('active-lost');
+            } else {
+                document.getElementById('btnFound').classList.add('active-found');
+            }
+        }
+    </script>
+}
