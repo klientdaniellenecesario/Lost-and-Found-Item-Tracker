@@ -1,0 +1,72 @@
+﻿@using LostAndFoundTracker.Models
+@model List<Item>
+@{
+    ViewData["Title"] = "Found Items";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var currentUserId = Context.Session.GetString("UserId");
+}
+
+<div class="page-header">
+    <h1><i class="fas fa-smile"></i> Found Items</h1>
+    <p>Items that have been found on campus. Could something here belong to you?</p>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="empty-state">
+        <div class="empty-state-icon">🟢</div>
+        <h3>No Found Items Reported</h3>
+        <p>There are currently no found items reported. Check back later or report a found item.</p>
+        <a href="/Items/ReportItem" class="btn btn-primary" style="margin-top: 1rem;"><i class="fas fa-plus-circle"></i> Report Found Item</a>
+    </div>
+}
+else
+{
+    <div class="cards-grid">
+        @foreach (var item in Model)
+        {
+            <div class="item-card" onclick="location.href='/Items/Detail/@item.Id'">
+                <div class="card-image">
+                    @if (!string.IsNullOrEmpty(item.PhotoUrl))
+                    {
+                        <img src="@item.PhotoUrl" alt="@item.Name" style="width: 100%; height: 100%; object-fit: cover;">
+                    }
+                    else
+                    {
+                        <span>🟢</span>
+                    }
+                </div>
+                <div class="card-content">
+                    <div class="card-title">@item.Name</div>
+                    <div class="card-details">
+                        <i class="fas fa-map-marker-alt"></i> @item.Location<br />
+                        <i class="fas fa-calendar"></i> @item.Date.ToString("MMM dd, yyyy")<br />
+                        <i class="fas fa-tag"></i> @item.Category
+                    </div>
+                    <span class="badge badge-found">FOUND</span>
+
+                    @if (!string.IsNullOrEmpty(currentUserId) && currentUserId == item.UserId.ToString())
+                    {
+                        <button class="btn btn-primary btn-sm btn-block" style="margin-top: 0.75rem; background: #008080;" onclick="markAsClaimed(@item.Id, event)">
+                            <i class="fas fa-gift"></i> Mark as Claimed
+                        </button>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@section Scripts {
+    <script>
+        async function markAsClaimed(itemId, event) {
+            event.stopPropagation();
+            if (confirm('Mark this item as claimed? It will be removed from found items.')) {
+                const response = await fetch(`/Items/MarkClaimed/${itemId}`, { method: 'POST' });
+                if (response.ok) {
+                    location.reload();
+                }
+            }
+        }
+    </script>
+}

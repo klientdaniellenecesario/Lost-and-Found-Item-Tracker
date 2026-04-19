@@ -1,0 +1,160 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Campus Lost & Found</title>
+    <link rel="stylesheet" href="~/css/site.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+</head>
+<body>
+    @{
+        var isLoggedIn = Context.Session.GetString("UserId") != null;
+        var userName = Context.Session.GetString("UserName") ?? "Student";
+        var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+        var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+    }
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="top-bar-container">
+            <span><i class="fas fa-university"></i> University Campus Lost & Found System</span>
+            <div>
+                <span><i class="fas fa-phone-alt"></i> Emergency: (555) 123-4567</span>
+                <a href="#"><i class="fas fa-envelope"></i> support@campus.edu</a>
+                <a href="#"><i class="fas fa-question-circle"></i> Help Center</a>
+            </div>
+        </div>
+    </div>
+
+    @if (isLoggedIn)
+    {
+        <!-- Logged In Navbar -->
+        <nav class="navbar">
+            <div class="nav-container">
+                <a href="/Home/Dashboard" class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-hand-holding-heart"></i>
+                    </div>
+                    <div class="logo-text">
+                        <h1>Campus Lost & Found</h1>
+                        <p>Reuniting What Matters</p>
+                    </div>
+                </a>
+                <div class="nav-links">
+                    <a href="/Home/Dashboard" class="@(currentController == "Home" && currentAction == "Dashboard" ? "active" : "")">
+                        <i class="fas fa-chart-line"></i> Dashboard
+                    </a>
+                    <a href="/Items/LostItems" class="@(currentController == "Items" && currentAction == "LostItems" ? "active" : "")">
+                        <i class="fas fa-frown"></i> Lost Items
+                    </a>
+                    <a href="/Items/FoundItems" class="@(currentController == "Items" && currentAction == "FoundItems" ? "active" : "")">
+                        <i class="fas fa-smile"></i> Found Items
+                    </a>
+                    <a href="/Items/ReportItem" class="@(currentController == "Items" && currentAction == "ReportItem" ? "active" : "")">
+                        <i class="fas fa-plus-circle"></i> Report
+                    </a>
+                    <a href="/Search/Index" class="@(currentController == "Search" ? "active" : "")">
+                        <i class="fas fa-search"></i> Search
+                    </a>
+                    <a href="/Profile/Index" class="profile-btn @(currentController == "Profile" ? "active" : "")">
+                        <i class="fas fa-user-circle"></i> @userName
+                    </a>
+                    <a href="/Account/Logout" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </nav>
+    }
+    else
+    {
+        <!-- Guest Navbar -->
+        <nav class="navbar">
+            <div class="nav-container">
+                <a href="/Home/Landing" class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-hand-holding-heart"></i>
+                    </div>
+                    <div class="logo-text">
+                        <h1>Campus Lost & Found</h1>
+                        <p>Reuniting What Matters</p>
+                    </div>
+                </a>
+                <div class="nav-links">
+                    <a href="/Home/Landing">Home</a>
+                    <a href="#how-it-works">How It Works</a>
+                    <a href="#">Success Stories</a>
+                    <a href="#">FAQ</a>
+                    <a href="#">Contact</a>
+                    <a href="/Account/Login"><i class="fas fa-sign-in-alt"></i> Sign In</a>
+                    <a href="/Account/Register" class="profile-btn"><i class="fas fa-user-plus"></i> Register</a>
+                </div>
+            </div>
+        </nav>
+    }
+
+    <main class="main-container">
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> @TempData["Success"]
+            </div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-error">
+                <i class="fas fa-exclamation-circle"></i> @TempData["Error"]
+            </div>
+        }
+        @if (TempData["Info"] != null)
+        {
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> @TempData["Info"]
+            </div>
+        }
+
+        @RenderBody()
+    </main>
+
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-section">
+                <h4><i class="fas fa-hand-holding-heart"></i> Campus Lost & Found</h4>
+                <p style="font-size: 0.875rem; opacity: 0.8;">Official campus lost and found system helping students, faculty, and staff reunite with their belongings.</p>
+                <p style="margin-top: 1rem; font-size: 0.75rem;">📍 Main Campus, Student Services Building</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <a href="/Items/ReportItem"><i class="fas fa-plus-circle"></i> Report Lost Item</a>
+                <a href="/Items/ReportItem"><i class="fas fa-gift"></i> Report Found Item</a>
+                <a href="/Items/LostItems"><i class="fas fa-search"></i> Browse Items</a>
+                <a href="#"><i class="fas fa-question-circle"></i> FAQs</a>
+            </div>
+            <div class="footer-section">
+                <h4>Resources</h4>
+                <a href="#"><i class="fas fa-shield-alt"></i> Campus Security</a>
+                <a href="#"><i class="fas fa-users"></i> Student Affairs</a>
+                <a href="#"><i class="fas fa-headset"></i> Support Center</a>
+                <a href="#"><i class="fas fa-comment"></i> Feedback</a>
+            </div>
+            <div class="footer-section">
+                <h4>Contact Info</h4>
+                <p><i class="fas fa-phone"></i> (555) 123-4567</p>
+                <p><i class="fas fa-envelope"></i> support@campus.edu</p>
+                <p><i class="fas fa-clock"></i> Mon-Fri: 8am-8pm</p>
+                <p><i class="fas fa-clock"></i> Sat: 9am-5pm</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 Campus Lost & Found System. All rights reserved. | <a href="#" style="color: white;">Privacy Policy</a> | <a href="#" style="color: white;">Terms of Service</a></p>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
+    <script src="~/js/site.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

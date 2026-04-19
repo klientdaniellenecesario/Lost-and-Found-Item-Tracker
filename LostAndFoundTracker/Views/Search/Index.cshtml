@@ -1,0 +1,144 @@
+﻿@{
+    ViewData["Title"] = "Search Items";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="page-header">
+    <h1><i class="fas fa-search"></i> Search Items</h1>
+    <p>Search through all lost and found items on campus.</p>
+</div>
+
+<div class="alert alert-info">
+    <i class="fas fa-info-circle"></i> Search page is working! Enter your search criteria below.
+</div>
+
+<div class="search-filters">
+    <div class="filter-row">
+        <div class="filter-group">
+            <label><i class="fas fa-keyboard"></i> SEARCH KEYWORD</label>
+            <input type="text" id="searchKeyword" class="form-control" placeholder="Search by item name..." />
+        </div>
+        <div class="filter-group">
+            <label><i class="fas fa-list"></i> CATEGORY</label>
+            <select id="categoryFilter" class="form-control">
+                <option value="">All Categories</option>
+                <option>Wallet / Purse</option>
+                <option>ID Card</option>
+                <option>Phone / Smartphone</option>
+                <option>Laptop / Tablet</option>
+                <option>Keys</option>
+                <option>Bag / Backpack</option>
+                <option>Clothing</option>
+                <option>Electronics</option>
+                <option>Books</option>
+                <option>Other</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label><i class="fas fa-map-marker-alt"></i> LOCATION</label>
+            <input type="text" id="locationFilter" class="form-control" placeholder="Filter by location..." />
+        </div>
+        <div class="filter-group">
+            <label><i class="fas fa-filter"></i> ITEM TYPE</label>
+            <select id="typeFilter" class="form-control">
+                <option value="all">All Items</option>
+                <option value="lost">Lost Only</option>
+                <option value="found">Found Only</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>&nbsp;</label>
+            <button class="btn btn-primary" onclick="searchItems()" style="width: 100%;">
+                <i class="fas fa-search"></i> Search
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="searchResults">
+    <div class="empty-state">
+        <div class="empty-state-icon">🔍</div>
+        <h3>Start Searching</h3>
+        <p>Enter search criteria above to find lost or found items.</p>
+    </div>
+</div>
+
+<style>
+    .form-control {
+        width: 100%;
+        padding: 0.625rem;
+        border: 1px solid #E5E7EB;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+    }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #008080;
+            box-shadow: 0 0 0 3px rgba(0,128,128,0.1);
+        }
+</style>
+
+@section Scripts {
+    <script>
+        console.log("Search page loaded");
+
+        async function searchItems() {
+            const container = document.getElementById('searchResults');
+            container.innerHTML = '<div class="loading"><div class="spinner"></div> Searching...</div>';
+
+            const keyword = document.getElementById('searchKeyword').value;
+            const category = document.getElementById('categoryFilter').value;
+            const location = document.getElementById('locationFilter').value;
+            const type = document.getElementById('typeFilter').value;
+
+            const params = new URLSearchParams({
+                keyword: keyword,
+                category: category,
+                location: location,
+                type: type
+            });
+
+            try {
+                const response = await fetch(`/Search/Results?${params}`);
+                const data = await response.json();
+
+                if (data.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🔍</div>
+                            <h3>No items found</h3>
+                            <p>Try different search keywords.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = `
+                    <div class="cards-grid">
+                        ${data.map(item => `
+                            <div class="item-card" onclick="location.href='/Items/Detail/${item.id}'">
+                                <div class="card-image">
+                                    ${item.type === 'lost' ? '🔴' : '🟢'}
+                                </div>
+                                <div class="card-content">
+                                    <div class="card-title">${item.name}</div>
+                                    <div class="card-details">
+                                        <i class="fas fa-map-marker-alt"></i> ${item.location}<br/>
+                                        <i class="fas fa-calendar"></i> ${item.date}
+                                    </div>
+                                    <span class="badge ${item.type === 'lost' ? 'badge-lost' : 'badge-found'}">
+                                        ${item.type === 'lost' ? 'LOST' : 'FOUND'}
+                                    </span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } catch (error) {
+                container.innerHTML = '<div class="alert alert-error">Error loading results. Please try again.</div>';
+                console.error('Error:', error);
+            }
+        }
+    </script>
+}

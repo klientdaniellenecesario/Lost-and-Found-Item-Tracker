@@ -1,0 +1,262 @@
+﻿@{
+    ViewData["Title"] = "Welcome to Campus Lost & Found";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, #008080 0%, #20B2AA 100%);
+        border-radius: 1.5rem;
+        padding: 4rem;
+        margin-bottom: 3rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .hero-section h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .hero-section p {
+            font-size: 1.125rem;
+            color: rgba(255,255,255,0.9);
+            max-width: 500px;
+        }
+
+    .hero-stats {
+        display: flex;
+        gap: 3rem;
+        margin-top: 2rem;
+    }
+
+    .hero-stat {
+        text-align: left;
+    }
+
+        .hero-stat .number {
+            font-size: 2rem;
+            font-weight: 800;
+            color: white;
+        }
+
+        .hero-stat .label {
+            color: rgba(255,255,255,0.8);
+        }
+
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+        margin: 3rem 0;
+    }
+
+    .feature-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 2rem;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        transition: all 0.3s;
+    }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+    .feature-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .feature-card h3 {
+        color: #008080;
+        margin-bottom: 0.5rem;
+    }
+
+    .feature-card p {
+        color: #6B7280;
+    }
+
+    .stats-banner {
+        background: white;
+        border-radius: 1rem;
+        padding: 3rem;
+        text-align: center;
+        margin: 3rem 0;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 2rem;
+        margin-top: 1rem;
+    }
+
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #008080;
+    }
+
+    .testimonial-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+        margin: 3rem 0;
+    }
+
+    .testimonial-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 2rem;
+        border-left: 4px solid #008080;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .cta-section {
+        background: #E6F3F3;
+        border-radius: 1rem;
+        padding: 3rem;
+        text-align: center;
+        margin: 3rem 0;
+    }
+
+    .btn-large {
+        padding: 1rem 2rem;
+        font-size: 1rem;
+    }
+
+    @@media (max-width: 768px) {
+        .hero-section {
+            padding: 2rem;
+            text-align: center;
+        }
+
+            .hero-section h1 {
+                font-size: 1.75rem;
+            }
+
+            .hero-section p {
+                margin: 0 auto;
+            }
+
+        .hero-stats {
+            justify-content: center;
+        }
+
+        .hero-stat {
+            text-align: center;
+        }
+
+        .features-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .testimonial-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="hero-section">
+    <div>
+        <h1>Lost Something?<br />We Can Help Find It.</h1>
+        <p>Campus-wide lost and found system helping thousands of students reunite with their belongings every semester.</p>
+        <div class="hero-buttons" style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+            <a href="/Account/Register" class="btn btn-primary" style="background: white; color: #008080; padding: 0.75rem 1.5rem; border-radius: 0.5rem; text-decoration: none; font-weight: 600;">
+                <i class="fas fa-plus-circle"></i> Report an Item
+            </a>
+            <a href="/Account/Login" class="btn btn-outline" style="background: rgba(255,255,255,0.2); color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; text-decoration: none; font-weight: 600; border: 1px solid white;">
+                <i class="fas fa-search"></i> Browse Items
+            </a>
+        </div>
+        <div class="hero-stats">
+            <div class="hero-stat">
+                <div class="number">2,847+</div>
+                <div class="label">Items Reunited</div>
+            </div>
+            <div class="hero-stat">
+                <div class="number">94%</div>
+                <div class="label">Success Rate</div>
+            </div>
+            <div class="hero-stat">
+                <div class="number">24h</div>
+                <div class="label">Avg Response</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="stats-banner">
+    <h3 style="color: #008080; margin-bottom: 1rem;">Trusted by the Campus Community</h3>
+    <div class="stats-grid">
+        <div>
+            <div class="stat-number">15,000+</div>
+            <div>Active Students</div>
+        </div>
+        <div>
+            <div class="stat-number">12</div>
+            <div>Campus Locations</div>
+        </div>
+        <div>
+            <div class="stat-number">4.9★</div>
+            <div>Student Rating</div>
+        </div>
+        <div>
+            <div class="stat-number">24/7</div>
+            <div>Support Available</div>
+        </div>
+    </div>
+</div>
+
+<div style="text-align: center; margin: 3rem 0;">
+    <h2 style="color: #008080;">How Our System Works</h2>
+    <p style="color: #6B7280;">Simple, fast, and effective process to reunite lost items</p>
+</div>
+
+<div class="features-grid">
+    <div class="feature-card">
+        <div class="feature-icon">📝</div>
+        <h3>1. Report an Item</h3>
+        <p>Fill out our simple form with item details, location, and upload a photo.</p>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">🔍</div>
+        <h3>2. We Match & Notify</h3>
+        <p>Our system automatically matches lost and found items and sends notifications.</p>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">✅</div>
+        <h3>3. Get Reunited</h3>
+        <p>Connect with the person who found your item or return found items to owners.</p>
+    </div>
+</div>
+
+<div class="cta-section">
+    <h2 style="color: #008080; margin-bottom: 1rem;">Ready to Get Started?</h2>
+    <p style="margin-bottom: 1.5rem;">Join thousands of students who trust us to help reunite lost items.</p>
+    <a href="/Account/Register" class="btn btn-primary btn-large" style="background: #008080; color: white; padding: 0.75rem 2rem; border-radius: 0.5rem; text-decoration: none; font-weight: 600; display: inline-block;">
+        Create Free Account →
+    </a>
+</div>
+
+<div class="testimonial-grid">
+    <div class="testimonial-card">
+        <i class="fas fa-quote-left" style="color: #008080; font-size: 2rem; opacity: 0.3;"></i>
+        <p style="margin: 1rem 0;">"I lost my wallet with my ID and cash. Within 24 hours, someone had found it and contacted me through this platform. So grateful!"</p>
+        <strong>- Sarah M., Junior</strong>
+    </div>
+    <div class="testimonial-card">
+        <i class="fas fa-quote-left" style="color: #008080; font-size: 2rem; opacity: 0.3;"></i>
+        <p style="margin: 1rem 0;">"Found someone's laptop in the library. Posted it here and the owner claimed it within hours. Such a great service for our campus!"</p>
+        <strong>- David K., Senior</strong>
+    </div>
+</div>
