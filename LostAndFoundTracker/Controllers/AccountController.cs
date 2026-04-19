@@ -1,13 +1,23 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using LostAndFoundTracker.Data;
+using LostAndFoundTracker.Models;
 using LostAndFoundTracker.Models.ViewModels;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
-using System;
+using System.Threading.Tasks;
 
 namespace LostAndFoundTracker.Controllers
 {
     [Route("Account")]
     public class AccountController : Controller
     {
+        private readonly AppDbContext _context;
+
+        public AccountController(AppDbContext context)
+        {
+            _context = context;
+        }
+
         [Route("Login")]
         [HttpGet]
         public IActionResult Login()
@@ -18,23 +28,24 @@ namespace LostAndFoundTracker.Controllers
 
         [Route("Login")]
         [HttpPost]
-        public IActionResult Login(LoginViewModel model)
+        public async Task<IActionResult> Login(LoginViewModel model)
         {
             if (ModelState.IsValid)
             {
-                // Demo authentication
-                if (model.Email == "student@campus.edu" && model.Password == "password123")
+                // Find user by email and compare plain password
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == model.Email && u.PasswordHash == model.Password);
+                if (user != null)
                 {
-                    HttpContext.Session.SetString("UserId", "1");
-                    HttpContext.Session.SetString("UserEmail", model.Email);
-                    HttpContext.Session.SetString("UserName", "John Smith");
+                    HttpContext.Session.SetInt32("UserId", user.Id);
+                    HttpContext.Session.SetString("UserEmail", user.Email);
+                    HttpContext.Session.SetString("UserFullName", user.FullName);
 
-                    TempData["Success"] = "Welcome back! You have successfully logged in.";
+                    TempData["Success"] = "Welcome back!";
                     return RedirectToAction("Dashboard", "Home");
                 }
                 else
                 {
-                    ViewBag.Error = "Invalid email or password. Try: student@campus.edu / password123";
+                    ViewBag.Error = "Invalid email or password.";
                 }
             }
             return View(model);
@@ -49,7 +60,7 @@ namespace LostAndFoundTracker.Controllers
 
         [Route("Register")]
         [HttpPost]
-        public IActionResult Register(RegisterViewModel model)
+        public async Task<IActionResult> Register(RegisterViewModel model)
         {
             if (ModelState.IsValid)
             {
@@ -59,11 +70,33 @@ namespace LostAndFoundTracker.Controllers
                     return View(model);
                 }
 
-                HttpContext.Session.SetString("UserId", "1");
-                HttpContext.Session.SetString("UserEmail", model.Email);
-                HttpContext.Session.SetString("UserName", model.FullName);
+                // Check if email already exists
+                var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == model.Email);
+                if (existingUser != null)
+                {
+                    ModelState.AddModelError("Email", "Email already registered.");
+                    return View(model);
+                }
 
-                TempData["Success"] = "Account created successfully! Welcome to the Lost & Found system.";
+                // Create new user – store plain password in PasswordHash field
+                var user = new User
+                {
+                    FullName = model.FullName,
+                    Email = model.Email,
+                    PasswordHash = model.Password,   // plain text (for learning only)
+                    ContactNumber = "",
+                    ProfilePictureUrl = null
+                };
+
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+
+                // Auto-login after registration
+                HttpContext.Session.SetInt32("UserId", user.Id);
+                HttpContext.Session.SetString("UserEmail", user.Email);
+                HttpContext.Session.SetString("UserFullName", user.FullName);
+
+                TempData["Success"] = "Account created successfully!";
                 return RedirectToAction("Dashboard", "Home");
             }
             return View(model);
@@ -74,7 +107,7 @@ namespace LostAndFoundTracker.Controllers
         public IActionResult Logout()
         {
             HttpContext.Session.Clear();
-            TempData["Success"] = "You have been logged out successfully.";
+            TempData["Success"] = "Logged out.";
             return RedirectToAction("Landing", "Home");
         }
     }

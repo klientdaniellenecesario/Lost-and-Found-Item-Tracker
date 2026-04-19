@@ -1,7 +1,7 @@
 ﻿@{
     ViewData["Title"] = "Dashboard";
     Layout = "~/Views/Shared/_Layout.cshtml";
-    var userName = Context.Session.GetString("UserName") ?? "Student";
+    var userName = Context.Session.GetString("UserFullName") ?? "Student";
 }
 
 <div class="page-header">
