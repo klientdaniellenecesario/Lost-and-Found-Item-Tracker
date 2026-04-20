@@ -82,6 +82,11 @@
             <!-- Owner's buttons (only if owner and not resolved) -->
             @if (isOwner && !Model.IsResolved)
             {
+                <!-- Edit button for owner -->
+                <a href="/Items/Edit/@Model.Id" class="btn btn-warning btn-block" style="margin-bottom: 0.5rem; background: #f59e0b; border-color: #f59e0b;">
+                    <i class="fas fa-edit"></i> Edit Item
+                </a>
+
                 if (Model.Type == "lost")
                 {
                     <form asp-action="MarkFound" asp-route-id="@Model.Id" method="post" style="margin-bottom: 1rem;">
