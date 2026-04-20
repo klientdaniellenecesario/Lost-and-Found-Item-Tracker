@@ -91,13 +91,9 @@ namespace LostAndFoundTracker.Controllers
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
 
-                // Auto-login after registration
-                HttpContext.Session.SetInt32("UserId", user.Id);
-                HttpContext.Session.SetString("UserEmail", user.Email);
-                HttpContext.Session.SetString("UserFullName", user.FullName);
-
-                TempData["Success"] = "Account created successfully!";
-                return RedirectToAction("Dashboard", "Home");
+                // Redirect to Login page instead of auto-login
+                TempData["Success"] = "Account created successfully! Please log in.";
+                return RedirectToAction("Login", "Account");
             }
             return View(model);
         }

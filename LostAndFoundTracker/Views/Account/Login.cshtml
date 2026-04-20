@@ -66,6 +66,13 @@
                 <p>Enter your campus credentials</p>
             </div>
             <div class="form-body">
+                @if (TempData["Success"] != null)
+                {
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i> @TempData["Success"]
+                    </div>
+                }
+
                 @if (ViewBag.Error != null)
                 {
                     <div class="alert alert-error">
@@ -73,15 +80,15 @@
                     </div>
                 }
 
-                <form asp-action="Login" method="post">
+                <form asp-action="Login" method="post" autocomplete="off">
                     <div class="form-group">
                         <label><i class="fas fa-envelope"></i> Email Address</label>
-                        <input asp-for="Email" type="email" placeholder="student@campus.edu" required />
+                        <input asp-for="Email" type="email" placeholder="student@campus.edu" required autocomplete="off" id="emailInput" />
                     </div>
 
                     <div class="form-group">
                         <label><i class="fas fa-lock"></i> Password</label>
-                        <input asp-for="Password" type="password" placeholder="Enter your password" required />
+                        <input asp-for="Password" type="password" placeholder="Enter your password" required autocomplete="new-password" id="passwordInput" />
                     </div>
 
                     <button type="submit" class="btn btn-primary btn-block">
@@ -95,5 +102,31 @@
             </div>
         </div>
     </div>
+
+    <script>
+            // Force clear fields immediately
+            (function() {
+                var email = document.getElementById('emailInput');
+                var password = document.getElementById('passwordInput');
+                if (email) email.value = '';
+                if (password) password.value = '';
+            })();
+
+            // Also clear after a short delay (for browsers that autofill later)
+            setTimeout(function() {
+                var email = document.getElementById('emailInput');
+                var password = document.getElementById('passwordInput');
+                if (email) email.value = '';
+                if (password) password.value = '';
+            }, 100);
+
+            // Clear again on pageshow (for back/forward navigation)
+            window.addEventListener('pageshow', function() {
+                var email = document.getElementById('emailInput');
+                var password = document.getElementById('passwordInput');
+                if (email) email.value = '';
+                if (password) password.value = '';
+            });
+    </script>
 </body>
 </html>
