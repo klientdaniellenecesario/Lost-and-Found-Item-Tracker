@@ -15,39 +15,39 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body {
-            background: linear-gradient(135deg, #008080 0%, #20B2AA 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 1rem;
-        }
+            body {
+                background: linear-gradient(135deg, #008080 0%, #20B2AA 100%);
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 1rem;
+            }
 
-        .register-wrapper {
-            max-width: 500px;
-            width: 100%;
-        }
+            .register-wrapper {
+                max-width: 500px;
+                width: 100%;
+            }
 
-        .brand {
-            text-align: center;
-            margin-bottom: 2rem;
-            color: white;
-        }
+            .brand {
+                text-align: center;
+                margin-bottom: 2rem;
+                color: white;
+            }
 
-        .brand-icon {
-            width: 80px;
-            height: 80px;
-            background: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.5rem;
-            margin: 0 auto 1rem;
-            color: #008080;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
+            .brand-icon {
+                width: 80px;
+                height: 80px;
+                background: white;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 2.5rem;
+                margin: 0 auto 1rem;
+                color: #008080;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            }
     </style>
 </head>
 <body>
@@ -70,6 +70,16 @@
                 {
                     <div class="alert alert-error">
                         <i class="fas fa-exclamation-circle"></i> @ViewBag.Error
+                    </div>
+                }
+
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-error">
+                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <p><i class="fas fa-exclamation-circle"></i> @error.ErrorMessage</p>
+                        }
                     </div>
                 }
 

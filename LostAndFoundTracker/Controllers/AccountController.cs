@@ -32,8 +32,8 @@ namespace LostAndFoundTracker.Controllers
         {
             if (ModelState.IsValid)
             {
-                // Find user by email and compare plain password
-                var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == model.Email && u.PasswordHash == model.Password);
+                // Find user by email (case‑insensitive) and compare plain password
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == model.Email.ToLower() && u.PasswordHash == model.Password);
                 if (user != null)
                 {
                     HttpContext.Session.SetInt32("UserId", user.Id);
@@ -70,8 +70,8 @@ namespace LostAndFoundTracker.Controllers
                     return View(model);
                 }
 
-                // Check if email already exists
-                var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == model.Email);
+                // Check if email already exists (case‑insensitive)
+                var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == model.Email.ToLower());
                 if (existingUser != null)
                 {
                     ModelState.AddModelError("Email", "Email already registered.");
@@ -91,7 +91,7 @@ namespace LostAndFoundTracker.Controllers
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
 
-                // Redirect to Login page instead of auto-login
+                // Redirect to Login page
                 TempData["Success"] = "Account created successfully! Please log in.";
                 return RedirectToAction("Login", "Account");
             }
