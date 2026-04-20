@@ -1,65 +1,106 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
+using LostAndFoundTracker.Data;
 using LostAndFoundTracker.Models;
 using LostAndFoundTracker.Models.ViewModels;
-using System.Collections.Generic;
-using System.Linq;
-using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Hosting;
 using System;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace LostAndFoundTracker.Controllers
 {
-    [Route("Items")]
     public class ItemsController : Controller
     {
-        // Make items public static so SearchController can access
-        public static List<Item> items = new List<Item>();
-        private static int nextId = 1;
+        private readonly AppDbContext _context;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
-        [Route("LostItems")]
-        public IActionResult LostItems()
+        public ItemsController(AppDbContext context, IWebHostEnvironment webHostEnvironment)
         {
-            if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserId")))
-            {
+            _context = context;
+            _webHostEnvironment = webHostEnvironment;
+        }
+
+        // GET: /Items/LostItems
+        public async Task<IActionResult> LostItems()
+        {
+            int? userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
                 return RedirectToAction("Login", "Account");
-            }
-            var lostItems = items.Where(i => i.Type == "lost" && !i.IsResolved).ToList();
+
+            var lostItems = await _context.Items
+                .Where(i => i.Type == "lost" && !i.IsResolved)
+                .OrderByDescending(i => i.Date)
+                .ToListAsync();
+
+            ViewBag.CurrentUserId = userId;
             return View(lostItems);
         }
 
-        [Route("FoundItems")]
-        public IActionResult FoundItems()
+        // GET: /Items/FoundItems
+        public async Task<IActionResult> FoundItems()
         {
-            if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserId")))
-            {
+            int? userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
                 return RedirectToAction("Login", "Account");
-            }
-            var foundItems = items.Where(i => i.Type == "found" && !i.IsResolved).ToList();
+
+            var foundItems = await _context.Items
+                .Where(i => i.Type == "found" && !i.IsResolved)
+                .OrderByDescending(i => i.Date)
+                .ToListAsync();
+
+            ViewBag.CurrentUserId = userId;
             return View(foundItems);
         }
 
-        [Route("ReportItem")]
+        // GET: /Items/ReportItem
         [HttpGet]
         public IActionResult ReportItem()
         {
-            if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserId")))
-            {
+            if (HttpContext.Session.GetInt32("UserId") == null)
                 return RedirectToAction("Login", "Account");
-            }
-            return View();
+
+            var model = new ReportItemViewModel
+            {
+                Date = DateTime.Now,
+                Email = HttpContext.Session.GetString("UserEmail") ?? ""
+            };
+            return View(model);
         }
 
-        [Route("ReportItem")]
+        // POST: /Items/ReportItem
         [HttpPost]
-        public IActionResult SubmitReport(ReportItemViewModel model)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReportItem(ReportItemViewModel model)
         {
+            int? userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
+                return RedirectToAction("Login", "Account");
+
             if (ModelState.IsValid)
             {
-                var userId = HttpContext.Session.GetString("UserId");
-                var userEmail = HttpContext.Session.GetString("UserEmail") ?? model.Email;
+                string photoUrl = null;
+
+                // Handle photo upload
+                if (model.Photo != null && model.Photo.Length > 0)
+                {
+                    string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads");
+                    if (!Directory.Exists(uploadsFolder))
+                        Directory.CreateDirectory(uploadsFolder);
+
+                    string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.Photo.FileName;
+                    string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await model.Photo.CopyToAsync(fileStream);
+                    }
+                    photoUrl = "/uploads/" + uniqueFileName;
+                }
 
                 var item = new Item
                 {
-                    Id = nextId++,
                     Type = model.ItemType,
                     Name = model.ItemName,
                     Category = model.Category,
@@ -67,53 +108,79 @@ namespace LostAndFoundTracker.Controllers
                     Date = model.Date,
                     Description = model.Description,
                     ContactNumber = model.ContactNumber,
-                    Email = userEmail,
-                    UserId = int.Parse(userId ?? "1"),
+                    Email = model.Email,
+                    UserId = userId.Value,
                     IsResolved = false,
-                    PhotoUrl = null
+                    PhotoUrl = photoUrl
                 };
 
-                items.Add(item);
+                _context.Items.Add(item);
+                await _context.SaveChangesAsync();
 
                 TempData["Success"] = $"Your {model.ItemType} item has been reported successfully!";
                 return RedirectToAction(model.ItemType == "lost" ? "LostItems" : "FoundItems");
             }
-            return View("ReportItem", model);
+            return View(model);
         }
 
+        // POST: /Items/MarkFound/{id}
         [HttpPost]
-        [Route("MarkFound/{id}")]
-        public IActionResult MarkFound(int id)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkFound(int id)
         {
-            var item = items.FirstOrDefault(i => i.Id == id);
-            if (item != null)
-            {
-                item.IsResolved = true;
-                return Ok();
-            }
-            return NotFound();
-        }
+            int? userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
+                return Unauthorized();
 
-        [HttpPost]
-        [Route("MarkClaimed/{id}")]
-        public IActionResult MarkClaimed(int id)
-        {
-            var item = items.FirstOrDefault(i => i.Id == id);
-            if (item != null)
-            {
-                item.IsResolved = true;
-                return Ok();
-            }
-            return NotFound();
-        }
-
-        [Route("Detail/{id}")]
-        public IActionResult Detail(int id)
-        {
-            var item = items.FirstOrDefault(i => i.Id == id);
+            var item = await _context.Items.FindAsync(id);
             if (item == null)
                 return NotFound();
 
+            if (item.UserId != userId.Value)
+                return Forbid();
+
+            item.IsResolved = true;
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        // POST: /Items/MarkClaimed/{id}
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkClaimed(int id)
+        {
+            int? userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
+                return Unauthorized();
+
+            var item = await _context.Items.FindAsync(id);
+            if (item == null)
+                return NotFound();
+
+            if (item.UserId != userId.Value)
+                return Forbid();
+
+            item.IsResolved = true;
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        // GET: /Items/Detail/{id}
+        public async Task<IActionResult> Detail(int id)
+        {
+            int? userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
+                return RedirectToAction("Login", "Account");
+
+            var item = await _context.Items
+                .Include(i => i.User)
+                .FirstOrDefaultAsync(i => i.Id == id);
+            if (item == null)
+                return NotFound();
+
+            ViewBag.CurrentUserId = userId;
             return View(item);
         }
     }
