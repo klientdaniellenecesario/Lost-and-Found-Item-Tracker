@@ -3,7 +3,7 @@
 @{
     ViewData["Title"] = Model.Name;
     Layout = "~/Views/Shared/_Layout.cshtml";
-    var currentUserId = Context.Session.GetString("UserId");
+    var currentUserId = Context.Session.GetInt32("UserId")?.ToString();
     var isOwner = currentUserId == Model.UserId.ToString();
 }
 
@@ -65,13 +65,41 @@
                 <p style="font-size: 0.75rem; margin-top: 0.5rem;"><i class="fas fa-shield-alt"></i> This information is only visible to logged-in users</p>
             </div>
 
+            <!-- Finder's button (only for lost items, not owner, not resolved) -->
+            @if (Model.Type == "lost" && !Model.IsResolved && !isOwner)
+            {
+                <form asp-action="ReportFoundByFinder" asp-route-id="@Model.Id" method="post" style="margin-bottom: 1rem;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-warning btn-block" style="background: #f59e0b; border-color: #f59e0b;">
+                        <i class="fas fa-hand-holding-heart"></i> I found this item
+                    </button>
+                </form>
+                <p style="font-size: 0.8rem; margin-top: -0.5rem; margin-bottom: 1rem; color: #6B7280;">
+                    Clicking this will notify the owner that you have found their item.
+                </p>
+            }
+
+            <!-- Owner's buttons (only if owner and not resolved) -->
             @if (isOwner && !Model.IsResolved)
             {
-                <button class="btn @(Model.Type == "lost" ? "btn-success" : "btn-primary") btn-block"
-                        onclick="markAsResolved(@Model.Id, '@Model.Type')" style="margin-bottom: 1rem;">
-                    <i class="fas @(Model.Type == "lost" ? "fa-check" : "fa-gift")"></i>
-                    @(Model.Type == "lost" ? "Mark as Found" : "Mark as Claimed")
-                </button>
+                if (Model.Type == "lost")
+                {
+                    <form asp-action="MarkFound" asp-route-id="@Model.Id" method="post" style="margin-bottom: 1rem;">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-success btn-block">
+                            <i class="fas fa-check"></i> Mark as Found
+                        </button>
+                    </form>
+                }
+                else if (Model.Type == "found")
+                {
+                    <form asp-action="MarkClaimed" asp-route-id="@Model.Id" method="post" style="margin-bottom: 1rem;">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <i class="fas fa-gift"></i> Mark as Claimed
+                        </button>
+                    </form>
+                }
             }
 
             <a href="javascript:history.back()" class="btn btn-outline btn-block">
@@ -81,16 +109,9 @@
     </div>
 </div>
 
-@section Scripts {
-    <script>
-        async function markAsResolved(itemId, type) {
-            const url = type === 'lost' ? `/Items/MarkFound/${itemId}` : `/Items/MarkClaimed/${itemId}`;
-            if (confirm(`Mark this item as ${type === 'lost' ? 'found' : 'claimed'}?`)) {
-                const response = await fetch(url, { method: 'POST' });
-                if (response.ok) {
-                    window.location.href = type === 'lost' ? '/Items/LostItems' : '/Items/FoundItems';
-                }
-            }
-        }
-    </script>
-}
+<style>
+    .badge-lost { background: #fee2e2; color: #dc2626; }
+    .badge-found { background: #d1fae5; color: #10b981; }
+    .btn-warning { color: white; background: #f59e0b; border-color: #f59e0b; }
+    .btn-warning:hover { background: #d97706; }
+</style>

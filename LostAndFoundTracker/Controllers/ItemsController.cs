@@ -81,7 +81,6 @@ namespace LostAndFoundTracker.Controllers
 
             if (ModelState.IsValid)
             {
-                // Photo is required – validated by [Required] attribute
                 string photoUrl = string.Empty;
 
                 // Handle photo upload
@@ -112,7 +111,7 @@ namespace LostAndFoundTracker.Controllers
                     Email = model.Email,
                     UserId = userId.Value,
                     IsResolved = false,
-                    PhotoUrl = photoUrl   // non‑nullable string
+                    PhotoUrl = photoUrl
                 };
 
                 _context.Items.Add(item);
@@ -143,7 +142,8 @@ namespace LostAndFoundTracker.Controllers
             item.IsResolved = true;
             await _context.SaveChangesAsync();
 
-            return Ok();
+            TempData["Success"] = "Item marked as found.";
+            return RedirectToAction("LostItems");
         }
 
         // POST: /Items/MarkClaimed/{id}
@@ -165,7 +165,31 @@ namespace LostAndFoundTracker.Controllers
             item.IsResolved = true;
             await _context.SaveChangesAsync();
 
-            return Ok();
+            TempData["Success"] = "Item marked as claimed.";
+            return RedirectToAction("FoundItems");
+        }
+
+        // POST: /Items/ReportFoundByFinder/{id}
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReportFoundByFinder(int id)
+        {
+            int? userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
+                return Unauthorized();
+
+            var item = await _context.Items.FindAsync(id);
+            if (item == null)
+                return NotFound();
+
+            // Prevent owner from using this button (though view already hides it)
+            if (item.UserId == userId.Value)
+                return BadRequest("You cannot report your own item as found.");
+
+            // TODO: Send actual notification (email, in-app message, etc.)
+            TempData["Success"] = $"Thank you! The owner of '{item.Name}' has been notified that you found it.";
+
+            return RedirectToAction("Detail", new { id });
         }
 
         // GET: /Items/Detail/{id}
