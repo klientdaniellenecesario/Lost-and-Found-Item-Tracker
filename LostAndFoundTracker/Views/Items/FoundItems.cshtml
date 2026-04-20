@@ -3,7 +3,7 @@
 @{
     ViewData["Title"] = "Found Items";
     Layout = "~/Views/Shared/_Layout.cshtml";
-    var currentUserId = Context.Session.GetString("UserId");
+    var currentUserId = Context.Session.GetInt32("UserId")?.ToString();
 }
 
 <div class="page-header">
@@ -57,14 +57,22 @@ else
     </div>
 }
 
+@Html.AntiForgeryToken()
+
 @section Scripts {
     <script>
         async function markAsClaimed(itemId, event) {
             event.stopPropagation();
             if (confirm('Mark this item as claimed? It will be removed from found items.')) {
-                const response = await fetch(`/Items/MarkClaimed/${itemId}`, { method: 'POST' });
+                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                const response = await fetch(`/Items/MarkClaimed/${itemId}`, {
+                    method: 'POST',
+                    headers: { 'RequestVerificationToken': token }
+                });
                 if (response.ok) {
                     location.reload();
+                } else {
+                    alert('Failed to mark item as claimed.');
                 }
             }
         }

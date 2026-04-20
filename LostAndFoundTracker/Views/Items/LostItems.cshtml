@@ -57,12 +57,18 @@ else
     </div>
 }
 
+@Html.AntiForgeryToken()
+
 @section Scripts {
     <script>
         async function markAsFound(itemId, event) {
             event.stopPropagation();
             if (confirm('Mark this item as found? It will be removed from lost items.')) {
-                const response = await fetch(`/Items/MarkFound/${itemId}`, { method: 'POST' });
+                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                const response = await fetch(`/Items/MarkFound/${itemId}`, {
+                    method: 'POST',
+                    headers: { 'RequestVerificationToken': token }
+                });
                 if (response.ok) {
                     location.reload();
                 } else {
