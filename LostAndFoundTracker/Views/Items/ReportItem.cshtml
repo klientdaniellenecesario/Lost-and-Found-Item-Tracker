@@ -3,6 +3,11 @@
 @{
     ViewData["Title"] = "Report an Item";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    // Pre‑fill email from session (if not already set in model)
+    if (string.IsNullOrEmpty(Model.Email))
+    {
+        Model.Email = Context.Session.GetString("UserEmail") ?? "";
+    }
 }
 
 <div class="page-header">
@@ -24,18 +29,21 @@
                 <i class="fas fa-smile"></i> I FOUND an item
             </button>
         </div>
+        <span asp-validation-for="ItemType" class="text-danger"></span>
 
-        <form asp-action="SubmitReport" method="post" enctype="multipart/form-data">
+        <form asp-action="ReportItem" method="post" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
             <input type="hidden" asp-for="ItemType" id="itemType" />
 
             <div class="form-group">
                 <label><i class="fas fa-tag"></i> Item Name</label>
-                <input asp-for="ItemName" placeholder="e.g., Black Wallet, iPhone 14, Student ID" required />
+                <input asp-for="ItemName" placeholder="e.g., Black Wallet, iPhone 14, Student ID" />
+                <span asp-validation-for="ItemName" class="text-danger"></span>
             </div>
 
             <div class="form-group">
                 <label><i class="fas fa-list"></i> Category</label>
-                <select asp-for="Category" required>
+                <select asp-for="Category">
                     <option value="">Select a category</option>
                     <option>Wallet / Purse</option>
                     <option>ID Card</option>
@@ -48,16 +56,19 @@
                     <option>Books</option>
                     <option>Other</option>
                 </select>
+                <span asp-validation-for="Category" class="text-danger"></span>
             </div>
 
             <div class="form-group">
                 <label><i class="fas fa-map-marker-alt"></i> Location</label>
-                <input asp-for="Location" placeholder="Where was it lost/found? (e.g., Library, Student Center, Gym)" required />
+                <input asp-for="Location" placeholder="Where was it lost/found? (e.g., Library, Student Center, Gym)" />
+                <span asp-validation-for="Location" class="text-danger"></span>
             </div>
 
             <div class="form-group">
                 <label><i class="fas fa-calendar"></i> Date</label>
-                <input asp-for="Date" type="date" required />
+                <input asp-for="Date" type="date" />
+                <span asp-validation-for="Date" class="text-danger"></span>
             </div>
 
             <div class="form-group">
@@ -66,19 +77,22 @@
             </div>
 
             <div class="form-group">
-                <label><i class="fas fa-camera"></i> Upload Photo (Optional)</label>
-                <input type="file" name="Photo" accept="image/*" />
-                <small style="color: #6B7280;">Uploading a photo increases chances of recovery by 70%</small>
+                <label><i class="fas fa-camera"></i> Upload Photo</label>
+                <input asp-for="Photo" accept="image/*" />
+                <span asp-validation-for="Photo" class="text-danger"></span>
+                <small style="color: #6B7280;">A photo is required and increases chances of recovery by 70%</small>
             </div>
 
             <div class="form-group">
-                <label><i class="fas fa-phone"></i> Contact Number (Required)</label>
-                <input asp-for="ContactNumber" placeholder="Your phone number" required />
+                <label><i class="fas fa-phone"></i> Contact Number</label>
+                <input asp-for="ContactNumber" placeholder="Your phone number" />
+                <span asp-validation-for="ContactNumber" class="text-danger"></span>
             </div>
 
             <div class="form-group">
                 <label><i class="fas fa-envelope"></i> Email</label>
-                <input asp-for="Email" readonly value="@Context.Session.GetString("UserEmail") ?? " student@campus.edu"" />
+                <input asp-for="Email" readonly />
+                <span asp-validation-for="Email" class="text-danger"></span>
             </div>
 
             <button type="submit" class="btn btn-primary btn-block">
@@ -92,13 +106,18 @@
     <script>
         function setType(type) {
             document.getElementById('itemType').value = type;
-            document.getElementById('btnLost').classList.remove('active-lost');
-            document.getElementById('btnFound').classList.remove('active-found');
+            const lostBtn = document.getElementById('btnLost');
+            const foundBtn = document.getElementById('btnFound');
+            lostBtn.classList.remove('active-lost', 'active-found');
+            foundBtn.classList.remove('active-lost', 'active-found');
             if (type === 'lost') {
-                document.getElementById('btnLost').classList.add('active-lost');
+                lostBtn.classList.add('active-lost');
             } else {
-                document.getElementById('btnFound').classList.add('active-found');
+                foundBtn.classList.add('active-found');
             }
+            // Clear validation message for ItemType
+            const validationSpan = document.querySelector('span[data-valmsg-for="ItemType"]');
+            if (validationSpan) validationSpan.innerText = '';
         }
     </script>
 }
