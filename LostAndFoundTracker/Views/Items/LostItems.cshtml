@@ -3,7 +3,7 @@
 @{
     ViewData["Title"] = "Lost Items";
     Layout = "~/Views/Shared/_Layout.cshtml";
-    var currentUserId = Context.Session.GetString("UserId");
+    var currentUserId = Context.Session.GetInt32("UserId")?.ToString();
 }
 
 <div class="page-header">
@@ -65,6 +65,8 @@ else
                 const response = await fetch(`/Items/MarkFound/${itemId}`, { method: 'POST' });
                 if (response.ok) {
                     location.reload();
+                } else {
+                    alert('Failed to mark item as found.');
                 }
             }
         }

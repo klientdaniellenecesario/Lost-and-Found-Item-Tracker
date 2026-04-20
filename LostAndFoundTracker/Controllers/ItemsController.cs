@@ -81,7 +81,8 @@ namespace LostAndFoundTracker.Controllers
 
             if (ModelState.IsValid)
             {
-                string photoUrl = null;
+                // Photo is required – validated by [Required] attribute
+                string photoUrl = string.Empty;
 
                 // Handle photo upload
                 if (model.Photo != null && model.Photo.Length > 0)
@@ -111,7 +112,7 @@ namespace LostAndFoundTracker.Controllers
                     Email = model.Email,
                     UserId = userId.Value,
                     IsResolved = false,
-                    PhotoUrl = photoUrl
+                    PhotoUrl = photoUrl   // non‑nullable string
                 };
 
                 _context.Items.Add(item);
