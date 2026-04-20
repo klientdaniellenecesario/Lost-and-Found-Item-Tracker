@@ -208,5 +208,73 @@ namespace LostAndFoundTracker.Controllers
             ViewBag.CurrentUserId = userId;
             return View(item);
         }
+
+        // GET: /Items/Edit/{id}
+        [HttpGet]
+        public async Task<IActionResult> Edit(int id)
+        {
+            int? userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
+                return RedirectToAction("Login", "Account");
+
+            var item = await _context.Items.FindAsync(id);
+            if (item == null)
+                return NotFound();
+
+            // Only the owner can edit
+            if (item.UserId != userId.Value)
+                return Forbid();
+
+            // Map Item to ReportItemViewModel for editing
+            var model = new ReportItemViewModel
+            {
+                ItemType = item.Type,
+                ItemName = item.Name,
+                Category = item.Category,
+                Location = item.Location,
+                Date = item.Date,
+                Description = item.Description,
+                ContactNumber = item.ContactNumber,
+                Email = item.Email
+            };
+
+            return View(model);
+        }
+
+        // POST: /Items/Edit/{id}
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, ReportItemViewModel model)
+        {
+            int? userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
+                return RedirectToAction("Login", "Account");
+
+            var item = await _context.Items.FindAsync(id);
+            if (item == null)
+                return NotFound();
+
+            if (item.UserId != userId.Value)
+                return Forbid();
+
+            if (ModelState.IsValid)
+            {
+                // Update fields (photo remains unchanged)
+                item.Type = model.ItemType;
+                item.Name = model.ItemName;
+                item.Category = model.Category;
+                item.Location = model.Location;
+                item.Date = model.Date;
+                item.Description = model.Description;
+                item.ContactNumber = model.ContactNumber;
+                item.Email = model.Email;
+
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "Item updated successfully!";
+                return RedirectToAction("Detail", new { id });
+            }
+
+            return View(model);
+        }
     }
 }

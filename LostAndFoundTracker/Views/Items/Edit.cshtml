@@ -1,0 +1,95 @@
+﻿@using LostAndFoundTracker.Models.ViewModels
+@model ReportItemViewModel
+@{
+    ViewData["Title"] = "Edit Item";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="page-header">
+    <h1><i class="fas fa-edit"></i> Edit Item</h1>
+    <p>Update the details of your reported item.</p>
+</div>
+
+<div class="form-container">
+    <div class="form-header">
+        <h2>Item Details</h2>
+        <p>Correct any incorrect information.</p>
+    </div>
+    <div class="form-body">
+        <form asp-action="Edit" method="post" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+
+            <div class="form-group">
+                <label><i class="fas fa-tag"></i> Item Type</label>
+                <select asp-for="ItemType" class="form-control" required>
+                    <option value="lost">Lost</option>
+                    <option value="found">Found</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-tag"></i> Item Name</label>
+                <input asp-for="ItemName" class="form-control" required />
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-list"></i> Category</label>
+                <select asp-for="Category" class="form-control" required>
+                    <option value="">Select a category</option>
+                    <option>Wallet / Purse</option>
+                    <option>ID Card</option>
+                    <option>Phone / Smartphone</option>
+                    <option>Laptop / Tablet</option>
+                    <option>Keys</option>
+                    <option>Bag / Backpack</option>
+                    <option>Clothing</option>
+                    <option>Electronics</option>
+                    <option>Books</option>
+                    <option>Other</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-map-marker-alt"></i> Location</label>
+                <input asp-for="Location" class="form-control" required />
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-calendar"></i> Date</label>
+                <input asp-for="Date" type="date" class="form-control" required />
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-align-left"></i> Description</label>
+                <textarea asp-for="Description" rows="4" class="form-control"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-phone"></i> Contact Number</label>
+                <input asp-for="ContactNumber" class="form-control" required />
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-envelope"></i> Email</label>
+                <input asp-for="Email" type="email" class="form-control" required />
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-camera"></i> Photo</label>
+                <p class="text-muted">To change the photo, please report a new item or contact support. (Feature not included in this edit for simplicity)</p>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Save Changes</button>
+            <a href="/Items/Detail/@ViewContext.RouteData.Values["id"]" class="btn btn-outline btn-block">Cancel</a>
+        </form>
+    </div>
+</div>
+
+<style>
+    .form-control {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #E5E7EB;
+        border-radius: 0.5rem;
+    }
+</style>
