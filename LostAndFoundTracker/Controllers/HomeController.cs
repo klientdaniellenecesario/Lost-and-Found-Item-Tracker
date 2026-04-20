@@ -59,7 +59,8 @@ namespace LostAndFoundTracker.Controllers
                     name = i.Name,
                     location = i.Location,
                     date = i.Date.ToString("MMM dd, yyyy"),
-                    type = i.Type
+                    type = i.Type,
+                    photoUrl = i.PhotoUrl ?? ""   // Added this line
                 })
                 .ToListAsync();
 

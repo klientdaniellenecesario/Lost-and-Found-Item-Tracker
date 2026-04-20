@@ -58,7 +58,7 @@
                             ${data.recentItems.map(item => `
                                 <div class="item-card" onclick="location.href='/Items/Detail/${item.id}'">
                                     <div class="card-image">
-                                        ${item.type === 'lost' ? '🔴' : '🟢'}
+                                        ${item.photoUrl ? `<img src="${item.photoUrl}" alt="${item.name}" style="width:100%; height:150px; object-fit:cover;">` : (item.type === 'lost' ? '🔴' : '🟢')}
                                     </div>
                                     <div class="card-content">
                                         <div class="card-title">${item.name}</div>
