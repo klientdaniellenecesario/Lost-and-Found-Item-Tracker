@@ -17,6 +17,7 @@ namespace LostAndFoundTracker.Controllers
         }
 
         [Route("Search")]
+        [Route("Search/Index")]
         public IActionResult Index()
         {
             if (HttpContext.Session.GetInt32("UserId") == null)
@@ -51,7 +52,8 @@ namespace LostAndFoundTracker.Controllers
                     location = i.Location,
                     date = i.Date.ToString("MMM dd, yyyy"),
                     type = i.Type,
-                    category = i.Category
+                    category = i.Category,
+                    photoUrl = i.PhotoUrl ?? ""   // include photo URL
                 })
                 .ToListAsync();
 
