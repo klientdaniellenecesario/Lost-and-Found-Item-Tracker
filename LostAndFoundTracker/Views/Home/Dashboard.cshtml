@@ -5,8 +5,8 @@
 }
 
 <div class="page-header">
-    <h1><i class="fas fa-chart-line"></i> Welcome back, @userName!</h1>
-    <p>Here's what's happening with your lost and found activity.</p>
+    <h1><i class="fas fa-chart-line"></i> Dashboard</h1>
+    <p>Welcome back, @userName! Here's an overview of lost and found activity.</p>
 </div>
 
 <div class="stats-grid">
@@ -32,30 +32,7 @@
     </div>
 </div>
 
-<div class="action-grid">
-    <a href="/Items/ReportItem" class="action-card">
-        <div class="action-icon">📝</div>
-        <h3>Report an Item</h3>
-        <p>Lost or found something? Report it now</p>
-    </a>
-    <a href="/Items/LostItems" class="action-card">
-        <div class="action-icon">🔴</div>
-        <h3>Browse Lost Items</h3>
-        <p>See what others have lost</p>
-    </a>
-    <a href="/Items/FoundItems" class="action-card">
-        <div class="action-icon">🟢</div>
-        <h3>Browse Found Items</h3>
-        <p>See items that have been found</p>
-    </a>
-    <a href="/Search" class="action-card">
-        <div class="action-icon">🔍</div>
-        <h3>Search Items</h3>
-        <p>Find specific items quickly</p>
-    </a>
-</div>
-
-<div style="background: white; border-radius: 1rem; padding: 1.5rem;">
+<div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-top: 2rem;">
     <h3 style="margin-bottom: 1rem; color: #008080;"><i class="fas fa-clock"></i> Recent Activity</h3>
     <div id="recentItems">
         <div class="loading"><div class="spinner"></div> Loading recent activity...</div>
@@ -101,7 +78,8 @@
                     container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><h3>No recent activity</h3><p>Start by reporting an item!</p></div>';
                 }
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error loading dashboard:', error);
+                document.getElementById('recentItems').innerHTML = '<div class="alert alert-error">Failed to load data.</div>';
             }
         }
 
