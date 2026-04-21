@@ -79,6 +79,9 @@ namespace LostAndFoundTracker.Controllers
             if (userId == null)
                 return RedirectToAction("Login", "Account");
 
+            if (model.Photo == null || model.Photo.Length == 0)
+                ModelState.AddModelError("Photo", "Please upload a photo of the item.");
+
             if (ModelState.IsValid)
             {
                 string photoUrl = string.Empty;
@@ -106,6 +109,8 @@ namespace LostAndFoundTracker.Controllers
                     Category = model.Category,
                     Location = model.Location,
                     Date = model.Date,
+                    LostDate = model.ItemType == "lost" ? model.Date : null,
+                    FoundDate = model.ItemType == "found" ? model.Date : null,
                     Description = model.Description,
                     ContactNumber = model.ContactNumber,
                     Email = model.Email,
@@ -185,6 +190,10 @@ namespace LostAndFoundTracker.Controllers
             // Prevent owner from using this button (though view already hides it)
             if (item.UserId == userId.Value)
                 return BadRequest("You cannot report your own item as found.");
+
+            // Record the date someone reported finding this item
+            item.FoundDate = DateTime.Now;
+            await _context.SaveChangesAsync();
 
             // TODO: Send actual notification (email, in-app message, etc.)
             TempData["Success"] = $"Thank you! The owner of '{item.Name}' has been notified that you found it.";
