@@ -24,8 +24,7 @@ namespace LostAndFoundTracker.Models.ViewModels
 
         public string Description { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Please upload a photo of the item")]
-        public IFormFile? Photo { get; set; }  // Required, but still nullable for model binding
+        public IFormFile? Photo { get; set; }  // Optional on edit; required check handled in controller
 
         [Required(ErrorMessage = "Contact number is required")]
         [Phone(ErrorMessage = "Invalid phone number")]
