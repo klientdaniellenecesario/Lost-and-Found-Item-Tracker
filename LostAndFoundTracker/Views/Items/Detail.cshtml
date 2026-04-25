@@ -9,6 +9,7 @@
 
 <div style="max-width: 800px; margin: 0 auto;">
     <div class="item-detail" style="background: white; border-radius: 1rem; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        @* ... image and header (unchanged) ... *@
         <div class="detail-image" style="background: linear-gradient(135deg, #008080, #20B2AA); text-align: center; padding: 2rem;">
             @if (!string.IsNullOrEmpty(Model.PhotoUrl))
             {
@@ -34,23 +35,12 @@
 
             <h1 style="font-size: 1.75rem; margin-bottom: 1rem; color: #008080;">@Model.Name</h1>
 
+            @* ... details grid ... *@
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem; padding: 1rem; background: #FDF5E6; border-radius: 0.5rem;">
-                <div>
-                    <strong><i class="fas fa-tag"></i> Category</strong><br />
-                    @Model.Category
-                </div>
-                <div>
-                    <strong><i class="fas fa-map-marker-alt"></i> Location</strong><br />
-                    @Model.Location
-                </div>
-                <div>
-                    <strong><i class="fas fa-calendar"></i> Date</strong><br />
-                    @Model.Date.ToString("MMMM dd, yyyy")
-                </div>
-                <div>
-                    <strong><i class="fas fa-user"></i> Reported By</strong><br />
-                    Campus Community Member
-                </div>
+                <div><strong><i class="fas fa-tag"></i> Category</strong><br />@Model.Category</div>
+                <div><strong><i class="fas fa-map-marker-alt"></i> Location</strong><br />@Model.Location</div>
+                <div><strong><i class="fas fa-calendar"></i> Date</strong><br />@Model.Date.ToString("MMMM dd, yyyy")</div>
+                <div><strong><i class="fas fa-user"></i> Reported By</strong><br />Campus Community Member</div>
             </div>
 
             <div style="margin-bottom: 1.5rem;">
@@ -65,7 +55,8 @@
                 <p style="font-size: 0.75rem; margin-top: 0.5rem;"><i class="fas fa-shield-alt"></i> This information is only visible to logged-in users</p>
             </div>
 
-            <!-- Finder's button (only for lost items, not owner, not resolved) - NOW USES MODAL -->
+            @* ========== BUTTONS FOR NON-OWNERS ========== *@
+            <!-- Lost item -> "I found this item" (modal) -->
             @if (Model.Type == "lost" && !Model.IsResolved && !isOwner)
             {
                 <button type="button" class="btn btn-warning btn-block" style="background: #f59e0b; border-color: #f59e0b;" onclick="showFoundModal(@Model.Id, '@Model.Name.Replace("'", "\\'")')">
@@ -76,10 +67,20 @@
                 </p>
             }
 
-            <!-- Owner's buttons (only if owner and not resolved) -->
+            <!-- Found item -> "This is my item" (claim modal) -->
+            @if (Model.Type == "found" && !Model.IsResolved && !isOwner)
+            {
+                <button type="button" class="btn btn-success btn-block" style="background: #10B981; border-color: #10B981;" onclick="showClaimModal(@Model.Id, '@Model.Name.Replace("'", "\\'")')">
+                    <i class="fas fa-user-check"></i> This is my item
+                </button>
+                <p style="font-size: 0.8rem; margin-top: 0.5rem; margin-bottom: 1rem; color: #6B7280;">
+                    Clicking this will notify the finder that this item belongs to you.
+                </p>
+            }
+
+            @* ========== OWNER BUTTONS ========== *@
             @if (isOwner && !Model.IsResolved)
             {
-                <!-- Edit button for owner -->
                 <a href="/Items/Edit/@Model.Id" class="btn btn-warning btn-block" style="margin-bottom: 0.5rem; background: #f59e0b; border-color: #f59e0b;">
                     <i class="fas fa-edit"></i> Edit Item
                 </a>
@@ -113,7 +114,7 @@
 
 @Html.AntiForgeryToken()
 
-<!-- Modal for I Found This Item -->
+<!-- Modal for "I found this item" (lost items) -->
 <div id="foundModal" class="modal" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
@@ -140,7 +141,35 @@
     </div>
 </div>
 
+<!-- Modal for "This is my item" (found items) -->
+<div id="claimModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-user-check"></i> Claim This Item</h3>
+            <span class="modal-close" onclick="closeClaimModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p>You are claiming: <strong id="claimItemName"></strong></p>
+            <p>Your information will be shared with the finder:</p>
+            <div class="user-info-preview">
+                <p><i class="fas fa-user"></i> Name: <span id="claimUserName"></span></p>
+                <p><i class="fas fa-envelope"></i> Email: <span id="claimUserEmail"></span></p>
+                <p><i class="fas fa-phone"></i> Phone: <span id="claimUserPhone"></span></p>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-comment"></i> Message to Finder:</label>
+                <textarea id="claimMessage" class="form-control" rows="3" placeholder="This item belongs to me! Please contact me to return it..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeClaimModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="submitClaim()">Send Notification</button>
+        </div>
+    </div>
+</div>
+
 <style>
+    /* existing styles – unchanged from your original */
     .badge-lost { background: #fee2e2; color: #dc2626; }
     .badge-found { background: #d1fae5; color: #10b981; }
     .btn-warning { color: white; background: #f59e0b; border-color: #f59e0b; }
@@ -163,21 +192,16 @@
     .form-group label i { margin-right: 0.5rem; color: #008080; }
     .form-control { width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 0.875rem; font-family: inherit; resize: vertical; }
     .form-control:focus { outline: none; border-color: #008080; box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.1); }
-    @@keyframes slideIn {
-        from { opacity: 0; transform: translateY(-50px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    @@media (max-width: 640px) {
-        .modal-content { width: 95%; margin: 1rem; }
-        .modal-footer { flex-direction: column; }
-        .modal-footer .btn { width: 100%; }
-    }
+    @@keyframes slideIn { from { opacity: 0; transform: translateY(-50px); } to { opacity: 1; transform: translateY(0); } }
+    @@media (max-width: 640px) { .modal-content { width: 95%; margin: 1rem; } .modal-footer { flex-direction: column; } .modal-footer .btn { width: 100%; } }
 </style>
 
 @section Scripts {
     <script>
         let currentItemId = 0;
+        let currentClaimItemId = 0;
 
+        // --- I found this item (lost items) ---
         function showFoundModal(itemId, itemName) {
             currentItemId = itemId;
             document.getElementById('modalItemName').textContent = itemName;
@@ -232,11 +256,69 @@
             }
         }
 
-        window.onclick = function(event) {
-            const modal = document.getElementById('foundModal');
-            if (event.target === modal) {
-                closeFoundModal();
+        // --- This is my item (found items) ---
+        function showClaimModal(itemId, itemName) {
+            currentClaimItemId = itemId;
+            document.getElementById('claimItemName').textContent = itemName;
+
+            fetch('/Profile/GetCurrentUser')
+                .then(res => res.json())
+                .then(user => {
+                    document.getElementById('claimUserName').textContent = user.fullName;
+                    document.getElementById('claimUserEmail').textContent = user.email;
+                    document.getElementById('claimUserPhone').textContent = user.contactNumber || 'Not provided';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('claimUserName').textContent = 'Error loading';
+                    document.getElementById('claimUserEmail').textContent = 'Error loading';
+                    document.getElementById('claimUserPhone').textContent = 'Error loading';
+                });
+
+            document.getElementById('claimModal').style.display = 'flex';
+            document.getElementById('claimMessage').value = '';
+        }
+
+        function closeClaimModal() {
+            document.getElementById('claimModal').style.display = 'none';
+        }
+
+        async function submitClaim() {
+            const message = document.getElementById('claimMessage').value;
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+            try {
+                const response = await fetch('/Items/ClaimFound', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify({ itemId: currentClaimItemId, message: message })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('Notification sent! The finder will contact you soon.');
+                    closeClaimModal();
+                    location.reload();
+                } else {
+                    alert(result.error || 'Failed to send notification. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
             }
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const foundModal = document.getElementById('foundModal');
+            if (event.target === foundModal) closeFoundModal();
+
+            const claimModal = document.getElementById('claimModal');
+            if (event.target === claimModal) closeClaimModal();
         }
     </script>
 }

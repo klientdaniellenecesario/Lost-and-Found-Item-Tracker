@@ -32,10 +32,25 @@
     </div>
 </div>
 
+<!-- Recent Lost Items Section -->
 <div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-top: 2rem;">
-    <h3 style="margin-bottom: 1rem; color: #008080;"><i class="fas fa-clock"></i> Recent Activity</h3>
-    <div id="recentItems">
-        <div class="loading"><div class="spinner"></div> Loading recent activity...</div>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin-bottom: 0; color: #008080;"><i class="fas fa-frown"></i> Recent Lost Items</h3>
+        <a href="/Items/LostItems" class="btn btn-sm btn-outline" style="font-size: 0.75rem;">View all →</a>
+    </div>
+    <div id="recentLostItems" style="margin-top: 1rem;">
+        <div class="loading"><div class="spinner"></div> Loading recent lost items...</div>
+    </div>
+</div>
+
+<!-- Recent Found Items Section -->
+<div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-top: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin-bottom: 0; color: #008080;"><i class="fas fa-smile"></i> Recent Found Items</h3>
+        <a href="/Items/FoundItems" class="btn btn-sm btn-outline" style="font-size: 0.75rem;">View all →</a>
+    </div>
+    <div id="recentFoundItems" style="margin-top: 1rem;">
+        <div class="loading"><div class="spinner"></div> Loading recent found items...</div>
     </div>
 </div>
 
@@ -51,36 +66,58 @@
                 document.getElementById('resolvedCount').textContent = data.resolvedCount;
                 document.getElementById('myItemsCount').textContent = data.myItemsCount;
 
-                const container = document.getElementById('recentItems');
-                if (data.recentItems && data.recentItems.length > 0) {
-                    container.innerHTML = `
-                        <div class="cards-grid">
-                            ${data.recentItems.map(item => `
-                                <div class="item-card" onclick="location.href='/Items/Detail/${item.id}'">
-                                    <div class="card-image">
-                                        ${item.photoUrl ? `<img src="${item.photoUrl}" alt="${item.name}" style="width:100%; height:150px; object-fit:cover;">` : (item.type === 'lost' ? '🔴' : '🟢')}
-                                    </div>
-                                    <div class="card-content">
-                                        <div class="card-title">${item.name}</div>
-                                        <div class="card-details">
-                                            <i class="fas fa-map-marker-alt"></i> ${item.location}<br/>
-                                            <i class="fas fa-calendar"></i> ${item.date}
-                                        </div>
-                                        <span class="badge ${item.type === 'lost' ? 'badge-lost' : 'badge-found'}">
-                                            ${item.type === 'lost' ? 'LOST' : 'FOUND'}
-                                        </span>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    `;
+                // Render recent lost items
+                const lostContainer = document.getElementById('recentLostItems');
+                if (data.recentLostItems && data.recentLostItems.length > 0) {
+                    lostContainer.innerHTML = renderItemCards(data.recentLostItems);
                 } else {
-                    container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><h3>No recent activity</h3><p>Start by reporting an item!</p></div>';
+                    lostContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔴</div><h3>No recent lost items</h3><p>Report a lost item to help others.</p></div>';
+                }
+
+                // Render recent found items
+                const foundContainer = document.getElementById('recentFoundItems');
+                if (data.recentFoundItems && data.recentFoundItems.length > 0) {
+                    foundContainer.innerHTML = renderItemCards(data.recentFoundItems);
+                } else {
+                    foundContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🟢</div><h3>No recent found items</h3><p>Found something? Report it!</p></div>';
                 }
             } catch (error) {
                 console.error('Error loading dashboard:', error);
-                document.getElementById('recentItems').innerHTML = '<div class="alert alert-error">Failed to load data.</div>';
+                document.getElementById('recentLostItems').innerHTML = '<div class="alert alert-error">Failed to load data.</div>';
+                document.getElementById('recentFoundItems').innerHTML = '<div class="alert alert-error">Failed to load data.</div>';
             }
+        }
+
+        function renderItemCards(items) {
+            return `<div class="cards-grid">
+                ${items.map(item => `
+                    <div class="item-card" onclick="location.href='/Items/Detail/${item.id}'">
+                        <div class="card-image">
+                            ${item.photoUrl ? `<img src="${item.photoUrl}" alt="${item.name}" style="width:100%; height:150px; object-fit:cover;">` : (item.type === 'lost' ? '🔴' : '🟢')}
+                        </div>
+                        <div class="card-content">
+                            <div class="card-title">${escapeHtml(item.name)}</div>
+                            <div class="card-details">
+                                <i class="fas fa-map-marker-alt"></i> ${escapeHtml(item.location)}<br/>
+                                <i class="fas fa-calendar"></i> ${escapeHtml(item.date)}
+                            </div>
+                            <span class="badge ${item.type === 'lost' ? 'badge-lost' : 'badge-found'}">
+                                ${item.type === 'lost' ? 'LOST' : 'FOUND'}
+                            </span>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>`;
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
         }
 
         loadDashboard();

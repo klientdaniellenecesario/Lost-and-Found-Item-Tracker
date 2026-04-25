@@ -22,14 +22,17 @@ namespace LostAndFoundTracker.Models.ViewModels
         [DataType(DataType.Date)]
         public DateTime Date { get; set; } = DateTime.Now;
 
+        [Required(ErrorMessage = "Description is required")]
         public string Description { get; set; } = string.Empty;
 
-        public IFormFile? Photo { get; set; }  // Optional on edit; required check handled in controller
+        [Required(ErrorMessage = "Photo is required")]
+        public IFormFile Photo { get; set; } = null!; // Non-nullable, required
 
         [Required(ErrorMessage = "Contact number is required")]
         [Phone(ErrorMessage = "Invalid phone number")]
         public string ContactNumber { get; set; } = string.Empty;
 
+        [Required(ErrorMessage = "Email is required")]
         [EmailAddress(ErrorMessage = "Invalid email address")]
         public string Email { get; set; } = string.Empty;
     }

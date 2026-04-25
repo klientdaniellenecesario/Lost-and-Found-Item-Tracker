@@ -3,11 +3,7 @@
 @{
     ViewData["Title"] = "Report an Item";
     Layout = "~/Views/Shared/_Layout.cshtml";
-    // Pre‑fill email from session (if not already set in model)
-    if (string.IsNullOrEmpty(Model.Email))
-    {
-        Model.Email = Context.Session.GetString("UserEmail") ?? "";
-    }
+    // Pre-fill email and contact number from model (already set by controller)
 }
 
 <div class="page-header">
@@ -21,7 +17,7 @@
         <p>Please provide as much information as possible</p>
     </div>
     <div class="form-body">
-        <div class="toggle-group">
+        <div class="toggle-group" id="toggleGroup">
             <button type="button" id="btnLost" class="toggle-btn" onclick="setType('lost')">
                 <i class="fas fa-frown"></i> I LOST an item
             </button>
@@ -29,80 +25,142 @@
                 <i class="fas fa-smile"></i> I FOUND an item
             </button>
         </div>
+        <div id="toggleError" class="text-danger" style="margin-top: 0.5rem; display: none;">
+            Please select whether you lost or found an item.
+        </div>
         <span asp-validation-for="ItemType" class="text-danger"></span>
 
-        <form asp-action="ReportItem" method="post" enctype="multipart/form-data">
+        <form asp-action="ReportItem" method="post" enctype="multipart/form-data" id="reportForm">
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="ItemType" id="itemType" />
+            <input type="hidden" id="originalContactNumber" value="@Model.ContactNumber" />
+            <input type="hidden" id="originalEmail" value="@Model.Email" />
 
             <div class="form-group">
-                <label><i class="fas fa-tag"></i> Item Name</label>
-                <input asp-for="ItemName" placeholder="e.g., Black Wallet, iPhone 14, Student ID" />
+                <label><i class="fas fa-tag"></i> Item Name *</label>
+                <input asp-for="ItemName" placeholder="e.g., Black Wallet, iPhone 14, Student ID" required />
                 <span asp-validation-for="ItemName" class="text-danger"></span>
             </div>
 
             <div class="form-group">
-                <label><i class="fas fa-list"></i> Category</label>
-                <select asp-for="Category">
+                <label><i class="fas fa-list"></i> Category *</label>
+                <select asp-for="Category" required>
                     <option value="">Select a category</option>
-                    <option>Wallet / Purse</option>
-                    <option>ID Card</option>
-                    <option>Phone / Smartphone</option>
-                    <option>Laptop / Tablet</option>
-                    <option>Keys</option>
-                    <option>Bag / Backpack</option>
-                    <option>Clothing</option>
-                    <option>Electronics</option>
-                    <option>Books</option>
+                    <optgroup label="Electronics">
+                        <option>Phone / Smartphone</option>
+                        <option>Laptop / Tablet</option>
+                        <option>Headphones / Earbuds</option>
+                        <option>Charger / Cable</option>
+                    </optgroup>
+                    <optgroup label="Personal">
+                        <option>Wallet / Purse</option>
+                        <option>ID Card</option>
+                        <option>Keys</option>
+                        <option>Glasses / Sunglasses</option>
+                    </optgroup>
+                    <optgroup label="Clothing & Bags">
+                        <option>Bag / Backpack</option>
+                        <option>Jacket / Coat</option>
+                        <option>Shoes</option>
+                    </optgroup>
+                    <optgroup label="Academic">
+                        <option>Textbook / Book</option>
+                        <option>Notebook / Binder</option>
+                        <option>Calculator</option>
+                    </optgroup>
                     <option>Other</option>
                 </select>
                 <span asp-validation-for="Category" class="text-danger"></span>
             </div>
 
             <div class="form-group">
-                <label><i class="fas fa-map-marker-alt"></i> Location</label>
-                <input asp-for="Location" placeholder="Where was it lost/found? (e.g., Library, Student Center, Gym)" />
+                <label><i class="fas fa-map-marker-alt"></i> Location *</label>
+                <input asp-for="Location" placeholder="Where was it lost/found? (e.g., Library, Student Center, Gym)" required />
                 <span asp-validation-for="Location" class="text-danger"></span>
             </div>
 
             <div class="form-group">
-                <label><i class="fas fa-calendar"></i> Date</label>
-                <input asp-for="Date" type="date" />
+                <label><i class="fas fa-calendar"></i> Date *</label>
+                <input asp-for="Date" type="date" required />
                 <span asp-validation-for="Date" class="text-danger"></span>
             </div>
 
             <div class="form-group">
-                <label><i class="fas fa-align-left"></i> Description</label>
-                <textarea asp-for="Description" rows="4" placeholder="Describe the item in detail (color, brand, distinguishing features, etc.)"></textarea>
+                <label><i class="fas fa-align-left"></i> Description *</label>
+                <textarea asp-for="Description" rows="4" placeholder="Describe the item in detail (color, brand, distinguishing features, etc.)" required></textarea>
+                <span asp-validation-for="Description" class="text-danger"></span>
             </div>
 
             <div class="form-group">
-                <label><i class="fas fa-camera"></i> Upload Photo</label>
-                <input asp-for="Photo" accept="image/*" />
+                <label><i class="fas fa-camera"></i> Upload Photo *</label>
+                <input asp-for="Photo" accept="image/*" required />
                 <span asp-validation-for="Photo" class="text-danger"></span>
                 <small style="color: #6B7280;">A photo is required and increases chances of recovery by 70%</small>
             </div>
 
             <div class="form-group">
-                <label><i class="fas fa-phone"></i> Contact Number</label>
-                <input asp-for="ContactNumber" placeholder="Your phone number" />
+                <label><i class="fas fa-phone"></i> Contact Number *</label>
+                <input asp-for="ContactNumber" placeholder="Your phone number" required />
                 <span asp-validation-for="ContactNumber" class="text-danger"></span>
             </div>
 
             <div class="form-group">
-                <label><i class="fas fa-envelope"></i> Email</label>
-                <input asp-for="Email" readonly />
+                <label><i class="fas fa-envelope"></i> Email *</label>
+                <input asp-for="Email" readonly required />
                 <span asp-validation-for="Email" class="text-danger"></span>
             </div>
 
-            <button type="submit" class="btn btn-primary btn-block">
-                <i class="fas fa-paper-plane"></i> Submit Report
-            </button>
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                <button type="submit" class="btn btn-primary" style="flex: 1;">
+                    <i class="fas fa-paper-plane"></i> Submit Report
+                </button>
+                <button type="button" class="btn btn-outline" style="flex: 1;" onclick="cancelReport()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            </div>
         </form>
     </div>
 </div>
 
 @section Scripts {
+    <style>
+        .toggle-group {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 0.75rem;
+            border: 2px solid #d1d5db;
+            background: #f9fafb;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+            .toggle-btn.active-lost {
+                background: #fee2e2;
+                border-color: #dc2626;
+                color: #dc2626;
+            }
+
+            .toggle-btn.active-found {
+                background: #d1fae5;
+                border-color: #10b981;
+                color: #10b981;
+            }
+
+        .toggle-group.error {
+            border: 1px solid #dc2626;
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            background: #fee2e2;
+        }
+    </style>
+
     <script>
         function setType(type) {
             document.getElementById('itemType').value = type;
@@ -115,9 +173,49 @@
             } else {
                 foundBtn.classList.add('active-found');
             }
-            // Clear validation message for ItemType
-            const validationSpan = document.querySelector('span[data-valmsg-for="ItemType"]');
-            if (validationSpan) validationSpan.innerText = '';
+            const errorDiv = document.getElementById('toggleError');
+            errorDiv.style.display = 'none';
+            document.getElementById('toggleGroup').classList.remove('error');
         }
+
+        function cancelReport() {
+            const form = document.getElementById('reportForm');
+            form.reset();
+
+            document.getElementById('itemType').value = '';
+            const lostBtn = document.getElementById('btnLost');
+            const foundBtn = document.getElementById('btnFound');
+            lostBtn.classList.remove('active-lost', 'active-found');
+            foundBtn.classList.remove('active-lost', 'active-found');
+
+            const originalEmail = document.getElementById('originalEmail')?.value || '';
+            const originalContact = document.getElementById('originalContactNumber')?.value || '';
+            const emailInput = document.getElementById('Email');
+            const contactInput = document.getElementById('ContactNumber');
+            if (emailInput) emailInput.value = originalEmail;
+            if (contactInput) contactInput.value = originalContact;
+
+            const errorDiv = document.getElementById('toggleError');
+            errorDiv.style.display = 'none';
+            document.getElementById('toggleGroup').classList.remove('error');
+
+            document.querySelectorAll('.text-danger').forEach(span => {
+                if (span.id !== 'toggleError') span.innerText = '';
+            });
+        }
+
+        document.getElementById('reportForm').addEventListener('submit', function(e) {
+            const itemType = document.getElementById('itemType').value;
+            if (!itemType) {
+                e.preventDefault();
+                const errorDiv = document.getElementById('toggleError');
+                errorDiv.textContent = 'Please select whether you lost or found an item.';
+                errorDiv.style.display = 'block';
+                document.getElementById('toggleGroup').classList.add('error');
+                document.querySelector('.form-container').scrollIntoView({ behavior: 'smooth' });
+                return false;
+            }
+            return true;
+        });
     </script>
 }

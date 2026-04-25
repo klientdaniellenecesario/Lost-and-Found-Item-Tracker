@@ -57,15 +57,21 @@ namespace LostAndFoundTracker.Controllers
 
         // GET: /Items/ReportItem
         [HttpGet]
-        public IActionResult ReportItem()
+        public async Task<IActionResult> ReportItem()
         {
-            if (HttpContext.Session.GetInt32("UserId") == null)
+            int? userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
+                return RedirectToAction("Login", "Account");
+
+            var user = await _context.Users.FindAsync(userId.Value);
+            if (user == null)
                 return RedirectToAction("Login", "Account");
 
             var model = new ReportItemViewModel
             {
                 Date = DateTime.Now,
-                Email = HttpContext.Session.GetString("UserEmail") ?? ""
+                Email = user.Email ?? "",
+                ContactNumber = user.ContactNumber ?? ""
             };
             return View(model);
         }

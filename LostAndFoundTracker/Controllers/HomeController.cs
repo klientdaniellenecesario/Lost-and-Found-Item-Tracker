@@ -55,7 +55,7 @@ namespace LostAndFoundTracker.Controllers
             if (userId == null)
             {
                 System.Diagnostics.Debug.WriteLine("UserId is null - returning empty data");
-                return Json(new { lostCount = 0, foundCount = 0, resolvedCount = 0, myItemsCount = 0, recentItems = new object[0] });
+                return Json(new { lostCount = 0, foundCount = 0, resolvedCount = 0, myItemsCount = 0, recentLostItems = new object[0], recentFoundItems = new object[0] });
             }
 
             // Get all items first to debug
@@ -84,10 +84,11 @@ namespace LostAndFoundTracker.Controllers
             System.Diagnostics.Debug.WriteLine($"Resolved count: {resolvedCount}");
             System.Diagnostics.Debug.WriteLine($"My items count: {myItemsCount}");
 
-            var recentItems = await _context.Items
-                .Where(i => !i.IsResolved)
+            // Recent Lost Items (unresolved, limit 4)
+            var recentLostItems = await _context.Items
+                .Where(i => i.Type == "lost" && !i.IsResolved)
                 .OrderByDescending(i => i.Date)
-                .Take(6)
+                .Take(4)
                 .Select(i => new
                 {
                     id = i.Id,
@@ -99,7 +100,24 @@ namespace LostAndFoundTracker.Controllers
                 })
                 .ToListAsync();
 
-            System.Diagnostics.Debug.WriteLine($"Recent items found: {recentItems.Count}");
+            // Recent Found Items (unresolved, limit 4)
+            var recentFoundItems = await _context.Items
+                .Where(i => i.Type == "found" && !i.IsResolved)
+                .OrderByDescending(i => i.Date)
+                .Take(4)
+                .Select(i => new
+                {
+                    id = i.Id,
+                    name = i.Name,
+                    location = i.Location,
+                    date = i.Date.ToString("MMM dd, yyyy"),
+                    type = i.Type,
+                    photoUrl = i.PhotoUrl ?? ""
+                })
+                .ToListAsync();
+
+            System.Diagnostics.Debug.WriteLine($"Recent lost items found: {recentLostItems.Count}");
+            System.Diagnostics.Debug.WriteLine($"Recent found items found: {recentFoundItems.Count}");
 
             return Json(new
             {
@@ -107,7 +125,8 @@ namespace LostAndFoundTracker.Controllers
                 foundCount,
                 resolvedCount,
                 myItemsCount,
-                recentItems
+                recentLostItems,
+                recentFoundItems
             });
         }
 
