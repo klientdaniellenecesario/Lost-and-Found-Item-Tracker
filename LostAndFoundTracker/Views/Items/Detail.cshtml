@@ -65,16 +65,13 @@
                 <p style="font-size: 0.75rem; margin-top: 0.5rem;"><i class="fas fa-shield-alt"></i> This information is only visible to logged-in users</p>
             </div>
 
-            <!-- Finder's button (only for lost items, not owner, not resolved) -->
+            <!-- Finder's button (only for lost items, not owner, not resolved) - NOW USES MODAL -->
             @if (Model.Type == "lost" && !Model.IsResolved && !isOwner)
             {
-                <form asp-action="ReportFoundByFinder" asp-route-id="@Model.Id" method="post" style="margin-bottom: 1rem;">
-                    @Html.AntiForgeryToken()
-                    <button type="submit" class="btn btn-warning btn-block" style="background: #f59e0b; border-color: #f59e0b;">
-                        <i class="fas fa-hand-holding-heart"></i> I found this item
-                    </button>
-                </form>
-                <p style="font-size: 0.8rem; margin-top: -0.5rem; margin-bottom: 1rem; color: #6B7280;">
+                <button type="button" class="btn btn-warning btn-block" style="background: #f59e0b; border-color: #f59e0b;" onclick="showFoundModal(@Model.Id, '@Model.Name.Replace("'", "\\'")')">
+                    <i class="fas fa-hand-holding-heart"></i> I found this item
+                </button>
+                <p style="font-size: 0.8rem; margin-top: 0.5rem; margin-bottom: 1rem; color: #6B7280;">
                     Clicking this will notify the owner that you have found their item.
                 </p>
             }
@@ -114,9 +111,132 @@
     </div>
 </div>
 
+@Html.AntiForgeryToken()
+
+<!-- Modal for I Found This Item -->
+<div id="foundModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-hand-holding-heart"></i> Report Found Item</h3>
+            <span class="modal-close" onclick="closeFoundModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p>You found: <strong id="modalItemName"></strong></p>
+            <p>Your information will be shared with the owner:</p>
+            <div class="user-info-preview">
+                <p><i class="fas fa-user"></i> Name: <span id="userName"></span></p>
+                <p><i class="fas fa-envelope"></i> Email: <span id="userEmail"></span></p>
+                <p><i class="fas fa-phone"></i> Phone: <span id="userPhone"></span></p>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-comment"></i> Message to Owner:</label>
+                <textarea id="foundMessage" class="form-control" rows="3" placeholder="I found your item! Please contact me to arrange pickup..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeFoundModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="submitFoundMatch()">Send Notification</button>
+        </div>
+    </div>
+</div>
+
 <style>
     .badge-lost { background: #fee2e2; color: #dc2626; }
     .badge-found { background: #d1fae5; color: #10b981; }
     .btn-warning { color: white; background: #f59e0b; border-color: #f59e0b; }
     .btn-warning:hover { background: #d97706; }
+    /* Modal Styles */
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 2000; }
+    .modal-content { background: white; border-radius: 1rem; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; animation: slideIn 0.3s ease; }
+    .modal-header { padding: 1rem 1.5rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; }
+    .modal-header h3 { margin: 0; color: #008080; }
+    .modal-header h3 i { margin-right: 0.5rem; }
+    .modal-close { font-size: 1.5rem; cursor: pointer; color: #6b7280; }
+    .modal-close:hover { color: #374151; }
+    .modal-body { padding: 1.5rem; }
+    .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 0.5rem; }
+    .user-info-preview { background: #f0f9f9; padding: 1rem; border-radius: 0.5rem; margin: 1rem 0; border-left: 3px solid #008080; }
+    .user-info-preview p { margin: 0.25rem 0; font-size: 0.875rem; }
+    .user-info-preview i { width: 20px; color: #008080; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.875rem; color: #374151; }
+    .form-group label i { margin-right: 0.5rem; color: #008080; }
+    .form-control { width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 0.875rem; font-family: inherit; resize: vertical; }
+    .form-control:focus { outline: none; border-color: #008080; box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.1); }
+    @@keyframes slideIn {
+        from { opacity: 0; transform: translateY(-50px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @@media (max-width: 640px) {
+        .modal-content { width: 95%; margin: 1rem; }
+        .modal-footer { flex-direction: column; }
+        .modal-footer .btn { width: 100%; }
+    }
 </style>
+
+@section Scripts {
+    <script>
+        let currentItemId = 0;
+
+        function showFoundModal(itemId, itemName) {
+            currentItemId = itemId;
+            document.getElementById('modalItemName').textContent = itemName;
+
+            fetch('/Profile/GetCurrentUser')
+                .then(res => res.json())
+                .then(user => {
+                    document.getElementById('userName').textContent = user.fullName;
+                    document.getElementById('userEmail').textContent = user.email;
+                    document.getElementById('userPhone').textContent = user.contactNumber || 'Not provided';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('userName').textContent = 'Error loading';
+                    document.getElementById('userEmail').textContent = 'Error loading';
+                    document.getElementById('userPhone').textContent = 'Error loading';
+                });
+
+            document.getElementById('foundModal').style.display = 'flex';
+            document.getElementById('foundMessage').value = '';
+        }
+
+        function closeFoundModal() {
+            document.getElementById('foundModal').style.display = 'none';
+        }
+
+        async function submitFoundMatch() {
+            const message = document.getElementById('foundMessage').value;
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+            try {
+                const response = await fetch('/Items/ReportFoundMatch', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify({ itemId: currentItemId, message: message })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('Notification sent! The owner will contact you soon.');
+                    closeFoundModal();
+                } else {
+                    alert(result.error || 'Failed to send notification. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            }
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('foundModal');
+            if (event.target === modal) {
+                closeFoundModal();
+            }
+        }
+    </script>
+}
