@@ -15,10 +15,18 @@
 
 <div class="profile-header" style="background: white; border-radius: 1rem; padding: 2rem; margin-bottom: 2rem; display: flex; gap: 2rem; align-items: center; flex-wrap: wrap;">
     <div class="profile-picture" style="text-align: center;">
-        <div style="width: 120px; height: 120px; background: #008080; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3rem; color: white;">
-            <i class="fas fa-user"></i>
+        <div id="profilePicContainer" style="width: 120px; height: 120px; background: #008080; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3rem; color: white; overflow: hidden;">
+            @if (!string.IsNullOrEmpty(Model?.ProfilePictureUrl))
+            {
+                <img id="profilePicImg" src="@Model.ProfilePictureUrl" alt="Profile Photo" style="width: 100%; height: 100%; object-fit: cover;" />
+            }
+            else
+            {
+                <i class="fas fa-user" id="profilePicIcon"></i>
+            }
         </div>
-        <button class="btn btn-outline btn-sm" style="margin-top: 1rem;" onclick="alert('Photo upload feature coming soon!')">
+        <input type="file" id="photoInput" accept="image/*" style="display: none;" onchange="uploadPhoto(this)" />
+        <button class="btn btn-outline btn-sm" style="margin-top: 1rem;" onclick="document.getElementById('photoInput').click()">
             <i class="fas fa-camera"></i> Change Photo
         </button>
     </div>
@@ -235,6 +243,32 @@
             const modal = document.getElementById('editModal');
             if (event.target == modal) {
                 closeEditModal();
+            }
+        }
+
+                async function uploadPhoto(input) {
+            if (!input.files || input.files.length === 0) return;
+
+            const formData = new FormData();
+            formData.append('photo', input.files[0]);
+
+            try {
+                const response = await fetch('/Profile/UploadPhoto', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const container = document.getElementById('profilePicContainer');
+                    container.innerHTML = `<img src="${data.photoUrl}" alt="Profile Photo" style="width: 100%; height: 100%; object-fit: cover;" />`;
+                    alert('Profile photo updated successfully!');
+                } else {
+                    alert('Failed to upload photo.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while uploading.');
             }
         }
     </script>

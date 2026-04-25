@@ -5,16 +5,20 @@ using LostAndFoundTracker.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 using System.Linq;
+using Microsoft.AspNetCore.Hosting;
+using System.IO;
 
 namespace LostAndFoundTracker.Controllers
 {
     public class ProfileController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public ProfileController(AppDbContext context)
+        public ProfileController(AppDbContext context, IWebHostEnvironment webHostEnvironment)
         {
             _context = context;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         public async Task<IActionResult> Index()
@@ -58,6 +62,37 @@ namespace LostAndFoundTracker.Controllers
             HttpContext.Session.SetString("UserFullName", user.FullName);
 
             return Ok();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UploadPhoto(IFormFile photo)
+        {
+            int? userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
+                return Unauthorized();
+
+            if (photo == null || photo.Length == 0)
+                return BadRequest("No photo uploaded.");
+
+            var user = await _context.Users.FindAsync(userId.Value);
+            if (user == null)
+                return NotFound();
+
+            string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads");
+            if (!Directory.Exists(uploadsFolder))
+                Directory.CreateDirectory(uploadsFolder);
+
+            string uniqueFileName = Guid.NewGuid().ToString() + "_" + photo.FileName;
+            string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+            using (var fileStream = new FileStream(filePath, FileMode.Create))
+            {
+                await photo.CopyToAsync(fileStream);
+            }
+
+            user.ProfilePictureUrl = "/uploads/" + uniqueFileName;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { photoUrl = user.ProfilePictureUrl });
         }
 
         // GET: /Profile/GetCurrentUser
