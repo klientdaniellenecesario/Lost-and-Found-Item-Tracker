@@ -1,0 +1,168 @@
+﻿@using LostAndFoundTracker.Models
+@model List<Notification>
+@{
+    ViewData["Title"] = "Notifications";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="page-header">
+    <h1><i class="fas fa-bell"></i> Notifications</h1>
+    <p>Stay updated when someone interacts with your items</p>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="empty-state">
+        <div class="empty-state-icon">🔔</div>
+        <h3>No Notifications Yet</h3>
+        <p>When someone finds your lost item or claims a found item, you'll be notified here.</p>
+    </div>
+}
+else
+{
+    <div class="notifications-container">
+        @foreach (var notification in Model)
+        {
+            <div class="notification-card @(notification.Status == "Unread" ? "unread" : "")">
+                <div class="notification-card-icon">
+                    @if (notification.NotificationType == "FoundMatch")
+                    {
+                        <i class="fas fa-hand-holding-heart"></i>
+                    }
+                    else
+                    {
+                        <i class="fas fa-check-circle"></i>
+                    }
+                </div>
+                <div class="notification-card-content">
+                    <div class="notification-card-header">
+                        <strong>@notification.Sender?.FullName</strong>
+                        <span class="notification-time">@notification.CreatedAt.ToString("MMMM dd, yyyy 'at' h:mm tt")</span>
+                    </div>
+                    <div class="notification-card-message">
+                        @if (notification.NotificationType == "FoundMatch")
+                        {
+                            <text>found your item "<strong>@notification.Item?.Name</strong>"</text>
+                        }
+                        else
+                        {
+                            <text>is claiming the item "<strong>@notification.Item?.Name</strong>" belongs to them</text>
+                        }
+                    </div>
+                    <div class="notification-card-message-text">
+                        <i class="fas fa-quote-left"></i> "@notification.Message"
+                    </div>
+                    <div class="notification-card-actions">
+                        <a href="/Notification/Details/@notification.Id" class="btn btn-primary btn-sm">
+                            <i class="fas fa-eye"></i> View Details & Contact
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<style>
+    .notifications-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .notification-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        display: flex;
+        gap: 1rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border: 1px solid #e5e7eb;
+        transition: all 0.3s;
+    }
+
+        .notification-card:hover {
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .notification-card.unread {
+            background: #f0f9f9;
+            border-left: 4px solid #008080;
+        }
+
+    .notification-card-icon {
+        width: 50px;
+        height: 50px;
+        background: #008080;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    .notification-card-content {
+        flex: 1;
+    }
+
+    .notification-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+        .notification-card-header strong {
+            font-size: 1rem;
+            color: #1f2937;
+        }
+
+    .notification-time {
+        font-size: 0.75rem;
+        color: #6b7280;
+    }
+
+    .notification-card-message {
+        font-size: 0.875rem;
+        color: #4b5563;
+        margin-bottom: 0.5rem;
+    }
+
+    .notification-card-message-text {
+        background: #f3f4f6;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        color: #374151;
+        margin: 0.75rem 0;
+        font-style: italic;
+    }
+
+    .notification-card-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+    }
+
+    @@media (max-width: 640px) {
+        .notification-card {
+            flex-direction: column;
+        }
+
+        .notification-card-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 1rem;
+        }
+
+        .notification-card-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>

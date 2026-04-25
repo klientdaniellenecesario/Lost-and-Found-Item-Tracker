@@ -84,46 +84,53 @@ namespace LostAndFoundTracker.Controllers
 
             if (ModelState.IsValid)
             {
-                string photoUrl = string.Empty;
-
-                // Handle photo upload
-                if (model.Photo != null && model.Photo.Length > 0)
+                try
                 {
-                    string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads");
-                    if (!Directory.Exists(uploadsFolder))
-                        Directory.CreateDirectory(uploadsFolder);
+                    string photoUrl = string.Empty;
 
-                    string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.Photo.FileName;
-                    string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    if (model.Photo != null && model.Photo.Length > 0)
                     {
-                        await model.Photo.CopyToAsync(fileStream);
+                        string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads");
+                        if (!Directory.Exists(uploadsFolder))
+                            Directory.CreateDirectory(uploadsFolder);
+
+                        string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.Photo.FileName;
+                        string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                        using (var fileStream = new FileStream(filePath, FileMode.Create))
+                        {
+                            await model.Photo.CopyToAsync(fileStream);
+                        }
+                        photoUrl = "/uploads/" + uniqueFileName;
                     }
-                    photoUrl = "/uploads/" + uniqueFileName;
+
+                    var item = new Item
+                    {
+                        Type = model.ItemType,
+                        Name = model.ItemName,
+                        Category = model.Category,
+                        Location = model.Location,
+                        Date = model.Date,
+                        LostDate = model.ItemType == "lost" ? model.Date : null,
+                        FoundDate = model.ItemType == "found" ? model.Date : null,
+                        Description = model.Description,
+                        ContactNumber = model.ContactNumber,
+                        Email = model.Email,
+                        UserId = userId.Value,
+                        IsResolved = false,
+                        PhotoUrl = photoUrl
+                    };
+
+                    _context.Items.Add(item);
+                    await _context.SaveChangesAsync();
+
+                    TempData["Success"] = $"Your {model.ItemType} item has been reported successfully!";
+                    return RedirectToAction(model.ItemType == "lost" ? "LostItems" : "FoundItems");
                 }
-
-                var item = new Item
+                catch (Exception ex)
                 {
-                    Type = model.ItemType,
-                    Name = model.ItemName,
-                    Category = model.Category,
-                    Location = model.Location,
-                    Date = model.Date,
-                    LostDate = model.ItemType == "lost" ? model.Date : null,
-                    FoundDate = model.ItemType == "found" ? model.Date : null,
-                    Description = model.Description,
-                    ContactNumber = model.ContactNumber,
-                    Email = model.Email,
-                    UserId = userId.Value,
-                    IsResolved = false,
-                    PhotoUrl = photoUrl
-                };
-
-                _context.Items.Add(item);
-                await _context.SaveChangesAsync();
-
-                TempData["Success"] = $"Your {model.ItemType} item has been reported successfully!";
-                return RedirectToAction(model.ItemType == "lost" ? "LostItems" : "FoundItems");
+                    TempData["Error"] = $"Database error: {ex.Message}";
+                    return View(model);
+                }
             }
             return View(model);
         }
@@ -174,31 +181,128 @@ namespace LostAndFoundTracker.Controllers
             return RedirectToAction("FoundItems");
         }
 
-        // POST: /Items/ReportFoundByFinder/{id}
+        // POST: /Items/ReportFoundMatch
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ReportFoundByFinder(int id)
+        public async Task<IActionResult> ReportFoundMatch([FromBody] FoundMatchRequest request)
         {
-            int? userId = HttpContext.Session.GetInt32("UserId");
-            if (userId == null)
-                return Unauthorized();
+            try
+            {
+                int? userId = HttpContext.Session.GetInt32("UserId");
+                if (userId == null)
+                {
+                    return Unauthorized(new { error = "Please login first" });
+                }
 
-            var item = await _context.Items.FindAsync(id);
-            if (item == null)
-                return NotFound();
+                if (request == null || request.ItemId == 0)
+                {
+                    return BadRequest(new { error = "Invalid request. Item ID is required." });
+                }
 
-            // Prevent owner from using this button (though view already hides it)
-            if (item.UserId == userId.Value)
-                return BadRequest("You cannot report your own item as found.");
+                var lostItem = await _context.Items
+                    .Include(i => i.User)
+                    .FirstOrDefaultAsync(i => i.Id == request.ItemId && i.Type == "lost");
 
-            // Record the date someone reported finding this item
-            item.FoundDate = DateTime.Now;
-            await _context.SaveChangesAsync();
+                if (lostItem == null)
+                {
+                    return NotFound(new { error = "Lost item not found" });
+                }
 
-            // TODO: Send actual notification (email, in-app message, etc.)
-            TempData["Success"] = $"Thank you! The owner of '{item.Name}' has been notified that you found it.";
+                if (lostItem.UserId == userId.Value)
+                {
+                    return BadRequest(new { error = "You cannot report your own item" });
+                }
 
-            return RedirectToAction("Detail", new { id });
+                var finder = await _context.Users.FindAsync(userId.Value);
+                if (finder == null)
+                {
+                    return NotFound(new { error = "User not found" });
+                }
+
+                var notification = new Notification
+                {
+                    ReceiverId = lostItem.UserId,
+                    SenderId = userId.Value,
+                    ItemId = request.ItemId,
+                    NotificationType = "FoundMatch",
+                    Message = string.IsNullOrEmpty(request.Message)
+                        ? $"I found your item '{lostItem.Name}'. Please contact me."
+                        : request.Message,
+                    Status = "Unread",
+                    CreatedAt = DateTime.Now
+                };
+
+                _context.Notifications.Add(notification);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true, message = "Owner notified successfully!" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        // POST: /Items/ClaimFound
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ClaimFound([FromBody] ClaimFoundRequest request)
+        {
+            try
+            {
+                int? userId = HttpContext.Session.GetInt32("UserId");
+                if (userId == null)
+                {
+                    return Unauthorized(new { error = "Please login first" });
+                }
+
+                if (request == null || request.ItemId == 0)
+                {
+                    return BadRequest(new { error = "Invalid request. Item ID is required." });
+                }
+
+                var foundItem = await _context.Items
+                    .Include(i => i.User)
+                    .FirstOrDefaultAsync(i => i.Id == request.ItemId && i.Type == "found");
+
+                if (foundItem == null)
+                {
+                    return NotFound(new { error = "Found item not found" });
+                }
+
+                if (foundItem.UserId == userId.Value)
+                {
+                    return BadRequest(new { error = "You cannot claim your own item" });
+                }
+
+                var claimant = await _context.Users.FindAsync(userId.Value);
+                if (claimant == null)
+                {
+                    return NotFound(new { error = "User not found" });
+                }
+
+                var notification = new Notification
+                {
+                    ReceiverId = foundItem.UserId,
+                    SenderId = userId.Value,
+                    ItemId = request.ItemId,
+                    NotificationType = "Claim",
+                    Message = string.IsNullOrEmpty(request.Message)
+                        ? $"This '{foundItem.Name}' belongs to me. Please contact me."
+                        : request.Message,
+                    Status = "Unread",
+                    CreatedAt = DateTime.Now
+                };
+
+                _context.Notifications.Add(notification);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true, message = "Finder notified successfully!" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
         }
 
         // GET: /Items/Detail/{id}
@@ -230,11 +334,9 @@ namespace LostAndFoundTracker.Controllers
             if (item == null)
                 return NotFound();
 
-            // Only the owner can edit
             if (item.UserId != userId.Value)
                 return Forbid();
 
-            // Map Item to ReportItemViewModel for editing
             var model = new ReportItemViewModel
             {
                 ItemType = item.Type,
@@ -268,7 +370,6 @@ namespace LostAndFoundTracker.Controllers
 
             if (ModelState.IsValid)
             {
-                // Update fields (photo remains unchanged)
                 item.Type = model.ItemType;
                 item.Name = model.ItemName;
                 item.Category = model.Category;
@@ -285,5 +386,18 @@ namespace LostAndFoundTracker.Controllers
 
             return View(model);
         }
+    }
+
+    // Request models for notifications
+    public class FoundMatchRequest
+    {
+        public int ItemId { get; set; }
+        public string? Message { get; set; }
+    }
+
+    public class ClaimFoundRequest
+    {
+        public int ItemId { get; set; }
+        public string? Message { get; set; }
     }
 }

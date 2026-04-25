@@ -25,8 +25,8 @@ else
     <div class="cards-grid">
         @foreach (var item in Model)
         {
-            <div class="item-card" onclick="location.href='/Items/Detail/@item.Id'">
-                <div class="card-image">
+            <div class="item-card">
+                <div class="card-image" onclick="location.href='/Items/Detail/@item.Id'">
                     @if (!string.IsNullOrEmpty(item.PhotoUrl))
                     {
                         <img src="@item.PhotoUrl" alt="@item.Name" style="width: 100%; height: 100%; object-fit: cover;">
@@ -47,8 +47,14 @@ else
 
                     @if (!string.IsNullOrEmpty(currentUserId) && currentUserId == item.UserId.ToString())
                     {
-                        <button class="btn btn-primary btn-sm btn-block" style="margin-top: 0.75rem; background: #008080;" onclick="markAsClaimed(@item.Id, event)">
+                        <button class="btn btn-primary btn-sm btn-block" style="margin-top: 0.75rem; background: #008080;" onclick="markAsClaimed(@item.Id)">
                             <i class="fas fa-gift"></i> Mark as Claimed
+                        </button>
+                    }
+                    else if (!string.IsNullOrEmpty(currentUserId))
+                    {
+                        <button class="btn btn-primary btn-sm btn-block" style="margin-top: 0.75rem; background: #10B981;" onclick="showClaimModal(@item.Id, '@item.Name.Replace("'", "\\'")')">
+                            <i class="fas fa-user-check"></i> This Is My Item
                         </button>
                     }
                 </div>
@@ -59,10 +65,180 @@ else
 
 @Html.AntiForgeryToken()
 
+<!-- Modal for This Is My Item -->
+<div id="claimModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-user-check"></i> Claim This Item</h3>
+            <span class="modal-close" onclick="closeClaimModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p>You are claiming: <strong id="claimItemName"></strong></p>
+            <p>Your information will be shared with the finder:</p>
+            <div class="user-info-preview">
+                <p><i class="fas fa-user"></i> Name: <span id="claimUserName"></span></p>
+                <p><i class="fas fa-envelope"></i> Email: <span id="claimUserEmail"></span></p>
+                <p><i class="fas fa-phone"></i> Phone: <span id="claimUserPhone"></span></p>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-comment"></i> Message to Finder:</label>
+                <textarea id="claimMessage" class="form-control" rows="3" placeholder="This item belongs to me! Please contact me to return it..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeClaimModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="submitClaim()">Send Notification</button>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
+    <style>
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 1rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideIn 0.3s ease;
+        }
+
+        .modal-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+            .modal-header h3 {
+                margin: 0;
+                color: #008080;
+            }
+
+                .modal-header h3 i {
+                    margin-right: 0.5rem;
+                }
+
+        .modal-close {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+        }
+
+            .modal-close:hover {
+                color: #374151;
+            }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+
+        .user-info-preview {
+            background: #f0f9f9;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            border-left: 3px solid #008080;
+        }
+
+            .user-info-preview p {
+                margin: 0.25rem 0;
+                font-size: 0.875rem;
+            }
+
+            .user-info-preview i {
+                width: 20px;
+                color: #008080;
+            }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+            .form-group label {
+                display: block;
+                margin-bottom: 0.5rem;
+                font-weight: 600;
+                font-size: 0.875rem;
+                color: #374151;
+            }
+
+                .form-group label i {
+                    margin-right: 0.5rem;
+                    color: #008080;
+                }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-family: inherit;
+            resize: vertical;
+        }
+
+            .form-control:focus {
+                outline: none;
+                border-color: #008080;
+                box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.1);
+            }
+
+        @@keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @@media (max-width: 640px) {
+            .modal-content {
+                width: 95%;
+                margin: 1rem;
+            }
+
+            .modal-footer {
+                flex-direction: column;
+            }
+
+                .modal-footer .btn {
+                    width: 100%;
+                }
+        }
+    </style>
+
     <script>
-        async function markAsClaimed(itemId, event) {
-            event.stopPropagation();
+        let currentClaimItemId = 0;
+
+        async function markAsClaimed(itemId) {
             if (confirm('Mark this item as claimed? It will be removed from found items.')) {
                 const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
                 const response = await fetch(`/Items/MarkClaimed/${itemId}`, {
@@ -74,6 +250,73 @@ else
                 } else {
                     alert('Failed to mark item as claimed.');
                 }
+            }
+        }
+
+        function showClaimModal(itemId, itemName) {
+            currentClaimItemId = itemId;
+            document.getElementById('claimItemName').textContent = itemName;
+
+            fetch('/Profile/GetCurrentUser')
+                .then(res => res.json())
+                .then(user => {
+                    document.getElementById('claimUserName').textContent = user.fullName;
+                    document.getElementById('claimUserEmail').textContent = user.email;
+                    document.getElementById('claimUserPhone').textContent = user.contactNumber || 'Not provided';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('claimUserName').textContent = 'Error loading';
+                    document.getElementById('claimUserEmail').textContent = 'Error loading';
+                    document.getElementById('claimUserPhone').textContent = 'Error loading';
+                });
+
+            document.getElementById('claimModal').style.display = 'flex';
+            document.getElementById('claimMessage').value = '';
+        }
+
+        function closeClaimModal() {
+            document.getElementById('claimModal').style.display = 'none';
+        }
+
+        async function submitClaim() {
+            const message = document.getElementById('claimMessage').value;
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+            const requestBody = {
+                itemId: currentClaimItemId,
+                message: message
+            };
+
+            try {
+                const response = await fetch('/Items/ClaimFound', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('Notification sent! The finder will contact you soon.');
+                    closeClaimModal();
+                    location.reload();
+                } else {
+                    alert(result.error || 'Failed to send notification. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            }
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('claimModal');
+            if (event.target === modal) {
+                closeClaimModal();
             }
         }
     </script>

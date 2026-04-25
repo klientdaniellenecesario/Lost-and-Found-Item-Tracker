@@ -59,6 +59,29 @@ namespace LostAndFoundTracker.Controllers
 
             return Ok();
         }
+
+        // GET: /Profile/GetCurrentUser
+        // This endpoint returns the current logged-in user's information
+        // Used by the notification modals to display user's contact info
+        [HttpGet]
+        public async Task<IActionResult> GetCurrentUser()
+        {
+            int? userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
+                return Unauthorized();
+
+            var user = await _context.Users.FindAsync(userId.Value);
+            if (user == null)
+                return NotFound();
+
+            return Json(new
+            {
+                id = user.Id,
+                fullName = user.FullName,
+                email = user.Email,
+                contactNumber = user.ContactNumber ?? ""
+            });
+        }
     }
 
     public class UpdateProfileRequest

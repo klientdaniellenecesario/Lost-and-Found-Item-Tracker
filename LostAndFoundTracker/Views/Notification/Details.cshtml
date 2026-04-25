@@ -1,0 +1,225 @@
+﻿@using LostAndFoundTracker.Models
+@model Notification
+@{
+    ViewData["Title"] = "Notification Details";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="page-header">
+    <h1><i class="fas fa-bell"></i> Notification Details</h1>
+</div>
+
+<div class="details-container">
+    <div class="details-card">
+        <div class="details-icon">
+            @if (Model.NotificationType == "FoundMatch")
+            {
+                <i class="fas fa-hand-holding-heart"></i>
+                <h2>Someone Found Your Item!</h2>
+            }
+            else
+            {
+                <i class="fas fa-check-circle"></i>
+                <h2>Someone Is Claiming an Item!</h2>
+            }
+        </div>
+
+        <div class="details-section">
+            <h3><i class="fas fa-comment-dots"></i> Message</h3>
+            <div class="message-box">
+                "@Model.Message"
+            </div>
+        </div>
+
+        <div class="details-section">
+            <h3><i class="fas fa-user-circle"></i> Contact Information</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Name:</span>
+                    <span class="info-value">@Model.Sender?.FullName</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Email:</span>
+                    <span class="info-value">
+                        <a href="mailto:@Model.Sender?.Email">@Model.Sender?.Email</a>
+                    </span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Contact Number:</span>
+                    <span class="info-value">
+                        <a href="tel:@Model.Sender?.ContactNumber">@Model.Sender?.ContactNumber</a>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="details-section">
+            <h3><i class="fas fa-box"></i> Item Details</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Item Name:</span>
+                    <span class="info-value">@Model.Item?.Name</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Type:</span>
+                    <span class="info-value">@Model.Item?.Type?.ToUpper()</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Location:</span>
+                    <span class="info-value">@Model.Item?.Location</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Date:</span>
+                    <span class="info-value">@Model.Item?.Date.ToString("MMMM dd, yyyy")</span>
+                </div>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.Item?.PhotoUrl))
+            {
+                <div class="item-photo">
+                    <img src="@Model.Item?.PhotoUrl" alt="@Model.Item?.Name">
+                </div>
+            }
+        </div>
+
+        <div class="action-buttons">
+            <a href="mailto:@Model.Sender?.Email" class="btn btn-primary">
+                <i class="fas fa-envelope"></i> Send Email
+            </a>
+            <a href="tel:@Model.Sender?.ContactNumber" class="btn btn-secondary">
+                <i class="fas fa-phone"></i> Call
+            </a>
+            <a href="/Notification/Index" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i> Back to Notifications
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .details-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .details-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 2rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .details-icon {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+        .details-icon i {
+            font-size: 3rem;
+            color: #008080;
+        }
+
+        .details-icon h2 {
+            margin-top: 0.5rem;
+            color: #1f2937;
+        }
+
+    .details-section {
+        margin-bottom: 2rem;
+    }
+
+        .details-section h3 {
+            color: #008080;
+            margin-bottom: 1rem;
+            font-size: 1.125rem;
+        }
+
+            .details-section h3 i {
+                margin-right: 0.5rem;
+            }
+
+    .message-box {
+        background: #f3f4f6;
+        padding: 1.25rem;
+        border-radius: 0.75rem;
+        font-style: italic;
+        color: #374151;
+        line-height: 1.6;
+    }
+
+    .info-grid {
+        background: #f9fafb;
+        border-radius: 0.75rem;
+        padding: 1rem;
+    }
+
+    .info-item {
+        display: flex;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+    .info-label {
+        width: 130px;
+        font-weight: 600;
+        color: #4b5563;
+    }
+
+    .info-value {
+        flex: 1;
+        color: #1f2937;
+    }
+
+        .info-value a {
+            color: #008080;
+            text-decoration: none;
+        }
+
+            .info-value a:hover {
+                text-decoration: underline;
+            }
+
+    .item-photo {
+        margin-top: 1rem;
+        text-align: center;
+    }
+
+        .item-photo img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 0.5rem;
+        }
+
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+        flex-wrap: wrap;
+    }
+
+    @@media (max-width: 640px) {
+        .details-card {
+            padding: 1.5rem;
+        }
+
+        .info-item {
+            flex-direction: column;
+        }
+
+        .info-label {
+            width: 100%;
+            margin-bottom: 0.25rem;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+        }
+
+            .action-buttons .btn {
+                width: 100%;
+            }
+    }
+</style>
