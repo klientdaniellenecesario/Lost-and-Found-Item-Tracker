@@ -1,7 +1,7 @@
 ﻿@{
     ViewData["Title"] = "Dashboard";
     Layout = "~/Views/Shared/_Layout.cshtml";
-    var userName = Context.Session.GetString("UserName") ?? "Student";
+    var userName = Context.Session.GetString("UserFullName") ?? "Student";
 }
 
 <div class="hero">
@@ -55,13 +55,12 @@
 
 @section Scripts {
     <script>
-        // Fetch counts from API
-        fetch('/Items/GetCounts')
+        fetch('/Home/GetDashboardData')
             .then(res => res.json())
             .then(data => {
-                document.getElementById('lostCount').textContent = data.lost;
-                document.getElementById('foundCount').textContent = data.found;
-                document.getElementById('resolvedCount').textContent = data.resolved;
+                document.getElementById('lostCount').textContent = data.lostCount;
+                document.getElementById('foundCount').textContent = data.foundCount;
+                document.getElementById('resolvedCount').textContent = data.resolvedCount;
             });
     </script>
 }
