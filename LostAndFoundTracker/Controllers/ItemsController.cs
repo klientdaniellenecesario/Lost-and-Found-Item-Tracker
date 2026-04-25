@@ -392,7 +392,63 @@ namespace LostAndFoundTracker.Controllers
 
             return View(model);
         }
+
+        // POST: /Items/Delete/{id}
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int id)
+        {
+            int? userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
+                return Unauthorized();
+
+            var item = await _context.Items.FindAsync(id);
+            if (item == null)
+                return NotFound();
+
+            if (item.UserId != userId.Value)
+                return Forbid();
+
+            _context.Items.Remove(item);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Item deleted successfully.";
+            return RedirectToAction("Index", "Profile");
+        }
+
+        // GET: /Items/Reuse/{id}
+        [HttpGet]
+        public async Task<IActionResult> Reuse(int id)
+        {
+            int? userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
+                return RedirectToAction("Login", "Account");
+
+            var item = await _context.Items.FindAsync(id);
+            if (item == null)
+                return NotFound();
+
+            if (item.UserId != userId.Value)
+                return Forbid();
+
+            var model = new ReportItemViewModel
+            {
+                ItemType = item.Type,
+                ItemName = item.Name,
+                Category = item.Category,
+                Location = item.Location,
+                Date = DateTime.Now,
+                Description = item.Description,
+                ContactNumber = item.ContactNumber,
+                Email = item.Email
+            };
+
+            TempData["Info"] = "We pre-filled the form based on your previous report. You can edit before submitting.";
+            return View("ReportItem", model);
+        }
     }
+
+
 
     // Request models for notifications
     public class FoundMatchRequest
