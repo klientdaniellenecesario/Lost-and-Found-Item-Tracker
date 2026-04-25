@@ -1,5 +1,5 @@
 ﻿@{
-    ViewData["Title"] = "Dashboard";
+    ViewData["Title"] = "Home";
     Layout = "~/Views/Shared/_Layout.cshtml";
     var userName = Context.Session.GetString("UserFullName") ?? "Student";
 }
@@ -7,24 +7,6 @@
 <div class="hero">
     <h1>Welcome back, @userName! 👋</h1>
     <p>Help your fellow students find their lost items or report something you've found</p>
-</div>
-
-<div class="stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
-    <div style="background: white; padding: 1.5rem; border-radius: var(--radius-lg); text-align: center;">
-        <div style="font-size: 2rem;">🔴</div>
-        <div style="font-size: 1.5rem; font-weight: 700;" id="lostCount">0</div>
-        <div style="color: var(--text-secondary);">Active Lost Items</div>
-    </div>
-    <div style="background: white; padding: 1.5rem; border-radius: var(--radius-lg); text-align: center;">
-        <div style="font-size: 2rem;">🟢</div>
-        <div style="font-size: 1.5rem; font-weight: 700;" id="foundCount">0</div>
-        <div style="color: var(--text-secondary);">Found Items</div>
-    </div>
-    <div style="background: white; padding: 1.5rem; border-radius: var(--radius-lg); text-align: center;">
-        <div style="font-size: 2rem;">✅</div>
-        <div style="font-size: 1.5rem; font-weight: 700;" id="resolvedCount">0</div>
-        <div style="color: var(--text-secondary);">Successfully Resolved</div>
-    </div>
 </div>
 
 <div class="home-cards">
@@ -52,15 +34,3 @@
         <p>Search for specific items</p>
     </a>
 </div>
-
-@section Scripts {
-    <script>
-        fetch('/Home/GetDashboardData')
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('lostCount').textContent = data.lostCount;
-                document.getElementById('foundCount').textContent = data.foundCount;
-                document.getElementById('resolvedCount').textContent = data.resolvedCount;
-            });
-    </script>
-}
