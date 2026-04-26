@@ -84,11 +84,11 @@ namespace LostAndFoundTracker.Controllers
             System.Diagnostics.Debug.WriteLine($"Resolved count: {resolvedCount}");
             System.Diagnostics.Debug.WriteLine($"My items count: {myItemsCount}");
 
-            // Recent Lost Items (unresolved, limit 4)
+            // Recent Lost Items (unresolved, limit 6)   <-- CHANGED from 4 to 6
             var recentLostItems = await _context.Items
                 .Where(i => i.Type == "lost" && !i.IsResolved)
                 .OrderByDescending(i => i.Date)
-                .Take(4)
+                .Take(6)
                 .Select(i => new
                 {
                     id = i.Id,
@@ -100,11 +100,11 @@ namespace LostAndFoundTracker.Controllers
                 })
                 .ToListAsync();
 
-            // Recent Found Items (unresolved, limit 4)
+            // Recent Found Items (unresolved, limit 6)  <-- CHANGED from 4 to 6
             var recentFoundItems = await _context.Items
                 .Where(i => i.Type == "found" && !i.IsResolved)
                 .OrderByDescending(i => i.Date)
-                .Take(4)
+                .Take(6)
                 .Select(i => new
                 {
                     id = i.Id,
