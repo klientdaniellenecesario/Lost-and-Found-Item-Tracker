@@ -31,12 +31,24 @@ namespace LostAndFoundTracker.Controllers
             if (user == null)
                 return RedirectToAction("Login", "Account");
 
-            var myItems = await _context.Items
-                .Where(i => i.UserId == userId.Value)
+            var myLostItems = await _context.Items
+                .Where(i => i.UserId == userId.Value && i.Type == "lost" && !i.IsResolved)
                 .OrderByDescending(i => i.Date)
                 .ToListAsync();
 
-            ViewBag.MyItems = myItems;
+            var myFoundItems = await _context.Items
+                .Where(i => i.UserId == userId.Value && i.Type == "found" && !i.IsResolved)
+                .OrderByDescending(i => i.Date)
+                .ToListAsync();
+
+            var myResolvedItems = await _context.Items
+                .Where(i => i.UserId == userId.Value && i.IsResolved)
+                .OrderByDescending(i => i.Date)
+                .ToListAsync();
+
+            ViewBag.MyLostItems = myLostItems;
+            ViewBag.MyFoundItems = myFoundItems;
+            ViewBag.MyResolvedItems = myResolvedItems;
             return View(user);
         }
 
