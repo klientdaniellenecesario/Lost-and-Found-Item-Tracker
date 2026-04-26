@@ -345,6 +345,7 @@ namespace LostAndFoundTracker.Controllers
 
             var model = new ReportItemViewModel
             {
+                Id = item.Id,
                 ItemType = item.Type,
                 ItemName = item.Name,
                 Category = item.Category,
@@ -358,7 +359,7 @@ namespace LostAndFoundTracker.Controllers
             return View(model);
         }
 
-        // POST: /Items/Edit/{id}
+        // POST: /Items/Edit/{id}  [FIXED]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, ReportItemViewModel model)
@@ -367,6 +368,12 @@ namespace LostAndFoundTracker.Controllers
             if (userId == null)
                 return RedirectToAction("Login", "Account");
 
+            if (id != model.Id)
+            {
+                TempData["Error"] = "Item ID mismatch.";
+                return RedirectToAction("LostItems");
+            }
+
             var item = await _context.Items.FindAsync(id);
             if (item == null)
                 return NotFound();
@@ -374,8 +381,12 @@ namespace LostAndFoundTracker.Controllers
             if (item.UserId != userId.Value)
                 return Forbid();
 
+            // Remove Photo from validation (optional during edit)
+            ModelState.Remove("Photo");
+
             if (ModelState.IsValid)
             {
+                // Update basic fields
                 item.Type = model.ItemType;
                 item.Name = model.ItemName;
                 item.Category = model.Category;
@@ -385,9 +396,34 @@ namespace LostAndFoundTracker.Controllers
                 item.ContactNumber = model.ContactNumber;
                 item.Email = model.Email;
 
+                // Handle new photo upload if provided
+                if (model.Photo != null && model.Photo.Length > 0)
+                {
+                    // Delete old photo file if exists
+                    if (!string.IsNullOrEmpty(item.PhotoUrl))
+                    {
+                        string oldPath = Path.Combine(_webHostEnvironment.WebRootPath, item.PhotoUrl.TrimStart('/'));
+                        if (System.IO.File.Exists(oldPath))
+                            System.IO.File.Delete(oldPath);
+                    }
+
+                    // Save new photo
+                    string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads");
+                    if (!Directory.Exists(uploadsFolder))
+                        Directory.CreateDirectory(uploadsFolder);
+
+                    string uniqueFileName = Guid.NewGuid().ToString() + "_" + model.Photo.FileName;
+                    string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await model.Photo.CopyToAsync(fileStream);
+                    }
+                    item.PhotoUrl = "/uploads/" + uniqueFileName;
+                }
+
                 await _context.SaveChangesAsync();
                 TempData["Success"] = "Item updated successfully!";
-                return RedirectToAction("Detail", new { id });
+                return RedirectToAction("Detail", new { id = item.Id });
             }
 
             return View(model);
@@ -447,8 +483,6 @@ namespace LostAndFoundTracker.Controllers
             return View("ReportItem", model);
         }
     }
-
-
 
     // Request models for notifications
     public class FoundMatchRequest

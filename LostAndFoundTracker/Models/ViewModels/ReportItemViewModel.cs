@@ -6,6 +6,9 @@ namespace LostAndFoundTracker.Models.ViewModels
 {
     public class ReportItemViewModel
     {
+        // Added this line to fix the error
+        public int Id { get; set; }
+
         [Required(ErrorMessage = "Please select if you lost or found the item")]
         public string ItemType { get; set; } = string.Empty;
 
@@ -26,7 +29,7 @@ namespace LostAndFoundTracker.Models.ViewModels
         public string Description { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Photo is required")]
-        public IFormFile Photo { get; set; } = null!; // Non-nullable, required
+        public IFormFile? Photo { get; set; }  // Made nullable to avoid required validation when editing (since photo upload is optional in edit)
 
         [Required(ErrorMessage = "Contact number is required")]
         [Phone(ErrorMessage = "Invalid phone number")]

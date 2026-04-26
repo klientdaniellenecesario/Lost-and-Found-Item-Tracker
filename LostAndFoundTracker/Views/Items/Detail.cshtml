@@ -105,7 +105,7 @@
                 }
             }
 
-            <a href="javascript:history.back()" class="btn btn-outline btn-block">
+            <a href="@(Model.Type == "lost" ? "/Items/LostItems" : "/Items/FoundItems")" class="btn btn-outline btn-block">
                 <i class="fas fa-arrow-left"></i> Back to Results
             </a>
         </div>
