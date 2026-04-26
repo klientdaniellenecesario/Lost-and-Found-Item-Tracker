@@ -9,7 +9,6 @@
 
 <div style="max-width: 800px; margin: 0 auto;">
     <div class="item-detail" style="background: white; border-radius: 1rem; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-        @* ... image and header (unchanged) ... *@
         <div class="detail-image" style="background: linear-gradient(135deg, #008080, #20B2AA); text-align: center; padding: 2rem;">
             @if (!string.IsNullOrEmpty(Model.PhotoUrl))
             {
@@ -35,7 +34,6 @@
 
             <h1 style="font-size: 1.75rem; margin-bottom: 1rem; color: #008080;">@Model.Name</h1>
 
-            @* ... details grid ... *@
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem; padding: 1rem; background: #FDF5E6; border-radius: 0.5rem;">
                 <div><strong><i class="fas fa-tag"></i> Category</strong><br />@Model.Category</div>
                 <div><strong><i class="fas fa-map-marker-alt"></i> Location</strong><br />@Model.Location</div>
@@ -55,66 +53,87 @@
                 <p style="font-size: 0.75rem; margin-top: 0.5rem;"><i class="fas fa-shield-alt"></i> This information is only visible to logged-in users</p>
             </div>
 
-            @* ========== BUTTONS FOR NON-OWNERS ========== *@
-            <!-- Lost item -> "I found this item" (modal) -->
-            @if (Model.Type == "lost" && !Model.IsResolved && !isOwner)
+            @* ========== NON-OWNER BUTTONS ========== *@
+            @if (!isOwner)
             {
-                <button type="button" class="btn btn-warning btn-block" style="background: #f59e0b; border-color: #f59e0b;" onclick="showFoundModal(@Model.Id, '@Model.Name.Replace("'", "\\'")')">
-                    <i class="fas fa-hand-holding-heart"></i> I found this item
-                </button>
-                <p style="font-size: 0.8rem; margin-top: 0.5rem; margin-bottom: 1rem; color: #6B7280;">
-                    Clicking this will notify the owner that you have found their item.
-                </p>
-            }
-
-            <!-- Found item -> "This is my item" (claim modal) -->
-            @if (Model.Type == "found" && !Model.IsResolved && !isOwner)
-            {
-                <button type="button" class="btn btn-success btn-block" style="background: #10B981; border-color: #10B981;" onclick="showClaimModal(@Model.Id, '@Model.Name.Replace("'", "\\'")')">
-                    <i class="fas fa-user-check"></i> This is my item
-                </button>
-                <p style="font-size: 0.8rem; margin-top: 0.5rem; margin-bottom: 1rem; color: #6B7280;">
-                    Clicking this will notify the finder that this item belongs to you.
-                </p>
+                if (Model.Type == "lost" && !Model.IsResolved)
+                {
+                    <button type="button" class="btn btn-warning btn-block" style="background: #f59e0b; border-color: #f59e0b;" onclick="showFoundModal(@Model.Id, '@Model.Name.Replace("'", "\\'")')">
+                        <i class="fas fa-hand-holding-heart"></i> I found this item
+                    </button>
+                    <p style="font-size: 0.8rem; margin-top: 0.5rem; margin-bottom: 1rem; color: #6B7280;">
+                        Clicking this will notify the owner that you have found their item.
+                    </p>
+                }
+                else if (Model.Type == "found" && !Model.IsResolved)
+                {
+                    <button type="button" class="btn btn-success btn-block" style="background: #10B981; border-color: #10B981;" onclick="showClaimModal(@Model.Id, '@Model.Name.Replace("'", "\\'")')">
+                        <i class="fas fa-user-check"></i> This is my item
+                    </button>
+                    <p style="font-size: 0.8rem; margin-top: 0.5rem; margin-bottom: 1rem; color: #6B7280;">
+                        Clicking this will notify the finder that this item belongs to you.
+                    </p>
+                }
             }
 
             @* ========== OWNER BUTTONS ========== *@
-            @if (isOwner && !Model.IsResolved)
+            @if (isOwner)
             {
-                <a href="/Items/Edit/@Model.Id" class="btn btn-warning btn-block" style="margin-bottom: 0.5rem; background: #f59e0b; border-color: #f59e0b;">
-                    <i class="fas fa-edit"></i> Edit Item
-                </a>
-
-                if (Model.Type == "lost")
+                if (!Model.IsResolved)
                 {
-                    <form asp-action="MarkFound" asp-route-id="@Model.Id" method="post" style="margin-bottom: 1rem;">
+                    <a href="/Items/Edit/@Model.Id" class="btn btn-warning btn-block" style="margin-bottom: 0.5rem; background: #f59e0b; border-color: #f59e0b;">
+                        <i class="fas fa-edit"></i> Edit Item
+                    </a>
+
+                    <form asp-action="Delete" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('Are you sure you want to delete this report? This action cannot be undone.');" style="margin-bottom: 0.5rem;">
                         @Html.AntiForgeryToken()
-                        <button type="submit" class="btn btn-success btn-block">
-                            <i class="fas fa-check"></i> Mark as Found
+                        <button type="submit" class="btn btn-danger btn-block" style="background: #dc2626; border-color: #dc2626;">
+                            <i class="fas fa-trash"></i> Delete Item
                         </button>
                     </form>
+
+                    if (Model.Type == "lost")
+                    {
+                        <form asp-action="MarkFound" asp-route-id="@Model.Id" method="post">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-success btn-block">
+                                <i class="fas fa-check"></i> Mark as Found
+                            </button>
+                        </form>
+                    }
+                    else if (Model.Type == "found")
+                    {
+                        <form asp-action="MarkClaimed" asp-route-id="@Model.Id" method="post">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-gift"></i> Mark as Claimed
+                            </button>
+                        </form>
+                    }
                 }
-                else if (Model.Type == "found")
+                else
                 {
-                    <form asp-action="MarkClaimed" asp-route-id="@Model.Id" method="post" style="margin-bottom: 1rem;">
+                    // Resolved: only Delete (Reuse removed)
+                    <form asp-action="Delete" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('Are you sure you want to delete this report? This action cannot be undone.');" style="margin-bottom: 0.5rem;">
                         @Html.AntiForgeryToken()
-                        <button type="submit" class="btn btn-primary btn-block">
-                            <i class="fas fa-gift"></i> Mark as Claimed
+                        <button type="submit" class="btn btn-danger btn-block" style="background: #dc2626; border-color: #dc2626;">
+                            <i class="fas fa-trash"></i> Delete Item
                         </button>
                     </form>
                 }
             }
 
-            <a href="@(Model.Type == "lost" ? "/Items/LostItems" : "/Items/FoundItems")" class="btn btn-outline btn-block">
+            <!-- Back button uses ViewBag.ReturnUrl -->
+            <a href="@ViewBag.ReturnUrl" class="btn btn-outline btn-block">
                 <i class="fas fa-arrow-left"></i> Back to Results
             </a>
         </div>
     </div>
 </div>
 
+<!-- Modals (unchanged) -->
 @Html.AntiForgeryToken()
 
-<!-- Modal for "I found this item" (lost items) -->
 <div id="foundModal" class="modal" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
@@ -141,7 +160,6 @@
     </div>
 </div>
 
-<!-- Modal for "This is my item" (found items) -->
 <div id="claimModal" class="modal" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
@@ -169,12 +187,12 @@
 </div>
 
 <style>
-    /* existing styles – unchanged from your original */
     .badge-lost { background: #fee2e2; color: #dc2626; }
     .badge-found { background: #d1fae5; color: #10b981; }
     .btn-warning { color: white; background: #f59e0b; border-color: #f59e0b; }
     .btn-warning:hover { background: #d97706; }
-    /* Modal Styles */
+    .btn-danger { color: white; background: #dc2626; border-color: #dc2626; }
+    .btn-danger:hover { background: #b91c1c; }
     .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 2000; }
     .modal-content { background: white; border-radius: 1rem; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; animation: slideIn 0.3s ease; }
     .modal-header { padding: 1rem 1.5rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; }
@@ -201,7 +219,6 @@
         let currentItemId = 0;
         let currentClaimItemId = 0;
 
-        // --- I found this item (lost items) ---
         function showFoundModal(itemId, itemName) {
             currentItemId = itemId;
             document.getElementById('modalItemName').textContent = itemName;
@@ -256,7 +273,6 @@
             }
         }
 
-        // --- This is my item (found items) ---
         function showClaimModal(itemId, itemName) {
             currentClaimItemId = itemId;
             document.getElementById('claimItemName').textContent = itemName;
@@ -312,7 +328,6 @@
             }
         }
 
-        // Close modals when clicking outside
         window.onclick = function(event) {
             const foundModal = document.getElementById('foundModal');
             if (event.target === foundModal) closeFoundModal();

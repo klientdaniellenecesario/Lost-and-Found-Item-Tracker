@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿#nullable enable
+
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using LostAndFoundTracker.Data;
 using LostAndFoundTracker.Models;
@@ -225,15 +227,18 @@ namespace LostAndFoundTracker.Controllers
                     return NotFound(new { error = "User not found" });
                 }
 
+                // Fix: Ensure message is never null (use ?? to provide default)
+                string message = string.IsNullOrEmpty(request.Message)
+                    ? $"I found your item '{lostItem.Name}'. Please contact me."
+                    : request.Message;
+
                 var notification = new Notification
                 {
                     ReceiverId = lostItem.UserId,
                     SenderId = userId.Value,
                     ItemId = request.ItemId,
                     NotificationType = "FoundMatch",
-                    Message = string.IsNullOrEmpty(request.Message)
-                        ? $"I found your item '{lostItem.Name}'. Please contact me."
-                        : request.Message,
+                    Message = message,
                     Status = "Unread",
                     CreatedAt = DateTime.Now
                 };
@@ -287,15 +292,18 @@ namespace LostAndFoundTracker.Controllers
                     return NotFound(new { error = "User not found" });
                 }
 
+                // Fix: Ensure message is never null
+                string message = string.IsNullOrEmpty(request.Message)
+                    ? $"This '{foundItem.Name}' belongs to me. Please contact me."
+                    : request.Message;
+
                 var notification = new Notification
                 {
                     ReceiverId = foundItem.UserId,
                     SenderId = userId.Value,
                     ItemId = request.ItemId,
                     NotificationType = "Claim",
-                    Message = string.IsNullOrEmpty(request.Message)
-                        ? $"This '{foundItem.Name}' belongs to me. Please contact me."
-                        : request.Message,
+                    Message = message,
                     Status = "Unread",
                     CreatedAt = DateTime.Now
                 };
@@ -312,7 +320,7 @@ namespace LostAndFoundTracker.Controllers
         }
 
         // GET: /Items/Detail/{id}
-        public async Task<IActionResult> Detail(int id)
+        public async Task<IActionResult> Detail(int id, string? returnUrl = null)
         {
             int? userId = HttpContext.Session.GetInt32("UserId");
             if (userId == null)
@@ -325,6 +333,13 @@ namespace LostAndFoundTracker.Controllers
                 return NotFound();
 
             ViewBag.CurrentUserId = userId;
+
+            // Set the return URL for the back button (never null)
+            if (string.IsNullOrEmpty(returnUrl))
+                ViewBag.ReturnUrl = item.Type == "lost" ? "/Items/LostItems" : "/Items/FoundItems";
+            else
+                ViewBag.ReturnUrl = returnUrl;
+
             return View(item);
         }
 
@@ -359,7 +374,7 @@ namespace LostAndFoundTracker.Controllers
             return View(model);
         }
 
-        // POST: /Items/Edit/{id}  [FIXED]
+        // POST: /Items/Edit/{id}
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, ReportItemViewModel model)
@@ -381,12 +396,10 @@ namespace LostAndFoundTracker.Controllers
             if (item.UserId != userId.Value)
                 return Forbid();
 
-            // Remove Photo from validation (optional during edit)
             ModelState.Remove("Photo");
 
             if (ModelState.IsValid)
             {
-                // Update basic fields
                 item.Type = model.ItemType;
                 item.Name = model.ItemName;
                 item.Category = model.Category;
@@ -396,10 +409,8 @@ namespace LostAndFoundTracker.Controllers
                 item.ContactNumber = model.ContactNumber;
                 item.Email = model.Email;
 
-                // Handle new photo upload if provided
                 if (model.Photo != null && model.Photo.Length > 0)
                 {
-                    // Delete old photo file if exists
                     if (!string.IsNullOrEmpty(item.PhotoUrl))
                     {
                         string oldPath = Path.Combine(_webHostEnvironment.WebRootPath, item.PhotoUrl.TrimStart('/'));
@@ -407,7 +418,6 @@ namespace LostAndFoundTracker.Controllers
                             System.IO.File.Delete(oldPath);
                     }
 
-                    // Save new photo
                     string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads");
                     if (!Directory.Exists(uploadsFolder))
                         Directory.CreateDirectory(uploadsFolder);
@@ -423,7 +433,7 @@ namespace LostAndFoundTracker.Controllers
 
                 await _context.SaveChangesAsync();
                 TempData["Success"] = "Item updated successfully!";
-                return RedirectToAction("Detail", new { id = item.Id });
+                return RedirectToAction("Detail", new { id = item.Id, returnUrl = HttpContext.Request.Query["returnUrl"].ToString() });
             }
 
             return View(model);

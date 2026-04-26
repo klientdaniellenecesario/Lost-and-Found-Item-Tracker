@@ -3,6 +3,27 @@
 @{
     ViewData["Title"] = "Edit Item";
     Layout = "~/Views/Shared/_Layout.cshtml";
+
+    // Build the category select list with preselected value
+    var categories = new List<SelectListItem>
+    {
+        new SelectListItem { Value = "", Text = "Select a category" },
+        new SelectListItem { Value = "Wallet / Purse", Text = "Wallet / Purse" },
+        new SelectListItem { Value = "ID Card", Text = "ID Card" },
+        new SelectListItem { Value = "Phone / Smartphone", Text = "Phone / Smartphone" },
+        new SelectListItem { Value = "Laptop / Tablet", Text = "Laptop / Tablet" },
+        new SelectListItem { Value = "Keys", Text = "Keys" },
+        new SelectListItem { Value = "Bag / Backpack", Text = "Bag / Backpack" },
+        new SelectListItem { Value = "Clothing", Text = "Clothing" },
+        new SelectListItem { Value = "Electronics", Text = "Electronics" },
+        new SelectListItem { Value = "Books", Text = "Books" },
+        new SelectListItem { Value = "Other", Text = "Other" }
+    };
+    // Set the selected value based on the model
+    foreach (var item in categories)
+    {
+        item.Selected = (item.Value == Model.Category);
+    }
 }
 
 <div class="page-header">
@@ -59,19 +80,7 @@
 
             <div class="form-group">
                 <label><i class="fas fa-list"></i> Category</label>
-                <select asp-for="Category" class="form-control" required>
-                    <option value="">Select a category</option>
-                    <option>Wallet / Purse</option>
-                    <option>ID Card</option>
-                    <option>Phone / Smartphone</option>
-                    <option>Laptop / Tablet</option>
-                    <option>Keys</option>
-                    <option>Bag / Backpack</option>
-                    <option>Clothing</option>
-                    <option>Electronics</option>
-                    <option>Books</option>
-                    <option>Other</option>
-                </select>
+                @Html.DropDownListFor(m => m.Category, categories, new { @class = "form-control", required = "required" })
                 <span asp-validation-for="Category" class="text-danger"></span>
             </div>
 

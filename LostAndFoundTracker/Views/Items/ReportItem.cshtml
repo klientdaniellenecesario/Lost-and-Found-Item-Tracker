@@ -3,7 +3,6 @@
 @{
     ViewData["Title"] = "Report an Item";
     Layout = "~/Views/Shared/_Layout.cshtml";
-    // Pre-fill email and contact number from model (already set by controller)
 }
 
 <div class="page-header">
@@ -33,8 +32,6 @@
         <form asp-action="ReportItem" method="post" enctype="multipart/form-data" id="reportForm">
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="ItemType" id="itemType" />
-            <input type="hidden" id="originalContactNumber" value="@Model.ContactNumber" />
-            <input type="hidden" id="originalEmail" value="@Model.Email" />
 
             <div class="form-group">
                 <label><i class="fas fa-tag"></i> Item Name *</label>
@@ -188,20 +185,9 @@
             lostBtn.classList.remove('active-lost', 'active-found');
             foundBtn.classList.remove('active-lost', 'active-found');
 
-            const originalEmail = document.getElementById('originalEmail')?.value || '';
-            const originalContact = document.getElementById('originalContactNumber')?.value || '';
-            const emailInput = document.getElementById('Email');
-            const contactInput = document.getElementById('ContactNumber');
-            if (emailInput) emailInput.value = originalEmail;
-            if (contactInput) contactInput.value = originalContact;
-
             const errorDiv = document.getElementById('toggleError');
             errorDiv.style.display = 'none';
             document.getElementById('toggleGroup').classList.remove('error');
-
-            document.querySelectorAll('.text-danger').forEach(span => {
-                if (span.id !== 'toggleError') span.innerText = '';
-            });
         }
 
         document.getElementById('reportForm').addEventListener('submit', function(e) {
