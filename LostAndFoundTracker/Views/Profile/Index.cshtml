@@ -5,7 +5,9 @@
     var userName = Context.Session.GetString("UserFullName") ?? Model?.FullName ?? "Student User";
     var userEmail = Context.Session.GetString("UserEmail") ?? Model?.Email ?? "student@campus.edu";
     var userContact = Model?.ContactNumber ?? "";
-    var myItems = ViewBag.MyItems as List<LostAndFoundTracker.Models.Item> ?? new List<LostAndFoundTracker.Models.Item>();
+    var myLostItems = ViewBag.MyLostItems as List<LostAndFoundTracker.Models.Item> ?? new List<LostAndFoundTracker.Models.Item>();
+    var myFoundItems = ViewBag.MyFoundItems as List<LostAndFoundTracker.Models.Item> ?? new List<LostAndFoundTracker.Models.Item>();
+    var myResolvedItems = ViewBag.MyResolvedItems as List<LostAndFoundTracker.Models.Item> ?? new List<LostAndFoundTracker.Models.Item>();
 }
 
 <div class="page-header">
@@ -42,11 +44,12 @@
 </div>
 
 <div>
-    <h3><i class="fas fa-clipboard-list"></i> My Reported Items</h3>
-    @if (myItems.Any())
+    <!-- LOST POSTS -->
+    <h3 style="margin-bottom: 0.5rem;"><i class="fas fa-frown" style="color: #dc2626;"></i> My Lost Posts</h3>
+    @if (myLostItems.Any())
     {
         <div class="cards-grid">
-            @foreach (var item in myItems)
+            @foreach (var item in myLostItems)
             {
                 <div class="item-card">
                     <div class="card-image" onclick="location.href='/Items/Detail/@item.Id'" style="cursor:pointer;">
@@ -56,7 +59,7 @@
                         }
                         else
                         {
-                            <span>@(item.Type == "lost" ? "🔴" : "🟢")</span>
+                            <span>🔴</span>
                         }
                     </div>
                     <div class="card-content">
@@ -65,14 +68,134 @@
                             <i class="fas fa-map-marker-alt"></i> @item.Location<br />
                             <i class="fas fa-calendar"></i> @item.Date.ToString("MMM dd, yyyy")
                         </div>
-                        <span class="badge @(item.Type == "lost" ? "badge-lost" : "badge-found")">
-                            @(item.Type == "lost" ? "LOST" : "FOUND")
-                        </span>
+                        <span class="badge badge-lost">LOST</span>
+                        <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
+                            <a href="/Items/Edit/@item.Id" class="btn btn-outline btn-sm" style="flex: 1; text-align: center;">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            <a href="/Items/Reuse/@item.Id" class="btn btn-outline btn-sm" style="flex: 1; text-align: center;">
+                                <i class="fas fa-redo"></i> Reuse
+                            </a>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                            <form method="post" action="/Items/MarkFound/@item.Id" style="flex: 1;">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm" style="width: 100%; background: #d1fae5; color: #10b981; border: none;">
+                                    <i class="fas fa-check"></i> Mark as Found
+                                </button>
+                            </form>
+                            <form method="post" action="/Items/Delete/@item.Id" onsubmit="return confirm('Delete this report?');" style="flex: 1;">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm" style="width: 100%; background: #fee2e2; color: #dc2626; border: none;">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state" style="margin-bottom: 2rem;">
+            <div class="empty-state-icon">🔴</div>
+            <p>No active lost posts.</p>
+            <a href="/Items/ReportItem" class="btn btn-primary" style="margin-top: 1rem;"><i class="fas fa-plus-circle"></i> Report Lost Item</a>
+        </div>
+    }
+
+    <!-- FOUND POSTS -->
+    <h3 style="margin-top: 2rem; margin-bottom: 0.5rem;"><i class="fas fa-smile" style="color: #10b981;"></i> My Found Posts</h3>
+    @if (myFoundItems.Any())
+    {
+        <div class="cards-grid">
+            @foreach (var item in myFoundItems)
+            {
+                <div class="item-card">
+                    <div class="card-image" onclick="location.href='/Items/Detail/@item.Id'" style="cursor:pointer;">
+                        @if (!string.IsNullOrEmpty(item.PhotoUrl))
+                        {
+                            <img src="@item.PhotoUrl" alt="@item.Name" style="width: 100%; height: 150px; object-fit: cover;">
+                        }
+                        else
+                        {
+                            <span>🟢</span>
+                        }
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">@item.Name</div>
+                        <div class="card-details">
+                            <i class="fas fa-map-marker-alt"></i> @item.Location<br />
+                            <i class="fas fa-calendar"></i> @item.Date.ToString("MMM dd, yyyy")
+                        </div>
+                        <span class="badge badge-found">FOUND</span>
+                        <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
+                            <a href="/Items/Edit/@item.Id" class="btn btn-outline btn-sm" style="flex: 1; text-align: center;">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            <a href="/Items/Reuse/@item.Id" class="btn btn-outline btn-sm" style="flex: 1; text-align: center;">
+                                <i class="fas fa-redo"></i> Reuse
+                            </a>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                            <form method="post" action="/Items/MarkClaimed/@item.Id" style="flex: 1;">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm" style="width: 100%; background: #d1fae5; color: #10b981; border: none;">
+                                    <i class="fas fa-check"></i> Mark as Claimed
+                                </button>
+                            </form>
+                            <form method="post" action="/Items/Delete/@item.Id" onsubmit="return confirm('Delete this report?');" style="flex: 1;">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm" style="width: 100%; background: #fee2e2; color: #dc2626; border: none;">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state" style="margin-bottom: 2rem;">
+            <div class="empty-state-icon">🟢</div>
+            <p>No active found posts.</p>
+            <a href="/Items/ReportItem" class="btn btn-primary" style="margin-top: 1rem;"><i class="fas fa-plus-circle"></i> Report Found Item</a>
+        </div>
+    }
+
+    <!-- RESOLVED -->
+    <h3 style="margin-top: 2rem; margin-bottom: 0.5rem;"><i class="fas fa-check-circle" style="color: #008080;"></i> Resolved</h3>
+    @if (myResolvedItems.Any())
+    {
+        <div class="cards-grid">
+            @foreach (var item in myResolvedItems)
+            {
+                <div class="item-card" style="opacity: 0.85;">
+                    <div class="card-image" onclick="location.href='/Items/Detail/@item.Id'" style="cursor:pointer;">
+                        @if (!string.IsNullOrEmpty(item.PhotoUrl))
+                        {
+                            <img src="@item.PhotoUrl" alt="@item.Name" style="width: 100%; height: 150px; object-fit: cover;">
+                        }
+                        else
+                        {
+                            <span>✅</span>
+                        }
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">@item.Name</div>
+                        <div class="card-details">
+                            <i class="fas fa-map-marker-alt"></i> @item.Location<br />
+                            <i class="fas fa-calendar"></i> @item.Date.ToString("MMM dd, yyyy")
+                        </div>
+                        <span class="badge" style="background: #e0f2fe; color: #0284c7;">✅ RESOLVED</span>
                         <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
                             <a href="/Items/Reuse/@item.Id" class="btn btn-outline btn-sm" style="flex: 1; text-align: center;">
                                 <i class="fas fa-redo"></i> Reuse
                             </a>
-                            <form method="post" action="/Items/Delete/@item.Id" onsubmit="return confirm('Are you sure you want to delete this report?');" style="flex: 1;">
+                            <form method="post" action="/Items/Delete/@item.Id" onsubmit="return confirm('Delete this report?');" style="flex: 1;">
                                 @Html.AntiForgeryToken()
                                 <button type="submit" class="btn btn-sm" style="width: 100%; background: #fee2e2; color: #dc2626; border: none;">
                                     <i class="fas fa-trash"></i> Delete
@@ -87,10 +210,8 @@
     else
     {
         <div class="empty-state">
-            <div class="empty-state-icon">📋</div>
-            <h3>No items reported yet</h3>
-            <p>You haven't reported any lost or found items.</p>
-            <a href="/Items/ReportItem" class="btn btn-primary" style="margin-top: 1rem;"><i class="fas fa-plus-circle"></i> Report an Item</a>
+            <div class="empty-state-icon">✅</div>
+            <p>No resolved items yet.</p>
         </div>
     }
 </div>
