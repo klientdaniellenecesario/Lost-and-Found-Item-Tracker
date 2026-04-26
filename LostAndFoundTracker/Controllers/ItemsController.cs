@@ -227,7 +227,6 @@ namespace LostAndFoundTracker.Controllers
                     return NotFound(new { error = "User not found" });
                 }
 
-                // Fix: Ensure message is never null (use ?? to provide default)
                 string message = string.IsNullOrEmpty(request.Message)
                     ? $"I found your item '{lostItem.Name}'. Please contact me."
                     : request.Message;
@@ -292,7 +291,6 @@ namespace LostAndFoundTracker.Controllers
                     return NotFound(new { error = "User not found" });
                 }
 
-                // Fix: Ensure message is never null
                 string message = string.IsNullOrEmpty(request.Message)
                     ? $"This '{foundItem.Name}' belongs to me. Please contact me."
                     : request.Message;
@@ -334,7 +332,6 @@ namespace LostAndFoundTracker.Controllers
 
             ViewBag.CurrentUserId = userId;
 
-            // Set the return URL for the back button (never null)
             if (string.IsNullOrEmpty(returnUrl))
                 ViewBag.ReturnUrl = item.Type == "lost" ? "/Items/LostItems" : "/Items/FoundItems";
             else
@@ -440,6 +437,7 @@ namespace LostAndFoundTracker.Controllers
         }
 
         // POST: /Items/Delete/{id}
+        // FIXED: Also removes all notifications that refer to this item
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
@@ -455,42 +453,15 @@ namespace LostAndFoundTracker.Controllers
             if (item.UserId != userId.Value)
                 return Forbid();
 
+            // Delete all notifications that reference this item
+            var relatedNotifications = _context.Notifications.Where(n => n.ItemId == id);
+            _context.Notifications.RemoveRange(relatedNotifications);
+
             _context.Items.Remove(item);
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Item deleted successfully.";
+            TempData["Success"] = "Item and its related notifications deleted successfully.";
             return RedirectToAction("Index", "Profile");
-        }
-
-        // GET: /Items/Reuse/{id}
-        [HttpGet]
-        public async Task<IActionResult> Reuse(int id)
-        {
-            int? userId = HttpContext.Session.GetInt32("UserId");
-            if (userId == null)
-                return RedirectToAction("Login", "Account");
-
-            var item = await _context.Items.FindAsync(id);
-            if (item == null)
-                return NotFound();
-
-            if (item.UserId != userId.Value)
-                return Forbid();
-
-            var model = new ReportItemViewModel
-            {
-                ItemType = item.Type,
-                ItemName = item.Name,
-                Category = item.Category,
-                Location = item.Location,
-                Date = DateTime.Now,
-                Description = item.Description,
-                ContactNumber = item.ContactNumber,
-                Email = item.Email
-            };
-
-            TempData["Info"] = "We pre-filled the form based on your previous report. You can edit before submitting.";
-            return View("ReportItem", model);
         }
     }
 

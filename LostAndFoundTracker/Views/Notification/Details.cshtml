@@ -47,7 +47,7 @@
                 <div class="info-item">
                     <span class="info-label">Contact Number:</span>
                     <span class="info-value">
-                        <a href="tel:@Model.Sender?.ContactNumber">@Model.Sender?.ContactNumber</a>
+                        @Model.Sender?.ContactNumber
                     </span>
                 </div>
             </div>
@@ -84,9 +84,6 @@
         <div class="action-buttons">
             <a href="mailto:@Model.Sender?.Email" class="btn btn-primary">
                 <i class="fas fa-envelope"></i> Send Email
-            </a>
-            <a href="tel:@Model.Sender?.ContactNumber" class="btn btn-secondary">
-                <i class="fas fa-phone"></i> Call
             </a>
             <a href="/Notification/Index" class="btn btn-outline">
                 <i class="fas fa-arrow-left"></i> Back to Notifications
@@ -199,6 +196,36 @@
         margin-top: 2rem;
         flex-wrap: wrap;
     }
+
+    .btn-primary {
+        background: #008080;
+        color: white;
+        border: none;
+        border-radius: 0.375rem;
+        padding: 0.5rem 1rem;
+        text-decoration: none;
+        display: inline-block;
+        cursor: pointer;
+    }
+
+        .btn-primary:hover {
+            background: #006666;
+        }
+
+    .btn-outline {
+        background: transparent;
+        border: 1px solid #008080;
+        color: #008080;
+        border-radius: 0.375rem;
+        padding: 0.5rem 1rem;
+        text-decoration: none;
+        display: inline-block;
+        cursor: pointer;
+    }
+
+        .btn-outline:hover {
+            background: #e6f3f3;
+        }
 
     @@media (max-width: 640px) {
         .details-card {
