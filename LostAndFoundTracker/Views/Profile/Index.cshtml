@@ -12,10 +12,10 @@
 
 <div class="page-header">
     <h1><i class="fas fa-user-circle"></i> My Profile</h1>
-    <p>Manage your account and view your reported items.</p>
+    <p>Manage your account information and settings.</p>
 </div>
 
-<!-- Profile Header (white container) -->
+<!-- Profile Header -->
 <div class="profile-header" style="background: white; border-radius: 1rem; padding: 2rem; margin-bottom: 2rem; display: flex; gap: 2rem; align-items: center; flex-wrap: wrap;">
     <div class="profile-picture" style="text-align: center;">
         <div id="profilePicContainer" style="width: 120px; height: 120px; background: #008080; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3rem; color: white; overflow: hidden;">
@@ -38,9 +38,6 @@
         <p><i class="fas fa-envelope"></i> <span id="userEmail">@userEmail</span></p>
         <p><i class="fas fa-phone"></i> <span id="userPhone">@(string.IsNullOrEmpty(userContact) ? "Not provided" : userContact)</span></p>
         <p><i class="fas fa-calendar-alt"></i> Member since @DateTime.Now.ToString("MMMM yyyy")</p>
-        <button class="btn btn-primary btn-sm" onclick="openEditModal()">
-            <i class="fas fa-edit"></i> Edit Profile
-        </button>
     </div>
 </div>
 
@@ -68,173 +65,65 @@
     </div>
 </div>
 
-<!-- ========== LOST POSTS SECTION ========== -->
-<div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-top: 2rem;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-        <h3 style="margin-bottom: 0; color: #dc2626;"><i class="fas fa-frown"></i> My Lost Posts</h3>
-        <a href="/Items/LostItems" class="btn btn-sm btn-outline" style="font-size: 0.75rem;">View all →</a>
-    </div>
-    @if (myLostItems.Any())
-    {
-        <div class="scrollable-container">
-            <div class="cards-grid">
-                @foreach (var item in myLostItems)
-                {
-                    <div class="item-card">
-                        <div class="card-image" onclick="location.href='/Items/Detail/@item.Id?returnUrl=/Profile/Index'" style="cursor:pointer;">
-                            @if (!string.IsNullOrEmpty(item.PhotoUrl))
-                            {
-                                <img src="@item.PhotoUrl" alt="@item.Name" style="width: 100%; height: 150px; object-fit: cover;">
-                            }
-                            else
-                            {
-                                <span>🔴</span>
-                            }
-                        </div>
-                        <div class="card-content">
-                            <div class="card-title">@item.Name</div>
-                            <div class="card-details">
-                                <i class="fas fa-map-marker-alt"></i> @item.Location<br />
-                                <i class="fas fa-calendar"></i> @item.Date.ToString("MMM dd, yyyy")
-                            </div>
-                            <span class="badge badge-lost">LOST</span>
-                            <form method="post" action="/Items/MarkFound/@item.Id" style="margin-top: 0.75rem;">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-sm" style="width: 100%; background: #d1fae5; color: #10b981; border: none; padding: 0.5rem;">
-                                    <i class="fas fa-check"></i> Mark as Found
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                }
-            </div>
-        </div>
-    }
-    else
-    {
-        <div class="empty-state" style="margin: 1rem 0;">
-            <div class="empty-state-icon">🔴</div>
-            <p>No active lost posts.</p>
-            <a href="/Items/ReportItem" class="btn btn-primary" style="margin-top: 1rem;"><i class="fas fa-plus-circle"></i> Report Lost Item</a>
-        </div>
-    }
-</div>
+<!-- Account Settings Section -->
+<div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-bottom: 2rem;">
+    <h3 style="margin-bottom: 1.25rem; color: #374151;"><i class="fas fa-cog"></i> Account Settings</h3>
+    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
 
-<!-- ========== FOUND POSTS SECTION ========== -->
-<div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-top: 2rem;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-        <h3 style="margin-bottom: 0; color: #10b981;"><i class="fas fa-smile"></i> My Found Posts</h3>
-        <a href="/Items/FoundItems" class="btn btn-sm btn-outline" style="font-size: 0.75rem;">View all →</a>
-    </div>
-    @if (myFoundItems.Any())
-    {
-        <div class="scrollable-container">
-            <div class="cards-grid">
-                @foreach (var item in myFoundItems)
-                {
-                    <div class="item-card">
-                        <div class="card-image" onclick="location.href='/Items/Detail/@item.Id?returnUrl=/Profile/Index'" style="cursor:pointer;">
-                            @if (!string.IsNullOrEmpty(item.PhotoUrl))
-                            {
-                                <img src="@item.PhotoUrl" alt="@item.Name" style="width: 100%; height: 150px; object-fit: cover;">
-                            }
-                            else
-                            {
-                                <span>🟢</span>
-                            }
-                        </div>
-                        <div class="card-content">
-                            <div class="card-title">@item.Name</div>
-                            <div class="card-details">
-                                <i class="fas fa-map-marker-alt"></i> @item.Location<br />
-                                <i class="fas fa-calendar"></i> @item.Date.ToString("MMM dd, yyyy")
-                            </div>
-                            <span class="badge badge-found">FOUND</span>
-                            <form method="post" action="/Items/MarkClaimed/@item.Id" style="margin-top: 0.75rem;">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-sm" style="width: 100%; background: #d1fae5; color: #10b981; border: none; padding: 0.5rem;">
-                                    <i class="fas fa-check"></i> Mark as Claimed
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                }
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border: 1px solid #E5E7EB; border-radius: 0.75rem;">
+            <div>
+                <strong><i class="fas fa-user" style="color: #008080;"></i> Edit Profile</strong>
+                <p style="font-size: 0.85rem; color: #6B7280; margin: 0;">Update your name and contact number</p>
             </div>
+            <button class="btn btn-outline btn-sm" onclick="openEditModal()">Edit</button>
         </div>
-    }
-    else
-    {
-        <div class="empty-state" style="margin: 1rem 0;">
-            <div class="empty-state-icon">🟢</div>
-            <p>No active found posts.</p>
-            <a href="/Items/ReportItem" class="btn btn-primary" style="margin-top: 1rem;"><i class="fas fa-plus-circle"></i> Report Found Item</a>
-        </div>
-    }
-</div>
 
-<!-- ========== RESOLVED SECTION ========== -->
-<div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-top: 2rem;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-        <h3 style="margin-bottom: 0; color: #008080;"><i class="fas fa-check-circle"></i> Resolved</h3>
-    </div>
-    @if (myResolvedItems.Any())
-    {
-        <div class="scrollable-container">
-            <div class="cards-grid">
-                @foreach (var item in myResolvedItems)
-                {
-                    <div class="item-card" style="opacity: 0.85;">
-                        <div class="card-image" onclick="location.href='/Items/Detail/@item.Id?returnUrl=/Profile/Index'" style="cursor:pointer;">
-                            @if (!string.IsNullOrEmpty(item.PhotoUrl))
-                            {
-                                <img src="@item.PhotoUrl" alt="@item.Name" style="width: 100%; height: 150px; object-fit: cover;">
-                            }
-                            else
-                            {
-                                <span>✅</span>
-                            }
-                        </div>
-                        <div class="card-content">
-                            <div class="card-title">@item.Name</div>
-                            <div class="card-details">
-                                <i class="fas fa-map-marker-alt"></i> @item.Location<br />
-                                <i class="fas fa-calendar"></i> @item.Date.ToString("MMM dd, yyyy")
-                            </div>
-                            <span class="badge" style="background: #e0f2fe; color: #0284c7;">✅ RESOLVED</span>
-                        </div>
-                    </div>
-                }
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border: 1px solid #E5E7EB; border-radius: 0.75rem;">
+            <div>
+                <strong><i class="fas fa-lock" style="color: #008080;"></i> Change Password</strong>
+                <p style="font-size: 0.85rem; color: #6B7280; margin: 0;">Update your account password</p>
             </div>
+            <button class="btn btn-outline btn-sm" onclick="openChangePasswordModal()">Change</button>
         </div>
-    }
-    else
-    {
-        <div class="empty-state" style="margin: 1rem 0;">
-            <div class="empty-state-icon">✅</div>
-            <p>No resolved items yet.</p>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border: 1px solid #E5E7EB; border-radius: 0.75rem;">
+            <div>
+                <strong><i class="fas fa-history" style="color: #008080;"></i> My History</strong>
+                <p style="font-size: 0.85rem; color: #6B7280; margin: 0;">View your lost, found, and resolved posts</p>
+            </div>
+            <a href="/History/Index" class="btn btn-outline btn-sm">View</a>
         </div>
-    }
+
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border: 1px solid #fee2e2; border-radius: 0.75rem; background: #fff5f5;">
+            <div>
+                <strong><i class="fas fa-trash" style="color: #dc2626;"></i> Delete Account</strong>
+                <p style="font-size: 0.85rem; color: #6B7280; margin: 0;">Permanently delete your account and all data</p>
+            </div>
+            <button class="btn btn-sm" style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;" onclick="confirmDeleteAccount()">Delete</button>
+        </div>
+
+    </div>
 </div>
 
 <!-- Edit Profile Modal -->
 <div id="editModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center;">
     <div style="background: white; border-radius: 1rem; max-width: 450px; width: 90%; margin: 50px auto;">
         <div style="padding: 1rem; border-bottom: 1px solid #E5E7EB; display: flex; justify-content: space-between; align-items: center;">
-            <h3>Edit Profile</h3>
+            <h3><i class="fas fa-edit"></i> Edit Profile</h3>
             <button onclick="closeEditModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
         </div>
         <div style="padding: 1rem;">
             <div class="form-group" style="margin-bottom: 1rem;">
                 <label>Full Name</label>
-                <input type="text" id="editFullName" class="form-control" style="width: 100%; padding: 0.5rem; border: 1px solid #E5E7EB; border-radius: 0.5rem;" value="@userName" />
+                <input type="text" id="editFullName" class="form-control" value="@userName" />
             </div>
             <div class="form-group" style="margin-bottom: 1rem;">
                 <label>Contact Number</label>
-                <input type="text" id="editContactNumber" class="form-control" style="width: 100%; padding: 0.5rem; border: 1px solid #E5E7EB; border-radius: 0.5rem;" value="@userContact" />
+                <input type="text" id="editContactNumber" class="form-control" value="@userContact" />
             </div>
             <div class="form-group" style="margin-bottom: 1rem;">
                 <label>Email</label>
-                <input type="email" id="editEmail" class="form-control" style="width: 100%; padding: 0.5rem; border: 1px solid #E5E7EB; border-radius: 0.5rem; background: #F3F4F6;" value="@userEmail" readonly disabled />
+                <input type="email" id="editEmail" class="form-control" style="background: #F3F4F6;" value="@userEmail" readonly disabled />
                 <small style="color: #6B7280;">Email cannot be changed.</small>
             </div>
         </div>
@@ -245,160 +134,149 @@
     </div>
 </div>
 
+<!-- Change Password Modal -->
+<div id="changePasswordModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 1rem; max-width: 450px; width: 90%; margin: 50px auto;">
+        <div style="padding: 1rem; border-bottom: 1px solid #E5E7EB; display: flex; justify-content: space-between; align-items: center;">
+            <h3><i class="fas fa-lock"></i> Change Password</h3>
+            <button onclick="closeChangePasswordModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+        </div>
+        <div style="padding: 1rem;">
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>Current Password</label>
+                <input type="password" id="currentPassword" class="form-control" placeholder="Enter current password" />
+            </div>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>New Password</label>
+                <input type="password" id="newPassword" class="form-control" placeholder="Enter new password" />
+            </div>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>Confirm New Password</label>
+                <input type="password" id="confirmPassword" class="form-control" placeholder="Confirm new password" />
+            </div>
+        </div>
+        <div style="padding: 1rem; border-top: 1px solid #E5E7EB; display: flex; justify-content: flex-end; gap: 0.5rem;">
+            <button class="btn btn-outline" onclick="closeChangePasswordModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="savePassword()">Update Password</button>
+        </div>
+    </div>
+</div>
+
 <style>
-    .cards-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 1.5rem;
-        margin-top: 1.5rem;
-    }
-
-    .item-card {
-        background: white;
-        border-radius: 0.75rem;
-        overflow: hidden;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        cursor: pointer;
-        transition: transform 0.2s;
-    }
-
-        .item-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-        }
-
-    .card-image {
-        height: 150px;
-        background: #f3f4f6;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 3rem;
-    }
-
-    .card-content {
-        padding: 1rem;
-    }
-
-    .card-title {
-        font-weight: 700;
-        font-size: 1.1rem;
-        margin-bottom: 0.5rem;
-    }
-
-    .card-details {
-        font-size: 0.85rem;
-        color: #4b5563;
-        margin-bottom: 0.75rem;
-    }
-
-    .badge {
-        display: inline-block;
-        padding: 0.25rem 0.75rem;
-        border-radius: 9999px;
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
-
-    .badge-lost {
-        background: #fee2e2;
-        color: #dc2626;
-    }
-
-    .badge-found {
-        background: #d1fae5;
-        color: #10b981;
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 3rem;
-        background: #f9fafb;
-        border-radius: 0.75rem;
-    }
-
-    .empty-state-icon {
-        font-size: 3rem;
-        margin-bottom: 1rem;
-    }
-
     .form-control {
         width: 100%;
         padding: 0.5rem;
         border: 1px solid #E5E7EB;
         border-radius: 0.5rem;
         font-size: 0.875rem;
+        box-sizing: border-box;
     }
-
-    .scrollable-container {
-        max-height: 650px;
-        overflow-y: auto;
-        padding-right: 0.5rem;
-        margin-top: 1rem;
-    }
-
-        .scrollable-container .cards-grid {
-            margin-top: 0;
-        }
 </style>
 
 @section Scripts {
     <script>
+        // Edit Profile Modal
         function openEditModal() {
             document.getElementById('editModal').style.display = 'flex';
             document.getElementById('editFullName').value = document.getElementById('userName').innerText;
             document.getElementById('editContactNumber').value = document.getElementById('userPhone').innerText;
         }
-
         function closeEditModal() {
             document.getElementById('editModal').style.display = 'none';
         }
-
         async function saveProfile() {
             const fullName = document.getElementById('editFullName').value;
             const contactNumber = document.getElementById('editContactNumber').value;
-
-            document.getElementById('userName').innerText = fullName;
-            document.getElementById('userPhone').innerText = contactNumber;
-
             try {
                 const response = await fetch('/Profile/UpdateProfile', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ fullName: fullName, contactNumber: contactNumber })
+                    body: JSON.stringify({ fullName, contactNumber })
                 });
                 if (response.ok) {
+                    document.getElementById('userName').innerText = fullName;
+                    document.getElementById('userPhone').innerText = contactNumber || 'Not provided';
                     alert('Profile updated successfully!');
                 } else {
                     alert('Failed to update profile.');
                 }
             } catch (error) {
-                console.error('Error:', error);
                 alert('An error occurred.');
             }
-
             closeEditModal();
         }
 
-        window.onclick = function(event) {
-            const modal = document.getElementById('editModal');
-            if (event.target == modal) {
-                closeEditModal();
+        // Change Password Modal
+        function openChangePasswordModal() {
+            document.getElementById('changePasswordModal').style.display = 'flex';
+        }
+        function closeChangePasswordModal() {
+            document.getElementById('changePasswordModal').style.display = 'none';
+            document.getElementById('currentPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+        }
+        async function savePassword() {
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                alert('Please fill in all password fields.');
+                return;
+            }
+            if (newPassword !== confirmPassword) {
+                alert('New passwords do not match.');
+                return;
+            }
+            if (newPassword.length < 6) {
+                alert('Password must be at least 6 characters.');
+                return;
+            }
+            try {
+                const response = await fetch('/Account/ChangePassword', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ currentPassword, newPassword })
+                });
+                if (response.ok) {
+                    alert('Password updated successfully!');
+                    closeChangePasswordModal();
+                } else {
+                    alert('Failed to update password. Check your current password.');
+                }
+            } catch (error) {
+                alert('An error occurred.');
             }
         }
 
+        // Delete Account
+        function confirmDeleteAccount() {
+            if (confirm('Are you sure you want to delete your account? This cannot be undone.')) {
+                fetch('/Account/DeleteAccount', { method: 'POST' })
+                    .then(res => {
+                        if (res.ok) window.location.href = '/Home/Landing';
+                        else alert('Failed to delete account.');
+                    })
+                    .catch(() => alert('An error occurred.'));
+            }
+        }
+
+        // Close modals on outside click
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('editModal')) closeEditModal();
+            if (event.target == document.getElementById('changePasswordModal')) closeChangePasswordModal();
+        }
+
+        // Upload Photo
         async function uploadPhoto(input) {
             if (!input.files || input.files.length === 0) return;
-
             const formData = new FormData();
             formData.append('photo', input.files[0]);
-
             try {
                 const response = await fetch('/Profile/UploadPhoto', {
                     method: 'POST',
                     body: formData
                 });
-
                 if (response.ok) {
                     const data = await response.json();
                     const container = document.getElementById('profilePicContainer');
@@ -408,7 +286,6 @@
                     alert('Failed to upload photo.');
                 }
             } catch (error) {
-                console.error('Error:', error);
                 alert('An error occurred while uploading.');
             }
         }

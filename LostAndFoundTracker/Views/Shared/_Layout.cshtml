@@ -17,10 +17,8 @@
         var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
     }
 
-
     @if (isLoggedIn)
     {
-        <!-- Logged In Navbar -->
         <nav class="navbar">
             <div class="nav-container">
                 <a href="/Home/Dashboard" class="logo">
@@ -49,7 +47,7 @@
                         <i class="fas fa-search"></i> Search
                     </a>
 
-                    <!-- Notification Link - Navigates to separate page -->
+                    <!-- Notifications -->
                     <a href="/Notification/Index" class="notification-link @(currentController == "Notification" ? "active" : "")">
                         <i class="fas fa-bell"></i>
                         Notifications
@@ -68,7 +66,6 @@
     }
     else
     {
-        <!-- Guest Navbar -->
         <nav class="navbar">
             <div class="nav-container">
                 <a href="/Home/Landing" class="logo">
@@ -113,70 +110,39 @@
         @RenderBody()
     </main>
 
-    <footer class="footer">
-        <div class="footer-container">
-            <div class="footer-section">
-                <h4><i class="fas fa-hand-holding-heart"></i> Campus Lost & Found</h4>
-                <p style="font-size: 0.875rem; opacity: 0.8;">Official campus lost and found system helping students, faculty, and staff reunite with their belongings.</p>
-                <p style="margin-top: 1rem; font-size: 0.75rem;">📍 Main Campus, Student Services Building</p>
-            </div>
-            <div class="footer-section">
-                <h4>Quick Links</h4>
-                <a href="/Items/ReportItem"><i class="fas fa-plus-circle"></i> Report Lost Item</a>
-                <a href="/Items/ReportItem"><i class="fas fa-gift"></i> Report Found Item</a>
-                <a href="/Items/LostItems"><i class="fas fa-search"></i> Browse Items</a>
-                <a href="#"><i class="fas fa-question-circle"></i> FAQs</a>
-            </div>
-            <div class="footer-section">
-                <h4>Resources</h4>
-                <a href="#"><i class="fas fa-shield-alt"></i> Campus Security</a>
-                <a href="#"><i class="fas fa-users"></i> Student Affairs</a>
-                <a href="#"><i class="fas fa-headset"></i> Support Center</a>
-                <a href="#"><i class="fas fa-comment"></i> Feedback</a>
-            </div>
-            <div class="footer-section">
-                <h4>Contact Info</h4>
-                <p><i class="fas fa-phone"></i> (555) 123-4567</p>
-                <p><i class="fas fa-envelope"></i> support@campus.edu</p>
-                <p><i class="fas fa-clock"></i> Mon-Fri: 8am-8pm</p>
-                <p><i class="fas fa-clock"></i> Sat: 9am-5pm</p>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <p>&copy; 2024 Campus Lost & Found System. All rights reserved. | <a href="#" style="color: white;">Privacy Policy</a> | <a href="#" style="color: white;">Terms of Service</a></p>
+    <footer class="footer" style="padding: 0;">
+        <div class="footer-bottom" style="margin: 0; padding: 1rem; text-align: center;">
+            <p style="margin: 0;">&copy; @DateTime.Now.Year Campus Lost & Found System. All rights reserved.</p>
         </div>
     </footer>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
     <script src="~/js/site.js"></script>
 
-    <!-- Notification Badge JavaScript -->
     <script>
-        // Load unread notification count for the bell badge
         function loadNotificationCount() {
-            fetch('/Notification/GetUnreadCount')
-                .then(response => response.json())
-                .then(count => {
-                    const badge = document.getElementById('notificationBadge');
-                    if (badge) {
-                        if (count > 0) {
-                            badge.textContent = count > 9 ? '9+' : count;
-                            badge.style.display = 'inline-block';
-                        } else {
-                            badge.style.display = 'none';
-                        }
-                    }
-                })
-                .catch(error => console.error('Error loading notification count:', error));
+        fetch('/Notification/GetUnreadCount')
+        .then(response => response.json())
+        .then(count => {
+        const badge = document.getElementById('notificationBadge');
+        if (badge) {
+        if (count > 0) {
+        badge.textContent = count > 9 ? '9+' : count;
+        badge.style.display = 'inline-block';
+        } else {
+        badge.style.display = 'none';
+        }
+        }
+        })
+        .catch(error => console.error('Error loading notification count:', error));
         }
 
-        // Load count when page loads and periodically
         @if (isLoggedIn)
         {
-                <text>
+            <text>
                 loadNotificationCount();
                 setInterval(loadNotificationCount, 30000);
-                </text>
+            </text>
         }
     </script>
 

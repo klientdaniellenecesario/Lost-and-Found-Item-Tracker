@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
 using System;
+using System.Linq;
 
 namespace LostAndFoundTracker.Controllers
 {
@@ -19,13 +20,15 @@ namespace LostAndFoundTracker.Controllers
             _context = context;
         }
 
+        // ─────────────────────────────────────────
+        // LOGIN
+        // ─────────────────────────────────────────
         [Route("Login")]
         [HttpGet]
         public IActionResult Login()
         {
             HttpContext.Session.Clear();
             System.Diagnostics.Debug.WriteLine("=== LOGIN PAGE LOADED ===");
-            System.Diagnostics.Debug.WriteLine("Session cleared");
             return View();
         }
 
@@ -35,51 +38,43 @@ namespace LostAndFoundTracker.Controllers
         {
             System.Diagnostics.Debug.WriteLine("=== LOGIN ATTEMPT ===");
             System.Diagnostics.Debug.WriteLine($"Email: {model.Email}");
-            System.Diagnostics.Debug.WriteLine($"Password length: {model.Password?.Length ?? 0}");
 
             if (ModelState.IsValid)
             {
-                // Find user by email (case‑insensitive) and compare plain password
-                var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == model.Email.ToLower() && u.PasswordHash == model.Password);
+                var user = await _context.Users.FirstOrDefaultAsync(
+                    u => u.Email.ToLower() == model.Email.ToLower()
+                      && u.PasswordHash == model.Password);
 
                 if (user != null)
                 {
-                    System.Diagnostics.Debug.WriteLine($"User found! ID: {user.Id}, Name: {user.FullName}, Email: {user.Email}");
-
                     HttpContext.Session.SetInt32("UserId", user.Id);
                     HttpContext.Session.SetString("UserEmail", user.Email);
                     HttpContext.Session.SetString("UserFullName", user.FullName);
-
-                    // Verify session was set
-                    var testUserId = HttpContext.Session.GetInt32("UserId");
-                    var testUserEmail = HttpContext.Session.GetString("UserEmail");
-                    System.Diagnostics.Debug.WriteLine($"Session verification - UserId: {testUserId}, Email: {testUserEmail}");
 
                     TempData["Success"] = $"Welcome back, {user.FullName}!";
                     return RedirectToAction("Dashboard", "Home");
                 }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine("User not found or password incorrect");
                     ViewBag.Error = "Invalid email or password.";
                 }
             }
             else
             {
-                System.Diagnostics.Debug.WriteLine("ModelState is invalid");
                 foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
-                {
                     System.Diagnostics.Debug.WriteLine($"Model error: {error.ErrorMessage}");
-                }
             }
+
             return View(model);
         }
 
+        // ─────────────────────────────────────────
+        // REGISTER
+        // ─────────────────────────────────────────
         [Route("Register")]
         [HttpGet]
         public IActionResult Register()
         {
-            System.Diagnostics.Debug.WriteLine("=== REGISTER PAGE LOADED ===");
             return View();
         }
 
@@ -88,82 +83,120 @@ namespace LostAndFoundTracker.Controllers
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
             System.Diagnostics.Debug.WriteLine("=== REGISTER ATTEMPT ===");
-            System.Diagnostics.Debug.WriteLine($"FullName: {model.FullName}");
-            System.Diagnostics.Debug.WriteLine($"Email: {model.Email}");
-            System.Diagnostics.Debug.WriteLine($"Password length: {model.Password?.Length ?? 0}");
 
             if (ModelState.IsValid)
             {
                 if (model.Password != model.ConfirmPassword)
                 {
-                    System.Diagnostics.Debug.WriteLine("Passwords do not match!");
                     ViewBag.Error = "Passwords do not match!";
                     return View(model);
                 }
 
-                // Check if email already exists (case‑insensitive)
-                var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == model.Email.ToLower());
+                var existingUser = await _context.Users.FirstOrDefaultAsync(
+                    u => u.Email.ToLower() == model.Email.ToLower());
+
                 if (existingUser != null)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Email already exists: {model.Email}");
                     ModelState.AddModelError("Email", "Email already registered.");
                     return View(model);
                 }
 
-                // Create new user – store plain password in PasswordHash field
                 var user = new User
                 {
                     FullName = model.FullName,
                     Email = model.Email,
-                    PasswordHash = model.Password,   // plain text (for learning only)
+                    PasswordHash = model.Password,
                     ContactNumber = "",
                     ProfilePictureUrl = null
                 };
 
                 _context.Users.Add(user);
-                int result = await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync();
 
-                System.Diagnostics.Debug.WriteLine($"User saved! Result: {result} record(s) affected");
-                System.Diagnostics.Debug.WriteLine($"New User ID: {user.Id}");
-                System.Diagnostics.Debug.WriteLine($"New User Email: {user.Email}");
-
-                // Redirect to Login page
                 TempData["Success"] = "Account created successfully! Please log in.";
                 return RedirectToAction("Login", "Account");
             }
             else
             {
-                System.Diagnostics.Debug.WriteLine("ModelState is invalid");
                 foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
-                {
                     System.Diagnostics.Debug.WriteLine($"Model error: {error.ErrorMessage}");
-                }
             }
+
             return View(model);
         }
 
+        // ─────────────────────────────────────────
+        // LOGOUT
+        // ─────────────────────────────────────────
         [Route("Logout")]
         [HttpGet]
         public IActionResult Logout()
         {
-            System.Diagnostics.Debug.WriteLine("=== LOGOUT ===");
-            var userId = HttpContext.Session.GetInt32("UserId");
-            System.Diagnostics.Debug.WriteLine($"Logging out user ID: {userId}");
-
             HttpContext.Session.Clear();
             TempData["Success"] = "Logged out.";
             return RedirectToAction("Landing", "Home");
         }
 
-        // GET: /Account/CheckUsers - Debug endpoint to see all users
+        // ─────────────────────────────────────────
+        // CHANGE PASSWORD
+        // ─────────────────────────────────────────
+        [Route("ChangePassword")]
+        [HttpPost]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null) return Unauthorized();
+
+            // Validate fields are not null or empty
+            if (string.IsNullOrEmpty(request.CurrentPassword) || string.IsNullOrEmpty(request.NewPassword))
+                return BadRequest("Password fields cannot be empty.");
+
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) return NotFound();
+
+            if (user.PasswordHash != request.CurrentPassword)
+                return BadRequest("Current password is incorrect.");
+
+            // ?? "" ensures we never assign null to a non-nullable string
+            user.PasswordHash = request.NewPassword ?? string.Empty;
+            await _context.SaveChangesAsync();
+
+            System.Diagnostics.Debug.WriteLine($"Password changed for user ID: {userId}");
+            return Ok();
+        }
+
+        // ─────────────────────────────────────────
+        // DELETE ACCOUNT
+        // ─────────────────────────────────────────
+        [Route("DeleteAccount")]
+        [HttpPost]
+        public async Task<IActionResult> DeleteAccount()
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null) return Unauthorized();
+
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) return NotFound();
+
+            var userItems = _context.Items.Where(i => i.UserId == userId);
+            _context.Items.RemoveRange(userItems);
+
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+
+            HttpContext.Session.Clear();
+            System.Diagnostics.Debug.WriteLine($"Account deleted for user ID: {userId}");
+            return Ok();
+        }
+
+        // ─────────────────────────────────────────
+        // DEBUG ENDPOINTS
+        // ─────────────────────────────────────────
         [Route("CheckUsers")]
         [HttpGet]
         public async Task<IActionResult> CheckUsers()
         {
             var users = await _context.Users.ToListAsync();
-
-            System.Diagnostics.Debug.WriteLine($"=== TOTAL USERS IN DB: {users.Count} ===");
-
             return Json(new
             {
                 totalUsers = users.Count,
@@ -177,7 +210,6 @@ namespace LostAndFoundTracker.Controllers
             });
         }
 
-        // GET: /Account/TestSession - Check if session is working
         [Route("TestSession")]
         [HttpGet]
         public IActionResult TestSession()
@@ -189,11 +221,20 @@ namespace LostAndFoundTracker.Controllers
             return Json(new
             {
                 isLoggedIn = userId != null,
-                userId = userId,
-                userEmail = userEmail,
-                userName = userName,
+                userId,
+                userEmail,
+                userName,
                 sessionId = HttpContext.Session.Id
             });
         }
+    }
+
+    // ─────────────────────────────────────────
+    // REQUEST MODEL FOR CHANGE PASSWORD
+    // ─────────────────────────────────────────
+    public class ChangePasswordRequest
+    {
+        public string? CurrentPassword { get; set; }
+        public string? NewPassword { get; set; }
     }
 }

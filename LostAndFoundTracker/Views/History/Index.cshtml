@@ -1,0 +1,203 @@
+﻿@{
+    ViewData["Title"] = "My History";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var myLostItems = ViewBag.MyLostItems as List<LostAndFoundTracker.Models.Item> 
+                      ?? new List<LostAndFoundTracker.Models.Item>();
+    var myFoundItems = ViewBag.MyFoundItems as List<LostAndFoundTracker.Models.Item> 
+                       ?? new List<LostAndFoundTracker.Models.Item>();
+    var myResolvedItems = ViewBag.MyResolvedItems as List<LostAndFoundTracker.Models.Item> 
+                          ?? new List<LostAndFoundTracker.Models.Item>();
+}
+
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h1><i class="fas fa-history"></i> My History</h1>
+        <p>All your lost, found, and resolved item posts.</p>
+    </div>
+    <a href="/Profile/Index" class="btn btn-outline">
+        <i class="fas fa-arrow-left"></i> Back to Profile
+    </a>
+</div>
+
+<!-- ========== LOST POSTS ========== -->
+<div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-top: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <h3 style="margin-bottom: 0; color: #dc2626;"><i class="fas fa-frown"></i> My Lost Posts</h3>
+        <a href="/Items/ReportItem" class="btn btn-sm btn-primary" style="font-size: 0.75rem;">
+            <i class="fas fa-plus"></i> Report Lost
+        </a>
+    </div>
+    @if (myLostItems.Any())
+    {
+        <div class="scrollable-container">
+            <div class="cards-grid">
+                @foreach (var item in myLostItems)
+                {
+                    <div class="item-card">
+                        <div class="card-image" onclick="location.href='/Items/Detail/@item.Id?returnUrl=/History/Index'" style="cursor:pointer;">
+                            @if (!string.IsNullOrEmpty(item.PhotoUrl))
+                            {
+                                <img src="@item.PhotoUrl" alt="@item.Name" style="width: 100%; height: 150px; object-fit: cover;">
+                            }
+                            else { <span>🔴</span> }
+                        </div>
+                        <div class="card-content">
+                            <div class="card-title">@item.Name</div>
+                            <div class="card-details">
+                                <i class="fas fa-map-marker-alt"></i> @item.Location<br />
+                                <i class="fas fa-calendar"></i> @item.Date.ToString("MMM dd, yyyy")
+                            </div>
+                            <span class="badge badge-lost">LOST</span>
+                            <form method="post" action="/Items/MarkFound/@item.Id" style="margin-top: 0.75rem;">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm" style="width: 100%; background: #d1fae5; color: #10b981; border: none; padding: 0.5rem;">
+                                    <i class="fas fa-check"></i> Mark as Found
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="empty-state" style="margin: 1rem 0;">
+            <div class="empty-state-icon">🔴</div>
+            <p>No active lost posts.</p>
+            <a href="/Items/ReportItem" class="btn btn-primary" style="margin-top: 1rem;">
+                <i class="fas fa-plus-circle"></i> Report Lost Item
+            </a>
+        </div>
+    }
+</div>
+
+<!-- ========== FOUND POSTS ========== -->
+<div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-top: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <h3 style="margin-bottom: 0; color: #10b981;"><i class="fas fa-smile"></i> My Found Posts</h3>
+        <a href="/Items/ReportItem" class="btn btn-sm btn-primary" style="font-size: 0.75rem;">
+            <i class="fas fa-plus"></i> Report Found
+        </a>
+    </div>
+    @if (myFoundItems.Any())
+    {
+        <div class="scrollable-container">
+            <div class="cards-grid">
+                @foreach (var item in myFoundItems)
+                {
+                    <div class="item-card">
+                        <div class="card-image" onclick="location.href='/Items/Detail/@item.Id?returnUrl=/History/Index'" style="cursor:pointer;">
+                            @if (!string.IsNullOrEmpty(item.PhotoUrl))
+                            {
+                                <img src="@item.PhotoUrl" alt="@item.Name" style="width: 100%; height: 150px; object-fit: cover;">
+                            }
+                            else { <span>🟢</span> }
+                        </div>
+                        <div class="card-content">
+                            <div class="card-title">@item.Name</div>
+                            <div class="card-details">
+                                <i class="fas fa-map-marker-alt"></i> @item.Location<br />
+                                <i class="fas fa-calendar"></i> @item.Date.ToString("MMM dd, yyyy")
+                            </div>
+                            <span class="badge badge-found">FOUND</span>
+                            <form method="post" action="/Items/MarkClaimed/@item.Id" style="margin-top: 0.75rem;">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm" style="width: 100%; background: #d1fae5; color: #10b981; border: none; padding: 0.5rem;">
+                                    <i class="fas fa-check"></i> Mark as Claimed
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="empty-state" style="margin: 1rem 0;">
+            <div class="empty-state-icon">🟢</div>
+            <p>No active found posts.</p>
+            <a href="/Items/ReportItem" class="btn btn-primary" style="margin-top: 1rem;">
+                <i class="fas fa-plus-circle"></i> Report Found Item
+            </a>
+        </div>
+    }
+</div>
+
+<!-- ========== RESOLVED ========== -->
+<div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-top: 2rem; margin-bottom: 2rem;">
+    <h3 style="margin-bottom: 0.5rem; color: #008080;"><i class="fas fa-check-circle"></i> Resolved</h3>
+    @if (myResolvedItems.Any())
+    {
+        <div class="scrollable-container">
+            <div class="cards-grid">
+                @foreach (var item in myResolvedItems)
+                {
+                    <div class="item-card" style="opacity: 0.85;">
+                        <div class="card-image" onclick="location.href='/Items/Detail/@item.Id?returnUrl=/History/Index'" style="cursor:pointer;">
+                            @if (!string.IsNullOrEmpty(item.PhotoUrl))
+                            {
+                                <img src="@item.PhotoUrl" alt="@item.Name" style="width: 100%; height: 150px; object-fit: cover;">
+                            }
+                            else { <span>✅</span> }
+                        </div>
+                        <div class="card-content">
+                            <div class="card-title">@item.Name</div>
+                            <div class="card-details">
+                                <i class="fas fa-map-marker-alt"></i> @item.Location<br />
+                                <i class="fas fa-calendar"></i> @item.Date.ToString("MMM dd, yyyy")
+                            </div>
+                            <span class="badge" style="background: #e0f2fe; color: #0284c7;">✅ RESOLVED</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="empty-state" style="margin: 1rem 0;">
+            <div class="empty-state-icon">✅</div>
+            <p>No resolved items yet.</p>
+        </div>
+    }
+</div>
+
+<style>
+    .cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+    }
+    .item-card {
+        background: white;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+    }
+    .item-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .card-image {
+        height: 150px;
+        background: #f3f4f6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+    }
+    .card-content { padding: 1rem; }
+    .card-title { font-weight: 700; font-size: 1.1rem; margin-bottom: 0.5rem; }
+    .card-details { font-size: 0.85rem; color: #4b5563; margin-bottom: 0.75rem; }
+    .badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+    .badge-lost { background: #fee2e2; color: #dc2626; }
+    .badge-found { background: #d1fae5; color: #10b981; }
+    .empty-state { text-align: center; padding: 3rem; background: #f9fafb; border-radius: 0.75rem; }
+    .empty-state-icon { font-size: 3rem; margin-bottom: 1rem; }
+    .scrollable-container { max-height: 650px; overflow-y: auto; padding-right: 0.5rem; margin-top: 1rem; }
+    .scrollable-container .cards-grid { margin-top: 0; }
+</style>

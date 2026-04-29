@@ -5,7 +5,6 @@
 }
 
 <style>
-    /* Dashboard specific styles for recent items grid */
     .cards-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -13,7 +12,6 @@
         margin-top: 1rem;
     }
 
-    /* On large screens, show exactly 3 columns so 6 items become 2 rows */
     @@media (min-width: 1200px) {
         .cards-grid {
             grid-template-columns: repeat(3, 1fr);
@@ -77,7 +75,6 @@
         color: #16a34a;
     }
 
-    /* Loading and empty states */
     .loading {
         text-align: center;
         padding: 2rem;
@@ -121,6 +118,49 @@
         border-radius: 0.5rem;
         text-align: center;
     }
+
+    .quick-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .quick-action-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 1rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-decoration: none;
+        transition: opacity 0.2s;
+    }
+
+        .quick-action-btn:hover {
+            opacity: 0.85;
+            text-decoration: none;
+        }
+
+    .quick-action-lost {
+        background: #fee2e2;
+        color: #dc2626;
+        border: 1.5px solid #fca5a5;
+    }
+
+    .quick-action-found {
+        background: #dcfce7;
+        color: #16a34a;
+        border: 1.5px solid #86efac;
+    }
+
+    @@media (max-width: 480px) {
+        .quick-actions {
+            grid-template-columns: 1fr;
+        }
+    }
 </style>
 
 <div class="page-header">
@@ -128,6 +168,17 @@
     <p>Welcome back, @userName! Here's an overview of lost and found activity.</p>
 </div>
 
+<!-- Quick Actions -->
+<div class="quick-actions">
+    <a href="/Items/ReportItem?type=lost" class="quick-action-btn quick-action-lost">
+        <i class="fas fa-plus-circle"></i> Report Lost Item
+    </a>
+    <a href="/Items/ReportItem?type=found" class="quick-action-btn quick-action-found">
+        <i class="fas fa-plus-circle"></i> Report Found Item
+    </a>
+</div>
+
+<!-- Stats -->
 <div class="stats-grid">
     <div class="stat-card">
         <div class="stat-icon"><i class="fas fa-frown"></i></div>
@@ -151,7 +202,7 @@
     </div>
 </div>
 
-<!-- Recent Lost Items Section -->
+<!-- Recent Lost Items -->
 <div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-top: 2rem;">
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <h3 style="margin-bottom: 0; color: #008080;"><i class="fas fa-frown"></i> Recent Lost Items</h3>
@@ -162,8 +213,8 @@
     </div>
 </div>
 
-<!-- Recent Found Items Section -->
-<div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-top: 2rem;">
+<!-- Recent Found Items -->
+<div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-top: 2rem; margin-bottom: 2rem;">
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <h3 style="margin-bottom: 0; color: #008080;"><i class="fas fa-smile"></i> Recent Found Items</h3>
         <a href="/Items/FoundItems" class="btn btn-sm btn-outline" style="font-size: 0.75rem;">View all →</a>
@@ -185,7 +236,6 @@
                 document.getElementById('resolvedCount').textContent = data.resolvedCount;
                 document.getElementById('myItemsCount').textContent = data.myItemsCount;
 
-                // Render recent lost items
                 const lostContainer = document.getElementById('recentLostItems');
                 if (data.recentLostItems && data.recentLostItems.length > 0) {
                     lostContainer.innerHTML = renderItemCards(data.recentLostItems);
@@ -193,7 +243,6 @@
                     lostContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔴</div><h3>No recent lost items</h3><p>Report a lost item to help others.</p></div>';
                 }
 
-                // Render recent found items
                 const foundContainer = document.getElementById('recentFoundItems');
                 if (data.recentFoundItems && data.recentFoundItems.length > 0) {
                     foundContainer.innerHTML = renderItemCards(data.recentFoundItems);
@@ -202,31 +251,33 @@
                 }
             } catch (error) {
                 console.error('Error loading dashboard:', error);
-                document.getElementById('recentLostItems').innerHTML = '<div class="alert alert-error">Failed to load data.</div>';
-                document.getElementById('recentFoundItems').innerHTML = '<div class="alert alert-error">Failed to load data.</div>';
+                document.getElementById('recentLostItems').innerHTML = '<div class="alert-error">Failed to load data.</div>';
+                document.getElementById('recentFoundItems').innerHTML = '<div class="alert-error">Failed to load data.</div>';
             }
         }
 
         function renderItemCards(items) {
             return `<div class="cards-grid">
-                ${items.map(item => `
-                    <div class="item-card" onclick="location.href='/Items/Detail/${item.id}'">
-                        <div class="card-image">
-                            ${item.photoUrl ? `<img src="${item.photoUrl}" alt="${item.name}" style="width:100%; height:150px; object-fit:cover;">` : (item.type === 'lost' ? '🔴' : '🟢')}
-                        </div>
-                        <div class="card-content">
-                            <div class="card-title">${escapeHtml(item.name)}</div>
-                            <div class="card-details">
-                                <i class="fas fa-map-marker-alt"></i> ${escapeHtml(item.location)}<br/>
-                                <i class="fas fa-calendar"></i> ${escapeHtml(item.date)}
+                        ${items.map(item => `
+                            <div class="item-card" onclick="location.href='/Items/Detail/${item.id}'">
+                                <div class="card-image">
+                                    ${item.photoUrl
+                    ? `<img src="${item.photoUrl}" alt="${item.name}" style="width:100%; height:150px; object-fit:cover;">`
+                    : (item.type === 'lost' ? '🔴' : '🟢')}
+                                </div>
+                                <div class="card-content">
+                                    <div class="card-title">${escapeHtml(item.name)}</div>
+                                    <div class="card-details">
+                                        <i class="fas fa-map-marker-alt"></i> ${escapeHtml(item.location)}<br/>
+                                        <i class="fas fa-calendar"></i> ${escapeHtml(item.date)}
+                                    </div>
+                                    <span class="badge ${item.type === 'lost' ? 'badge-lost' : 'badge-found'}">
+                                        ${item.type === 'lost' ? 'LOST' : 'FOUND'}
+                                    </span>
+                                </div>
                             </div>
-                            <span class="badge ${item.type === 'lost' ? 'badge-lost' : 'badge-found'}">
-                                ${item.type === 'lost' ? 'LOST' : 'FOUND'}
-                            </span>
-                        </div>
-                    </div>
-                `).join('')}
-            </div>`;
+                        `).join('')}
+                    </div>`;
         }
 
         function escapeHtml(str) {
