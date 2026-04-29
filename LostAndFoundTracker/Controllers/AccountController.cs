@@ -41,15 +41,17 @@ namespace LostAndFoundTracker.Controllers
 
             if (ModelState.IsValid)
             {
-                var user = await _context.Users.FirstOrDefaultAsync(
-                    u => u.Email.ToLower() == model.Email.ToLower()
-                      && u.PasswordHash == model.Password);
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == model.Email.ToLower() && u.PasswordHash == model.Password);
 
                 if (user != null)
                 {
                     HttpContext.Session.SetInt32("UserId", user.Id);
                     HttpContext.Session.SetString("UserEmail", user.Email);
                     HttpContext.Session.SetString("UserFullName", user.FullName);
+
+                    var testUserId = HttpContext.Session.GetInt32("UserId");
+                    var testUserEmail = HttpContext.Session.GetString("UserEmail");
+                    System.Diagnostics.Debug.WriteLine($"Session verification - UserId: {testUserId}, Email: {testUserEmail}");
 
                     TempData["Success"] = $"Welcome back, {user.FullName}!";
                     return RedirectToAction("Dashboard", "Home");
@@ -92,9 +94,7 @@ namespace LostAndFoundTracker.Controllers
                     return View(model);
                 }
 
-                var existingUser = await _context.Users.FirstOrDefaultAsync(
-                    u => u.Email.ToLower() == model.Email.ToLower());
-
+                var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == model.Email.ToLower());
                 if (existingUser != null)
                 {
                     ModelState.AddModelError("Email", "Email already registered.");
@@ -112,6 +112,10 @@ namespace LostAndFoundTracker.Controllers
 
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
+
+                System.Diagnostics.Debug.WriteLine($"User saved! Result: {result} record(s) affected");
+                System.Diagnostics.Debug.WriteLine($"New User ID: {user.Id}");
+                System.Diagnostics.Debug.WriteLine($"New User Email: {user.Email}");
 
                 TempData["Success"] = "Account created successfully! Please log in.";
                 return RedirectToAction("Login", "Account");
@@ -137,66 +141,13 @@ namespace LostAndFoundTracker.Controllers
             return RedirectToAction("Landing", "Home");
         }
 
-        // ─────────────────────────────────────────
-        // CHANGE PASSWORD
-        // ─────────────────────────────────────────
-        [Route("ChangePassword")]
-        [HttpPost]
-        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
-        {
-            var userId = HttpContext.Session.GetInt32("UserId");
-            if (userId == null) return Unauthorized();
-
-            // Validate fields are not null or empty
-            if (string.IsNullOrEmpty(request.CurrentPassword) || string.IsNullOrEmpty(request.NewPassword))
-                return BadRequest("Password fields cannot be empty.");
-
-            var user = await _context.Users.FindAsync(userId);
-            if (user == null) return NotFound();
-
-            if (user.PasswordHash != request.CurrentPassword)
-                return BadRequest("Current password is incorrect.");
-
-            // ?? "" ensures we never assign null to a non-nullable string
-            user.PasswordHash = request.NewPassword ?? string.Empty;
-            await _context.SaveChangesAsync();
-
-            System.Diagnostics.Debug.WriteLine($"Password changed for user ID: {userId}");
-            return Ok();
-        }
-
-        // ─────────────────────────────────────────
-        // DELETE ACCOUNT
-        // ─────────────────────────────────────────
-        [Route("DeleteAccount")]
-        [HttpPost]
-        public async Task<IActionResult> DeleteAccount()
-        {
-            var userId = HttpContext.Session.GetInt32("UserId");
-            if (userId == null) return Unauthorized();
-
-            var user = await _context.Users.FindAsync(userId);
-            if (user == null) return NotFound();
-
-            var userItems = _context.Items.Where(i => i.UserId == userId);
-            _context.Items.RemoveRange(userItems);
-
-            _context.Users.Remove(user);
-            await _context.SaveChangesAsync();
-
-            HttpContext.Session.Clear();
-            System.Diagnostics.Debug.WriteLine($"Account deleted for user ID: {userId}");
-            return Ok();
-        }
-
-        // ─────────────────────────────────────────
-        // DEBUG ENDPOINTS
-        // ─────────────────────────────────────────
         [Route("CheckUsers")]
         [HttpGet]
         public async Task<IActionResult> CheckUsers()
         {
             var users = await _context.Users.ToListAsync();
+            System.Diagnostics.Debug.WriteLine($"=== TOTAL USERS IN DB: {users.Count} ===");
+
             return Json(new
             {
                 totalUsers = users.Count,
@@ -226,6 +177,72 @@ namespace LostAndFoundTracker.Controllers
                 userName,
                 sessionId = HttpContext.Session.Id
             });
+        }
+
+        [Route("ForgotPassword")]
+        [HttpGet]
+        public IActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+        [Route("ForgotPassword")]
+        [HttpPost]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
+        {
+            if (string.IsNullOrWhiteSpace(model.Email))
+            {
+                ViewBag.Error = "Please enter your email address.";
+                return View(model);
+            }
+
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == model.Email.ToLower());
+
+            if (user == null)
+            {
+                ViewBag.Info = "If that email is registered, you can now reset your password.";
+                return View(model);
+            }
+
+            TempData["ResetEmail"] = user.Email;
+            return RedirectToAction("ResetPassword", "Account");
+        }
+
+        [Route("ResetPassword")]
+        [HttpGet]
+        public IActionResult ResetPassword()
+        {
+            var email = TempData["ResetEmail"] as string;
+            if (string.IsNullOrEmpty(email))
+                return RedirectToAction("ForgotPassword");
+
+            TempData["ResetEmail"] = email;
+            return View(new ResetPasswordViewModel { Email = email });
+        }
+
+        [Route("ResetPassword")]
+        [HttpPost]
+        public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
+        {
+            if (string.IsNullOrWhiteSpace(model.NewPassword) || model.NewPassword != model.ConfirmPassword)
+            {
+                ViewBag.Error = "Passwords do not match or are empty.";
+                TempData["ResetEmail"] = model.Email;
+                return View(model);
+            }
+
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == model.Email.ToLower());
+
+            if (user == null)
+                return RedirectToAction("ForgotPassword");
+
+            user.PasswordHash = model.NewPassword;
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Password reset successfully! Please sign in with your new password.";
+            return RedirectToAction("Login", "Account");
         }
     }
 
