@@ -5,9 +5,6 @@
     var userName = Context.Session.GetString("UserFullName") ?? Model?.FullName ?? "Student User";
     var userEmail = Context.Session.GetString("UserEmail") ?? Model?.Email ?? "student@campus.edu";
     var userContact = Model?.ContactNumber ?? "";
-    var myLostItems = ViewBag.MyLostItems as List<LostAndFoundTracker.Models.Item> ?? new List<LostAndFoundTracker.Models.Item>();
-    var myFoundItems = ViewBag.MyFoundItems as List<LostAndFoundTracker.Models.Item> ?? new List<LostAndFoundTracker.Models.Item>();
-    var myResolvedItems = ViewBag.MyResolvedItems as List<LostAndFoundTracker.Models.Item> ?? new List<LostAndFoundTracker.Models.Item>();
 }
 
 <div class="page-header">
@@ -38,30 +35,6 @@
         <p><i class="fas fa-envelope"></i> <span id="userEmail">@userEmail</span></p>
         <p><i class="fas fa-phone"></i> <span id="userPhone">@(string.IsNullOrEmpty(userContact) ? "Not provided" : userContact)</span></p>
         <p><i class="fas fa-calendar-alt"></i> Member since @DateTime.Now.ToString("MMMM yyyy")</p>
-    </div>
-</div>
-
-<!-- Stats Summary Cards -->
-<div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-    <div class="stat-card" style="background: white; border-radius: 1rem; padding: 1.5rem; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-        <div class="stat-icon"><i class="fas fa-frown" style="font-size: 2rem; color: #dc2626;"></i></div>
-        <div class="stat-value" style="font-size: 2rem; font-weight: 800;">@myLostItems.Count</div>
-        <div class="stat-label">Active Lost Items</div>
-    </div>
-    <div class="stat-card" style="background: white; border-radius: 1rem; padding: 1.5rem; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-        <div class="stat-icon"><i class="fas fa-smile" style="font-size: 2rem; color: #10b981;"></i></div>
-        <div class="stat-value" style="font-size: 2rem; font-weight: 800;">@myFoundItems.Count</div>
-        <div class="stat-label">Active Found Items</div>
-    </div>
-    <div class="stat-card" style="background: white; border-radius: 1rem; padding: 1.5rem; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-        <div class="stat-icon"><i class="fas fa-check-circle" style="font-size: 2rem; color: #008080;"></i></div>
-        <div class="stat-value" style="font-size: 2rem; font-weight: 800;">@myResolvedItems.Count</div>
-        <div class="stat-label">Resolved Items</div>
-    </div>
-    <div class="stat-card" style="background: white; border-radius: 1rem; padding: 1.5rem; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-        <div class="stat-icon"><i class="fas fa-clipboard-list" style="font-size: 2rem; color: #6b7280;"></i></div>
-        <div class="stat-value" style="font-size: 2rem; font-weight: 800;">@(myLostItems.Count + myFoundItems.Count + myResolvedItems.Count)</div>
-        <div class="stat-label">Total Reports</div>
     </div>
 </div>
 

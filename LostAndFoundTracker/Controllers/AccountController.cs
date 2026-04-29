@@ -113,7 +113,6 @@ namespace LostAndFoundTracker.Controllers
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
 
-                System.Diagnostics.Debug.WriteLine($"User saved! Result: {result} record(s) affected");
                 System.Diagnostics.Debug.WriteLine($"New User ID: {user.Id}");
                 System.Diagnostics.Debug.WriteLine($"New User Email: {user.Email}");
 
@@ -141,6 +140,134 @@ namespace LostAndFoundTracker.Controllers
             return RedirectToAction("Landing", "Home");
         }
 
+        // ─────────────────────────────────────────
+        // CHANGE PASSWORD
+        // ─────────────────────────────────────────
+        [Route("ChangePassword")]
+        [HttpPost]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+        {
+            int? userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
+                return Unauthorized();
+
+            var user = await _context.Users.FindAsync(userId.Value);
+            if (user == null)
+                return NotFound();
+
+            if (user.PasswordHash != request.CurrentPassword)
+                return BadRequest("Current password is incorrect.");
+
+            if (string.IsNullOrEmpty(request.NewPassword) || request.NewPassword.Length < 6)
+                return BadRequest("New password must be at least 6 characters.");
+
+            user.PasswordHash = request.NewPassword;
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        // ─────────────────────────────────────────
+        // DELETE ACCOUNT
+        // ─────────────────────────────────────────
+        [Route("DeleteAccount")]
+        [HttpPost]
+        public async Task<IActionResult> DeleteAccount()
+        {
+            int? userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
+                return Unauthorized();
+
+            var user = await _context.Users.FindAsync(userId.Value);
+            if (user == null)
+                return NotFound();
+
+            // Remove user's items first
+            var userItems = _context.Items.Where(i => i.UserId == userId.Value);
+            _context.Items.RemoveRange(userItems);
+
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+
+            HttpContext.Session.Clear();
+            return Ok();
+        }
+
+        // ─────────────────────────────────────────
+        // FORGOT PASSWORD
+        // ─────────────────────────────────────────
+        [Route("ForgotPassword")]
+        [HttpGet]
+        public IActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+        [Route("ForgotPassword")]
+        [HttpPost]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
+        {
+            if (string.IsNullOrWhiteSpace(model.Email))
+            {
+                ViewBag.Error = "Please enter your email address.";
+                return View(model);
+            }
+
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == model.Email.ToLower());
+
+            if (user == null)
+            {
+                ViewBag.Info = "If that email is registered, you can now reset your password.";
+                return View(model);
+            }
+
+            TempData["ResetEmail"] = user.Email;
+            return RedirectToAction("ResetPassword", "Account");
+        }
+
+        // ─────────────────────────────────────────
+        // RESET PASSWORD
+        // ─────────────────────────────────────────
+        [Route("ResetPassword")]
+        [HttpGet]
+        public IActionResult ResetPassword()
+        {
+            var email = TempData["ResetEmail"] as string;
+            if (string.IsNullOrEmpty(email))
+                return RedirectToAction("ForgotPassword");
+
+            TempData["ResetEmail"] = email;
+            return View(new ResetPasswordViewModel { Email = email });
+        }
+
+        [Route("ResetPassword")]
+        [HttpPost]
+        public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
+        {
+            if (string.IsNullOrWhiteSpace(model.NewPassword) || model.NewPassword != model.ConfirmPassword)
+            {
+                ViewBag.Error = "Passwords do not match or are empty.";
+                TempData["ResetEmail"] = model.Email;
+                return View(model);
+            }
+
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == model.Email.ToLower());
+
+            if (user == null)
+                return RedirectToAction("ForgotPassword");
+
+            user.PasswordHash = model.NewPassword;
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Password reset successfully! Please sign in with your new password.";
+            return RedirectToAction("Login", "Account");
+        }
+
+        // ─────────────────────────────────────────
+        // DEBUG HELPERS
+        // ─────────────────────────────────────────
         [Route("CheckUsers")]
         [HttpGet]
         public async Task<IActionResult> CheckUsers()
@@ -177,72 +304,6 @@ namespace LostAndFoundTracker.Controllers
                 userName,
                 sessionId = HttpContext.Session.Id
             });
-        }
-
-        [Route("ForgotPassword")]
-        [HttpGet]
-        public IActionResult ForgotPassword()
-        {
-            return View();
-        }
-
-        [Route("ForgotPassword")]
-        [HttpPost]
-        public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
-        {
-            if (string.IsNullOrWhiteSpace(model.Email))
-            {
-                ViewBag.Error = "Please enter your email address.";
-                return View(model);
-            }
-
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Email.ToLower() == model.Email.ToLower());
-
-            if (user == null)
-            {
-                ViewBag.Info = "If that email is registered, you can now reset your password.";
-                return View(model);
-            }
-
-            TempData["ResetEmail"] = user.Email;
-            return RedirectToAction("ResetPassword", "Account");
-        }
-
-        [Route("ResetPassword")]
-        [HttpGet]
-        public IActionResult ResetPassword()
-        {
-            var email = TempData["ResetEmail"] as string;
-            if (string.IsNullOrEmpty(email))
-                return RedirectToAction("ForgotPassword");
-
-            TempData["ResetEmail"] = email;
-            return View(new ResetPasswordViewModel { Email = email });
-        }
-
-        [Route("ResetPassword")]
-        [HttpPost]
-        public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
-        {
-            if (string.IsNullOrWhiteSpace(model.NewPassword) || model.NewPassword != model.ConfirmPassword)
-            {
-                ViewBag.Error = "Passwords do not match or are empty.";
-                TempData["ResetEmail"] = model.Email;
-                return View(model);
-            }
-
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Email.ToLower() == model.Email.ToLower());
-
-            if (user == null)
-                return RedirectToAction("ForgotPassword");
-
-            user.PasswordHash = model.NewPassword;
-            await _context.SaveChangesAsync();
-
-            TempData["Success"] = "Password reset successfully! Please sign in with your new password.";
-            return RedirectToAction("Login", "Account");
         }
     }
 
