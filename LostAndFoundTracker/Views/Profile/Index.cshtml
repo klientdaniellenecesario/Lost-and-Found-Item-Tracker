@@ -38,6 +38,18 @@
     </div>
 </div>
 
+<!-- Star Rewards Section -->
+<div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-bottom: 2rem;">
+    <h3 style="margin-bottom: 1rem; color: #f59e0b;">
+        <i class="fas fa-star"></i> Star Rewards
+    </h3>
+    <div id="starSummary" class="star-summary">
+        <div class="loading">Loading rewards...</div>
+    </div>
+    <div id="certificatesList" style="margin-top: 1rem;"></div>
+    <div id="recentTransactions" style="margin-top: 1.5rem;"></div>
+</div>
+
 <!-- Account Settings Section -->
 <div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-bottom: 2rem;">
     <h3 style="margin-bottom: 1.25rem; color: #374151;"><i class="fas fa-cog"></i> Account Settings</h3>
@@ -75,6 +87,19 @@
             <button class="btn btn-sm" style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;" onclick="confirmDeleteAccount()">Delete</button>
         </div>
 
+    </div>
+</div>
+
+<!-- Certificates Modal -->
+<div id="certificatesModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3><i class="fas fa-certificate"></i> My Certificates</h3>
+            <span class="modal-close" onclick="closeCertificatesModal()">&times;</span>
+        </div>
+        <div class="modal-body" id="certificatesModalBody">
+            <div class="loading">Loading certificates...</div>
+        </div>
     </div>
 </div>
 
@@ -144,19 +169,376 @@
         font-size: 0.875rem;
         box-sizing: border-box;
     }
+
+    /* Star Rewards Styles */
+    .star-summary {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .star-card {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        border-radius: 1rem;
+        padding: 1rem;
+        flex: 1;
+        min-width: 120px;
+        text-align: center;
+    }
+
+        .star-card h4 {
+            font-size: 0.75rem;
+            color: #92400e;
+            margin-bottom: 0.5rem;
+        }
+
+        .star-card .value {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: #d97706;
+        }
+
+    .progress-container {
+        margin: 1rem 0;
+        flex: 2;
+        min-width: 200px;
+    }
+
+    .progress-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.75rem;
+        color: #6b7280;
+        margin-bottom: 0.25rem;
+    }
+
+    .progress-bar-bg {
+        background: #e5e7eb;
+        border-radius: 9999px;
+        height: 10px;
+        overflow: hidden;
+    }
+
+    .progress-bar-fill {
+        background: #f59e0b;
+        border-radius: 9999px;
+        height: 100%;
+        transition: width 0.3s ease;
+    }
+
+    .certificate-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: #f3f4f6;
+        border-radius: 9999px;
+        margin: 0.25rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        font-size: 0.875rem;
+    }
+
+        .certificate-badge:hover {
+            transform: translateY(-2px);
+        }
+
+        .certificate-badge.bronze {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .certificate-badge.silver {
+            background: #f3f4f6;
+            color: #6b7280;
+            border: 1px solid #d1d5db;
+        }
+
+        .certificate-badge.gold {
+            background: #fef3c7;
+            color: #f59e0b;
+        }
+
+    .transaction-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .transaction-stars {
+        font-size: 1.25rem;
+        color: #f59e0b;
+        min-width: 60px;
+    }
+
+    .transaction-message {
+        flex: 1;
+        font-size: 0.85rem;
+    }
+
+    .transaction-date {
+        font-size: 0.7rem;
+        color: #9ca3af;
+    }
+
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 1rem;
+        max-width: 500px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        animation: slideIn 0.3s ease;
+    }
+
+    .modal-header {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+        .modal-header h3 {
+            margin: 0;
+            color: #008080;
+        }
+
+    .modal-close {
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #6b7280;
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    .certificate-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .certificate-info {
+        flex: 1;
+    }
+
+    .certificate-type {
+        font-weight: bold;
+        margin-bottom: 0.25rem;
+    }
+
+    .certificate-date {
+        font-size: 0.7rem;
+        color: #6b7280;
+    }
+
+    .certificate-code {
+        font-size: 0.7rem;
+        font-family: monospace;
+        color: #9ca3af;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 2rem;
+        color: #6b7280;
+    }
+
+    @@keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-50px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @@media (max-width: 640px) {
+        .star-summary {
+            flex-direction: column;
+        }
+
+        .star-card {
+            min-width: auto;
+        }
+
+        .transaction-item {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
 </style>
 
 @section Scripts {
     <script>
-        // Edit Profile Modal
+        // ========== STAR REWARDS FUNCTIONS ==========
+        async function loadStarRewards() {
+            try {
+                const response = await fetch('/Profile/GetStarSummary');
+                if (!response.ok) throw new Error('Failed to load star data');
+
+                const data = await response.json();
+
+                // Build star summary HTML
+                const summaryHtml = `
+                    <div class="star-card">
+                        <h4><i class="fas fa-star"></i> Total Stars</h4>
+                        <div class="value">${data.totalStars}</div>
+                    </div>
+                    <div class="star-card">
+                        <h4><i class="fas fa-certificate"></i> Bronze</h4>
+                        <div class="value">${data.bronzeCertificates}</div>
+                    </div>
+                    <div class="star-card">
+                        <h4><i class="fas fa-certificate"></i> Silver</h4>
+                        <div class="value">${data.silverCertificates}</div>
+                    </div>
+                    <div class="star-card">
+                        <h4><i class="fas fa-certificate"></i> Gold</h4>
+                        <div class="value">${data.goldCertificates}</div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-label">
+                            <span>Next Milestone: ${data.nextMilestone} ⭐</span>
+                            <span>${data.totalStars} / ${data.nextMilestone}</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" style="width: ${data.progressPercentage}%"></div>
+                        </div>
+                        <small style="color: #6b7280;">${data.totalCertificates} total certificates earned</small>
+                    </div>
+                `;
+
+                document.getElementById('starSummary').innerHTML = summaryHtml;
+
+                // Build certificates badges
+                if (data.certificates && data.certificates.length > 0) {
+                    let certHtml = '<div style="margin-top: 0.5rem;"><strong>Your Certificates:</strong> ';
+                    const bronzeCerts = data.certificates.filter(c => c.certificateType === 'Bronze');
+                    const silverCerts = data.certificates.filter(c => c.certificateType === 'Silver');
+                    const goldCerts = data.certificates.filter(c => c.certificateType === 'Gold');
+
+                    if (bronzeCerts.length > 0) {
+                        certHtml += `<button class="certificate-badge bronze" onclick="viewCertificates('Bronze')">🥉 Bronze (${bronzeCerts.length})</button> `;
+                    }
+                    if (silverCerts.length > 0) {
+                        certHtml += `<button class="certificate-badge silver" onclick="viewCertificates('Silver')">🥈 Silver (${silverCerts.length})</button> `;
+                    }
+                    if (goldCerts.length > 0) {
+                        certHtml += `<button class="certificate-badge gold" onclick="viewCertificates('Gold')">🥇 Gold (${goldCerts.length})</button> `;
+                    }
+                    certHtml += '</div>';
+                    document.getElementById('certificatesList').innerHTML = certHtml;
+                } else {
+                    document.getElementById('certificatesList').innerHTML = '<small>No certificates earned yet. Keep helping others!</small>';
+                }
+
+                // Build recent transactions
+                if (data.recentTransactions && data.recentTransactions.length > 0) {
+                    let transHtml = '<strong><i class="fas fa-history"></i> Recent Stars Received:</strong><div style="margin-top: 0.5rem;">';
+                    data.recentTransactions.forEach(t => {
+                        transHtml += `
+                            <div class="transaction-item">
+                                <div class="transaction-stars">⭐ ${t.stars}</div>
+                                <div class="transaction-message">
+                                    <strong>${t.fromName}</strong> gave you stars for returning "${t.itemName}"
+                                    ${t.message ? `<br/><small>"${t.message}"</small>` : ''}
+                                </div>
+                                <div class="transaction-date">${t.date}</div>
+                            </div>
+                        `;
+                    });
+                    transHtml += '</div>';
+                    document.getElementById('recentTransactions').innerHTML = transHtml;
+                } else {
+                    document.getElementById('recentTransactions').innerHTML = '<small>No star transactions yet. Help return items to earn stars!</small>';
+                }
+
+                // Store certificates data globally
+                window.allCertificates = data.certificates;
+            } catch (error) {
+                console.error('Error loading star rewards:', error);
+                document.getElementById('starSummary').innerHTML = '<div class="alert alert-error">Failed to load rewards data.</div>';
+            }
+        }
+
+        // View certificates modal
+        async function viewCertificates(type) {
+            const certificates = window.allCertificates || [];
+            const filtered = type === 'All' ? certificates : certificates.filter(c => c.certificateType === type);
+
+            if (filtered.length === 0) {
+                alert(`No ${type} certificates yet. Keep helping others to earn one!`);
+                return;
+            }
+
+            const modalBody = document.getElementById('certificatesModalBody');
+            let html = '';
+
+            for (const cert of filtered) {
+                const certType = cert.certificateType;
+                const icon = certType === 'Bronze' ? '🥉' : (certType === 'Silver' ? '🥈' : '🥇');
+                html += `
+                    <div class="certificate-item">
+                        <div class="certificate-info">
+                            <div class="certificate-type">${icon} ${certType} Certificate</div>
+                            <div class="certificate-date">Earned: ${new Date(cert.earnedAt).toLocaleDateString()}</div>
+                            <div class="certificate-code">Code: ${cert.certificateCode}</div>
+                        </div>
+                        <button class="btn btn-outline btn-sm" onclick="downloadCertificate(${cert.id})">
+                            <i class="fas fa-download"></i> Download
+                        </button>
+                    </div>
+                `;
+            }
+
+            modalBody.innerHTML = html;
+            document.getElementById('certificatesModal').style.display = 'flex';
+        }
+
+        function closeCertificatesModal() {
+            document.getElementById('certificatesModal').style.display = 'none';
+        }
+
+        async function downloadCertificate(certId) {
+            window.open(`/Profile/DownloadCertificate/${certId}`, '_blank');
+        }
+
+        // ========== EDIT PROFILE FUNCTIONS ==========
         function openEditModal() {
             document.getElementById('editModal').style.display = 'flex';
             document.getElementById('editFullName').value = document.getElementById('userName').innerText;
             document.getElementById('editContactNumber').value = document.getElementById('userPhone').innerText;
         }
+
         function closeEditModal() {
             document.getElementById('editModal').style.display = 'none';
         }
+
         async function saveProfile() {
             const fullName = document.getElementById('editFullName').value;
             const contactNumber = document.getElementById('editContactNumber').value;
@@ -179,16 +561,18 @@
             closeEditModal();
         }
 
-        // Change Password Modal
+        // ========== CHANGE PASSWORD FUNCTIONS ==========
         function openChangePasswordModal() {
             document.getElementById('changePasswordModal').style.display = 'flex';
         }
+
         function closeChangePasswordModal() {
             document.getElementById('changePasswordModal').style.display = 'none';
             document.getElementById('currentPassword').value = '';
             document.getElementById('newPassword').value = '';
             document.getElementById('confirmPassword').value = '';
         }
+
         async function savePassword() {
             const currentPassword = document.getElementById('currentPassword').value;
             const newPassword = document.getElementById('newPassword').value;
@@ -222,7 +606,7 @@
             }
         }
 
-        // Delete Account
+        // ========== DELETE ACCOUNT ==========
         function confirmDeleteAccount() {
             if (confirm('Are you sure you want to delete your account? This cannot be undone.')) {
                 fetch('/Account/DeleteAccount', { method: 'POST' })
@@ -234,13 +618,7 @@
             }
         }
 
-        // Close modals on outside click
-        window.onclick = function(event) {
-            if (event.target == document.getElementById('editModal')) closeEditModal();
-            if (event.target == document.getElementById('changePasswordModal')) closeChangePasswordModal();
-        }
-
-        // Upload Photo
+        // ========== UPLOAD PHOTO ==========
         async function uploadPhoto(input) {
             if (!input.files || input.files.length === 0) return;
             const formData = new FormData();
@@ -262,5 +640,15 @@
                 alert('An error occurred while uploading.');
             }
         }
+
+        // ========== CLOSE MODALS ON OUTSIDE CLICK ==========
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('editModal')) closeEditModal();
+            if (event.target == document.getElementById('changePasswordModal')) closeChangePasswordModal();
+            if (event.target == document.getElementById('certificatesModal')) closeCertificatesModal();
+        }
+
+        // ========== LOAD STAR REWARDS ON PAGE LOAD ==========
+        loadStarRewards();
     </script>
 }
