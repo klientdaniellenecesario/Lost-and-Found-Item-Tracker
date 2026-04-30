@@ -47,7 +47,7 @@ else
 
                     @if (!string.IsNullOrEmpty(currentUserId) && currentUserId == item.UserId.ToString())
                     {
-                        <button class="btn btn-success btn-sm btn-block" style="margin-top: 0.75rem; background: #10B981;" onclick="markAsFound(@item.Id)">
+                        <button class="btn btn-success btn-sm btn-block" style="margin-top: 0.75rem; background: #10B981;" onclick="showMarkFoundModal(@item.Id, '@item.Name.Replace("'", "\\'")')">
                             <i class="fas fa-check"></i> Mark as Found
                         </button>
                     }
@@ -65,7 +65,7 @@ else
 
 @Html.AntiForgeryToken()
 
-<!-- Modal for I Found This Item -->
+<!-- Modal for I Found This Item (Existing) -->
 <div id="foundModal" class="modal" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
@@ -88,6 +88,50 @@ else
         <div class="modal-footer">
             <button class="btn btn-outline" onclick="closeFoundModal()">Cancel</button>
             <button class="btn btn-primary" onclick="submitFoundMatch()">Send Notification</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Mark as Found with Reward -->
+<div id="markFoundModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-check-circle"></i> Mark Item as Found</h3>
+            <span class="modal-close" onclick="closeMarkFoundModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p>Marking as found: <strong id="markFoundItemName"></strong></p>
+
+            <div class="form-group">
+                <label><i class="fas fa-user-friends"></i> Who helped you find this item?</label>
+                <input type="text" id="helperSearch" class="form-control" placeholder="Search by name or email..." autocomplete="off" />
+                <div id="searchResults" class="search-results-dropdown" style="display: none;"></div>
+                <input type="hidden" id="selectedHelperId" value="" />
+                <input type="hidden" id="selectedHelperName" value="" />
+                <small style="color: #6B7280;">Search for the person who helped you, or skip if nobody helped.</small>
+            </div>
+
+            <div class="form-group" id="starRatingGroup" style="display: none;">
+                <label><i class="fas fa-star"></i> Rate the Helper (1-5 stars)</label>
+                <div class="star-rating">
+                    <span class="star" data-value="1">☆</span>
+                    <span class="star" data-value="2">☆</span>
+                    <span class="star" data-value="3">☆</span>
+                    <span class="star" data-value="4">☆</span>
+                    <span class="star" data-value="5">☆</span>
+                </div>
+                <input type="hidden" id="starRatingValue" value="0" />
+                <small style="color: #6B7280;">Your rating helps recognize helpful students!</small>
+            </div>
+
+            <div class="form-group" id="thankYouGroup" style="display: none;">
+                <label><i class="fas fa-comment"></i> Thank You Message (Optional):</label>
+                <textarea id="thankYouMessage" class="form-control" rows="3" placeholder="Thank you for helping me find my item! I really appreciate it..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-outline" onclick="skipReward()">🏃 Nobody helped, just found it</button>
+            <button type="button" class="btn btn-primary" onclick="submitMarkFoundWithReward()" id="confirmRewardBtn" style="display: none;">⭐ Confirm & Give Stars</button>
         </div>
     </div>
 </div>
@@ -154,6 +198,7 @@ else
             display: flex;
             justify-content: flex-end;
             gap: 0.5rem;
+            flex-wrap: wrap;
         }
 
         .user-info-preview {
@@ -207,6 +252,66 @@ else
                 box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.1);
             }
 
+        /* Star Rating Styles */
+        .star-rating {
+            display: flex;
+            gap: 0.5rem;
+            font-size: 1.75rem;
+            cursor: pointer;
+            margin: 0.5rem 0;
+        }
+
+        .star {
+            cursor: pointer;
+            transition: transform 0.2s;
+            color: #d1d5db;
+        }
+
+            .star:hover {
+                transform: scale(1.2);
+            }
+
+        /* Search Results Dropdown */
+        .search-results-dropdown {
+            position: absolute;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1001;
+            width: calc(100% - 3rem);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+
+        .search-result-item {
+            padding: 0.75rem;
+            cursor: pointer;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+            .search-result-item:hover {
+                background: #f0f9f9;
+            }
+
+        .search-result-name {
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .search-result-email {
+            font-size: 0.7rem;
+            color: #6b7280;
+        }
+
+        .selected-helper {
+            background: #f0f9f9;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            margin-top: 0.5rem;
+            border-left: 3px solid #008080;
+        }
+
         @@keyframes slideIn {
             from {
                 opacity: 0;
@@ -232,12 +337,19 @@ else
                 .modal-footer .btn {
                     width: 100%;
                 }
+
+            .star-rating {
+                font-size: 1.25rem;
+            }
         }
     </style>
 
     <script>
         let currentItemId = 0;
+        let currentMarkFoundItemId = 0;
+        let searchTimeout;
 
+        // ========== I FOUND THIS ITEM (EXISTING) ==========
         async function markAsFound(itemId) {
             if (confirm('Mark this item as found? It will be removed from lost items.')) {
                 const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
@@ -312,11 +424,185 @@ else
             }
         }
 
-        window.onclick = function(event) {
-            const modal = document.getElementById('foundModal');
-            if (event.target === modal) {
-                closeFoundModal();
+        // ========== MARK AS FOUND WITH REWARD (NEW) ==========
+        function showMarkFoundModal(itemId, itemName) {
+            currentMarkFoundItemId = itemId;
+            document.getElementById('markFoundItemName').textContent = itemName;
+
+            // Reset form
+            document.getElementById('helperSearch').value = '';
+            document.getElementById('selectedHelperId').value = '';
+            document.getElementById('selectedHelperName').value = '';
+            document.getElementById('searchResults').style.display = 'none';
+            document.getElementById('starRatingGroup').style.display = 'none';
+            document.getElementById('thankYouGroup').style.display = 'none';
+            document.getElementById('confirmRewardBtn').style.display = 'none';
+            document.getElementById('starRatingValue').value = 0;
+            document.getElementById('thankYouMessage').value = '';
+
+            // Reset star display
+            document.querySelectorAll('#markFoundModal .star').forEach(star => {
+                star.textContent = '☆';
+                star.style.color = '#d1d5db';
+            });
+
+            document.getElementById('markFoundModal').style.display = 'flex';
+        }
+
+        function closeMarkFoundModal() {
+            document.getElementById('markFoundModal').style.display = 'none';
+        }
+
+        // User search functionality
+        document.getElementById('helperSearch').addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const term = this.value.trim();
+            const resultsDiv = document.getElementById('searchResults');
+
+            if (term.length < 2) {
+                resultsDiv.style.display = 'none';
+                resultsDiv.innerHTML = '';
+                return;
             }
+
+            searchTimeout = setTimeout(async () => {
+                try {
+                    const response = await fetch(`/Items/GetUsersForSearch?term=${encodeURIComponent(term)}`);
+                    const users = await response.json();
+
+                    if (users.length === 0) {
+                        resultsDiv.innerHTML = '<div class="search-result-item" style="color: #6b7280;">No users found</div>';
+                        resultsDiv.style.display = 'block';
+                        return;
+                    }
+
+                    resultsDiv.innerHTML = users.map(user => `
+                        <div class="search-result-item" onclick="selectHelper(${user.id}, '${user.name.replace(/'/g, "\\'")}', '${user.email}')">
+                            <div class="search-result-name">${user.name}</div>
+                            <div class="search-result-email">${user.email}</div>
+                        </div>
+                    `).join('');
+                    resultsDiv.style.display = 'block';
+                } catch (error) {
+                    console.error('Search error:', error);
+                }
+            }, 300);
+        });
+
+        function selectHelper(id, name, email) {
+            document.getElementById('selectedHelperId').value = id;
+            document.getElementById('selectedHelperName').value = name;
+            document.getElementById('helperSearch').value = `${name} (${email})`;
+            document.getElementById('searchResults').style.display = 'none';
+            document.getElementById('searchResults').innerHTML = '';
+
+            // Show star rating and thank you message
+            document.getElementById('starRatingGroup').style.display = 'block';
+            document.getElementById('thankYouGroup').style.display = 'block';
+            document.getElementById('confirmRewardBtn').style.display = 'block';
+        }
+
+        function skipReward() {
+            // No helper selected - just mark as found with no stars
+            submitMarkFoundWithReward(true);
+        }
+
+        function setStarRating(rating) {
+            document.getElementById('starRatingValue').value = rating;
+            const stars = document.querySelectorAll('#markFoundModal .star');
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.textContent = '★';
+                    star.style.color = '#f59e0b';
+                } else {
+                    star.textContent = '☆';
+                    star.style.color = '#d1d5db';
+                }
+            });
+        }
+
+        async function submitMarkFoundWithReward(skip = false) {
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            let helperId = null;
+            let starRating = null;
+            let thankYouMessage = null;
+
+            if (!skip) {
+                helperId = parseInt(document.getElementById('selectedHelperId').value);
+                starRating = parseInt(document.getElementById('starRatingValue').value);
+                thankYouMessage = document.getElementById('thankYouMessage').value;
+
+                if (!helperId) {
+                    alert('Please search and select the person who helped you, or click "Nobody helped".');
+                    return;
+                }
+
+                if (starRating === 0) {
+                    alert('Please select a star rating (1-5).');
+                    return;
+                }
+            }
+
+            const requestBody = {
+                helperId: helperId,
+                starRating: starRating,
+                thankYouMessage: thankYouMessage
+            };
+
+            try {
+                const response = await fetch(`/Items/MarkFoundWithReward/${currentMarkFoundItemId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    if (skip) {
+                        alert('Item marked as found!');
+                    } else {
+                        alert(`Thank you! ${document.getElementById('selectedHelperName').value} has been notified and received ${starRating} stars.`);
+                    }
+                    closeMarkFoundModal();
+                    location.reload();
+                } else {
+                    alert(result.error || 'Failed to mark item as found. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            }
+        }
+
+        // Star click handler for mark found modal
+        document.addEventListener('click', function(e) {
+            if (e.target.classList && e.target.classList.contains('star') &&
+                e.target.closest('#markFoundModal')) {
+                const value = parseInt(e.target.getAttribute('data-value'));
+                setStarRating(value);
+            }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const searchInput = document.getElementById('helperSearch');
+            const resultsDiv = document.getElementById('searchResults');
+            if (searchInput && resultsDiv && !searchInput.contains(e.target) && !resultsDiv.contains(e.target)) {
+                resultsDiv.style.display = 'none';
+            }
+        });
+
+        // Close modals on outside click
+        window.onclick = function(event) {
+            const foundModal = document.getElementById('foundModal');
+            if (event.target === foundModal) closeFoundModal();
+
+            const markFoundModal = document.getElementById('markFoundModal');
+            if (event.target === markFoundModal) closeMarkFoundModal();
         }
     </script>
 }
