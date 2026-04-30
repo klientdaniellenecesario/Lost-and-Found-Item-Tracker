@@ -18,16 +18,27 @@ namespace LostAndFoundTracker.Models
         public DateTime? FoundDate { get; set; }
 
         public string Description { get; set; } = string.Empty;
-        public string PhotoUrl { get; set; } = string.Empty;  // ✅ Non‑nullable, default empty string
+        public string PhotoUrl { get; set; } = string.Empty;
         public string ContactNumber { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
 
         // Foreign key
         public int UserId { get; set; }
 
-        // Navigation property (required for EF relationship)
+        // Navigation property
         public User? User { get; set; }
 
-        public bool IsResolved { get; set; }
+        // Item Status: "active", "claimed", "returned"
+        public string Status { get; set; } = "active";
+
+        [Obsolete("Use Status property instead. IsResolved will be removed in future.")]
+        public bool IsResolved { get; set; } = false;
+
+        // Star rating given for this item (1-5)
+        public int? StarRatingGiven { get; set; }
+
+        // Who confirmed return (the owner who received the item back)
+        public int? ConfirmedByUserId { get; set; }
+        public DateTime? ConfirmedReturnDate { get; set; }
     }
 }
