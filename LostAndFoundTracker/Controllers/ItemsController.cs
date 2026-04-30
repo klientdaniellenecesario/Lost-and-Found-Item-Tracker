@@ -49,6 +49,7 @@ namespace LostAndFoundTracker.Controllers
                 return RedirectToAction("Login", "Account");
 
             var foundItems = await _context.Items
+                .Include(i => i.User)
                 .Where(i => i.Type == "found" && !i.IsResolved)
                 .OrderByDescending(i => i.Date)
                 .ToListAsync();
@@ -125,6 +126,7 @@ namespace LostAndFoundTracker.Controllers
                         Email = model.Email,
                         UserId = userId.Value,
                         IsResolved = false,
+                        Status = "active",
                         PhotoUrl = photoUrl
                     };
 
@@ -143,7 +145,184 @@ namespace LostAndFoundTracker.Controllers
             return View(model);
         }
 
-        // POST: /Items/MarkFound/{id}
+        // GET: /Items/GetUsersForSearch - Search users for reward modal
+        [HttpGet]
+        public async Task<IActionResult> GetUsersForSearch(string term)
+        {
+            int? currentUserId = HttpContext.Session.GetInt32("UserId");
+            if (currentUserId == null)
+                return Unauthorized();
+
+            if (string.IsNullOrWhiteSpace(term) || term.Length < 2)
+                return Json(new List<object>());
+
+            var users = await _context.Users
+                .Where(u => u.Id != currentUserId.Value &&
+                            (u.FullName.Contains(term) || u.Email.Contains(term)))
+                .Take(10)
+                .Select(u => new
+                {
+                    id = u.Id,
+                    name = u.FullName,
+                    email = u.Email
+                })
+                .ToListAsync();
+
+            return Json(users);
+        }
+
+        // POST: /Items/MarkFoundWithReward/{id} - Lost item reward flow
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkFoundWithReward(int id, [FromBody] MarkFoundRewardRequest request)
+        {
+            try
+            {
+                int? userId = HttpContext.Session.GetInt32("UserId");
+                if (userId == null)
+                {
+                    return Unauthorized(new { error = "Please login first" });
+                }
+
+                var item = await _context.Items
+                    .Include(i => i.User)
+                    .FirstOrDefaultAsync(i => i.Id == id);
+
+                if (item == null)
+                {
+                    return NotFound(new { error = "Item not found" });
+                }
+
+                // Verify the current user is the owner of this lost item
+                if (item.UserId != userId.Value)
+                {
+                    return BadRequest(new { error = "You are not the owner of this item" });
+                }
+
+                if (item.Type != "lost")
+                {
+                    return BadRequest(new { error = "Only lost items can be marked as found" });
+                }
+
+                // Check if already resolved
+                if (item.IsResolved || item.Status == "returned")
+                {
+                    return BadRequest(new { error = "This item has already been marked as found" });
+                }
+
+                // Update item status
+                item.IsResolved = true;
+                item.Status = "returned";
+                item.ConfirmedReturnDate = DateTime.Now;
+
+                // If someone helped (reward given)
+                if (request.HelperId.HasValue && request.HelperId.Value > 0 && request.StarRating.HasValue)
+                {
+                    // Validate star rating
+                    if (request.StarRating.Value < 1 || request.StarRating.Value > 5)
+                    {
+                        return BadRequest(new { error = "Star rating must be between 1 and 5" });
+                    }
+
+                    // Don't allow giving stars to self
+                    if (request.HelperId.Value == userId.Value)
+                    {
+                        return BadRequest(new { error = "You cannot give stars to yourself" });
+                    }
+
+                    int helperId = request.HelperId.Value;
+                    var helper = await _context.Users.FindAsync(helperId);
+                    if (helper == null)
+                    {
+                        return BadRequest(new { error = "Helper not found" });
+                    }
+
+                    // Create star transaction
+                    var starTransaction = new StarTransaction
+                    {
+                        ReceiverId = helperId,
+                        GiverId = userId.Value,
+                        ItemId = id,
+                        StarsGiven = request.StarRating.Value,
+                        ThankYouMessage = request.ThankYouMessage ?? "",
+                        CreatedAt = DateTime.Now
+                    };
+                    _context.StarTransactions.Add(starTransaction);
+
+                    // Update helper's total star points
+                    int oldStars = helper.TotalStarPoints;
+                    helper.TotalStarPoints += request.StarRating.Value;
+
+                    // Check for certificate milestones
+                    var newCertificateType = CertificateMilestone.GetCertificateType(helper.TotalStarPoints);
+                    var oldCertificateType = CertificateMilestone.GetCertificateType(oldStars);
+
+                    if (newCertificateType != oldCertificateType && newCertificateType != "None")
+                    {
+                        // Award new certificate
+                        var certificate = new Certificate
+                        {
+                            UserId = helperId,
+                            CertificateType = newCertificateType,
+                            StarsRequired = newCertificateType == "Gold" ? CertificateMilestone.GoldStars :
+                                           (newCertificateType == "Silver" ? CertificateMilestone.SilverStars : CertificateMilestone.BronzeStars),
+                            StarsEarned = helper.TotalStarPoints,
+                            CertificateCode = GenerateCertificateCode(helperId, newCertificateType),
+                            EarnedAt = DateTime.Now
+                        };
+                        _context.Certificates.Add(certificate);
+                        helper.TotalCertificatesEarned++;
+
+                        if (newCertificateType == "Bronze") helper.BronzeCertificates++;
+                        else if (newCertificateType == "Silver") helper.SilverCertificates++;
+                        else if (newCertificateType == "Gold") helper.GoldCertificates++;
+
+                        // Send certificate notification
+                        var certificateNotification = new Notification
+                        {
+                            ReceiverId = helperId,
+                            SenderId = userId.Value,
+                            ItemId = id,
+                            NotificationType = "CertificateEarned",
+                            Message = $"Congratulations! You've earned a {newCertificateType} Certificate for your helpfulness! You now have {helper.TotalStarPoints} total stars.",
+                            Status = "Unread",
+                            CreatedAt = DateTime.Now
+                        };
+                        _context.Notifications.Add(certificateNotification);
+                    }
+
+                    await _context.SaveChangesAsync();
+
+                    // Send notification to helper about stars received
+                    var owner = await _context.Users.FindAsync(userId.Value);
+                    var starNotification = new Notification
+                    {
+                        ReceiverId = helperId,
+                        SenderId = userId.Value,
+                        ItemId = id,
+                        NotificationType = "StarsReceived",
+                        Message = $"{owner?.FullName ?? "Someone"} gave you {request.StarRating.Value} stars for helping them find '{item.Name}'! You now have {helper.TotalStarPoints} total stars.",
+                        Status = "Unread",
+                        CreatedAt = DateTime.Now
+                    };
+                    _context.Notifications.Add(starNotification);
+                    await _context.SaveChangesAsync();
+                }
+                else
+                {
+                    // No reward - just mark as found
+                    await _context.SaveChangesAsync();
+                }
+
+                return Ok(new { success = true, message = "Item marked as found!" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        // POST: /Items/MarkFound/{id} - Keep original for backward compatibility
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkFound(int id)
@@ -160,6 +339,8 @@ namespace LostAndFoundTracker.Controllers
                 return Forbid();
 
             item.IsResolved = true;
+            item.Status = "returned";
+            item.ConfirmedReturnDate = DateTime.Now;
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Item marked as found.";
@@ -175,18 +356,193 @@ namespace LostAndFoundTracker.Controllers
             if (userId == null)
                 return Unauthorized();
 
-            var item = await _context.Items.FindAsync(id);
+            var item = await _context.Items
+                .Include(i => i.User)
+                .FirstOrDefaultAsync(i => i.Id == id);
+
             if (item == null)
                 return NotFound();
 
             if (item.UserId != userId.Value)
                 return Forbid();
 
-            item.IsResolved = true;
+            if (item.Type != "found")
+                return BadRequest("Only found items can be marked as claimed.");
+
+            // Update status to "claimed"
+            item.Status = "claimed";
+            item.IsResolved = false;
+
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Item marked as claimed.";
+            // Find who claimed this item (the owner who reported it as theirs)
+            var claimNotification = await _context.Notifications
+                .FirstOrDefaultAsync(n => n.ItemId == id && n.NotificationType == "Claim");
+
+            int claimerId = claimNotification?.SenderId ?? 0;
+            var claimer = await _context.Users.FindAsync(claimerId);
+            var finder = item.User;
+
+            if (claimer != null && claimer.Id != finder?.Id && claimerId > 0)
+            {
+                var notification = new Notification
+                {
+                    ReceiverId = claimerId,
+                    SenderId = userId.Value,
+                    ItemId = id,
+                    NotificationType = "ClaimConfirmed",
+                    Message = $"{finder?.FullName ?? "The finder"} has marked the item '{item.Name}' as claimed. Please confirm pickup and rate them!",
+                    Status = "Unread",
+                    CreatedAt = DateTime.Now
+                };
+                _context.Notifications.Add(notification);
+                await _context.SaveChangesAsync();
+            }
+
+            TempData["Success"] = "Item marked as claimed. The owner has been notified to confirm pickup.";
             return RedirectToAction("FoundItems");
+        }
+
+        // POST: /Items/ConfirmReturn/{id}
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConfirmReturn(int id, [FromBody] ConfirmReturnRequest request)
+        {
+            try
+            {
+                int? userId = HttpContext.Session.GetInt32("UserId");
+                if (userId == null)
+                {
+                    return Unauthorized(new { error = "Please login first" });
+                }
+
+                var item = await _context.Items
+                    .Include(i => i.User)
+                    .FirstOrDefaultAsync(i => i.Id == id);
+
+                if (item == null)
+                {
+                    return NotFound(new { error = "Item not found" });
+                }
+
+                // Check if user is the owner/claimer of this item
+                bool isClaimer = false;
+
+                if (item.Type == "found")
+                {
+                    var claimNotification = await _context.Notifications
+                        .FirstOrDefaultAsync(n => n.ItemId == id && n.NotificationType == "Claim" && n.SenderId == userId);
+                    isClaimer = claimNotification != null;
+                }
+
+                if (!isClaimer && item.UserId != userId)
+                {
+                    return BadRequest(new { error = "You are not authorized to confirm return for this item" });
+                }
+
+                // Check if already confirmed
+                if (item.Status == "returned")
+                {
+                    return BadRequest(new { error = "This item has already been confirmed as returned" });
+                }
+
+                // Validate star rating
+                if (request.StarRating < 1 || request.StarRating > 5)
+                {
+                    return BadRequest(new { error = "Star rating must be between 1 and 5" });
+                }
+
+                // Determine who is the finder (the one who should receive stars)
+                int finderId = item.UserId;
+
+                // Update item
+                item.Status = "returned";
+                item.IsResolved = true;
+                item.StarRatingGiven = request.StarRating;
+                item.ConfirmedByUserId = userId;
+                item.ConfirmedReturnDate = DateTime.Now;
+
+                // Create star transaction
+                var starTransaction = new StarTransaction
+                {
+                    ReceiverId = finderId,
+                    GiverId = userId.Value,
+                    ItemId = id,
+                    StarsGiven = request.StarRating,
+                    ThankYouMessage = request.ThankYouMessage ?? "",
+                    CreatedAt = DateTime.Now
+                };
+                _context.StarTransactions.Add(starTransaction);
+
+                // Update finder's total star points
+                var finder = await _context.Users.FindAsync(finderId);
+                if (finder != null)
+                {
+                    int oldStars = finder.TotalStarPoints;
+                    finder.TotalStarPoints += request.StarRating;
+
+                    // Check for certificate milestones
+                    var newCertificateType = CertificateMilestone.GetCertificateType(finder.TotalStarPoints);
+                    var oldCertificateType = CertificateMilestone.GetCertificateType(oldStars);
+
+                    if (newCertificateType != oldCertificateType && newCertificateType != "None")
+                    {
+                        // Award new certificate
+                        var certificate = new Certificate
+                        {
+                            UserId = finderId,
+                            CertificateType = newCertificateType,
+                            StarsRequired = newCertificateType == "Gold" ? CertificateMilestone.GoldStars :
+                                           (newCertificateType == "Silver" ? CertificateMilestone.SilverStars : CertificateMilestone.BronzeStars),
+                            StarsEarned = finder.TotalStarPoints,
+                            CertificateCode = GenerateCertificateCode(finderId, newCertificateType),
+                            EarnedAt = DateTime.Now
+                        };
+                        _context.Certificates.Add(certificate);
+                        finder.TotalCertificatesEarned++;
+
+                        if (newCertificateType == "Bronze") finder.BronzeCertificates++;
+                        else if (newCertificateType == "Silver") finder.SilverCertificates++;
+                        else if (newCertificateType == "Gold") finder.GoldCertificates++;
+
+                        // Send certificate notification
+                        var certificateNotification = new Notification
+                        {
+                            ReceiverId = finderId,
+                            SenderId = userId.Value,
+                            ItemId = id,
+                            NotificationType = "CertificateEarned",
+                            Message = $"Congratulations! You've earned a {newCertificateType} Certificate for your helpfulness! You now have {finder.TotalStarPoints} total stars.",
+                            Status = "Unread",
+                            CreatedAt = DateTime.Now
+                        };
+                        _context.Notifications.Add(certificateNotification);
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+
+                // Send notification to finder about stars received
+                var giver = await _context.Users.FindAsync(userId.Value);
+                var starNotification = new Notification
+                {
+                    ReceiverId = finderId,
+                    SenderId = userId.Value,
+                    ItemId = id,
+                    NotificationType = "StarsReceived",
+                    Message = $"{giver?.FullName ?? "Someone"} gave you {request.StarRating} stars for returning '{item.Name}'! You now have {(finder?.TotalStarPoints ?? 0)} total stars.",
+                    Status = "Unread",
+                    CreatedAt = DateTime.Now
+                };
+                _context.Notifications.Add(starNotification);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true, message = "Return confirmed and stars awarded!" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
         }
 
         // POST: /Items/ReportFoundMatch
@@ -317,6 +673,24 @@ namespace LostAndFoundTracker.Controllers
             }
         }
 
+        // GET: /Items/GetFinderInfo/{id}
+        [HttpGet]
+        public async Task<IActionResult> GetFinderInfo(int id)
+        {
+            var item = await _context.Items
+                .Include(i => i.User)
+                .FirstOrDefaultAsync(i => i.Id == id);
+
+            if (item == null)
+                return NotFound(new { error = "Item not found" });
+
+            return Json(new
+            {
+                finderName = item.User?.FullName ?? "the finder",
+                itemName = item.Name
+            });
+        }
+
         // GET: /Items/Detail/{id}
         public async Task<IActionResult> Detail(int id, string? returnUrl = null)
         {
@@ -437,7 +811,6 @@ namespace LostAndFoundTracker.Controllers
         }
 
         // POST: /Items/Delete/{id}
-        // FIXED: Also removes all notifications that refer to this item
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
@@ -463,6 +836,12 @@ namespace LostAndFoundTracker.Controllers
             TempData["Success"] = "Item and its related notifications deleted successfully.";
             return RedirectToAction("Index", "Profile");
         }
+
+        // Helper method to generate certificate code
+        private string GenerateCertificateCode(int userId, string certificateType)
+        {
+            return $"{certificateType.ToUpper()}-{userId}-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}";
+        }
     }
 
     // Request models for notifications
@@ -476,5 +855,18 @@ namespace LostAndFoundTracker.Controllers
     {
         public int ItemId { get; set; }
         public string? Message { get; set; }
+    }
+
+    public class ConfirmReturnRequest
+    {
+        public int StarRating { get; set; }
+        public string? ThankYouMessage { get; set; }
+    }
+
+    public class MarkFoundRewardRequest
+    {
+        public int? HelperId { get; set; }
+        public int? StarRating { get; set; }
+        public string? ThankYouMessage { get; set; }
     }
 }
