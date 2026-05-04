@@ -32,7 +32,7 @@ namespace LostAndFoundTracker.Controllers
             if (userId == null)
                 return RedirectToAction("Login", "Account");
 
-            var query = _context.Items.Where(i => i.Type == "lost" && !i.IsResolved);
+            var query = _context.Items.Where(i => i.Type == "lost" && i.Status != "returned");
 
             // Apply sorting
             query = sort switch
@@ -57,7 +57,7 @@ namespace LostAndFoundTracker.Controllers
 
             var query = _context.Items
                 .Include(i => i.User)
-                .Where(i => i.Type == "found" && !i.IsResolved);
+                .Where(i => i.Type == "found" && i.Status != "returned");
 
             // Apply sorting
             query = sort switch
@@ -140,7 +140,6 @@ namespace LostAndFoundTracker.Controllers
                         ContactNumber = model.ContactNumber,
                         Email = model.Email,
                         UserId = userId.Value,
-                        IsResolved = false,
                         Status = "active",
                         PhotoUrl = photoUrl
                     };
@@ -218,12 +217,11 @@ namespace LostAndFoundTracker.Controllers
                     return BadRequest(new { error = "Only lost items can be marked as found" });
                 }
 
-                if (item.IsResolved || item.Status == "returned")
+                if (item.Status == "returned")
                 {
                     return BadRequest(new { error = "This item has already been marked as found" });
                 }
 
-                item.IsResolved = true;
                 item.Status = "returned";
                 item.ConfirmedReturnDate = DateTime.Now;
 
@@ -340,7 +338,6 @@ namespace LostAndFoundTracker.Controllers
             if (item.UserId != userId.Value)
                 return Forbid();
 
-            item.IsResolved = true;
             item.Status = "returned";
             item.ConfirmedReturnDate = DateTime.Now;
             await _context.SaveChangesAsync();
@@ -372,7 +369,6 @@ namespace LostAndFoundTracker.Controllers
                 return BadRequest("Only found items can be marked as claimed.");
 
             item.Status = "claimed";
-            item.IsResolved = false;
 
             await _context.SaveChangesAsync();
 
@@ -452,7 +448,6 @@ namespace LostAndFoundTracker.Controllers
                 int finderId = item.UserId;
 
                 item.Status = "returned";
-                item.IsResolved = true;
                 item.StarRatingGiven = request.StarRating;
                 item.ConfirmedByUserId = userId;
                 item.ConfirmedReturnDate = DateTime.Now;

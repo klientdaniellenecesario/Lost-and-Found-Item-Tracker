@@ -1,7 +1,7 @@
-﻿﻿@{
-ViewData["Title"] = "Dashboard";
-Layout = "~/Views/Shared/_Layout.cshtml";
-var userName = Context.Session.GetString("UserFullName") ?? "Student";
+﻿@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var userName = Context.Session.GetString("UserFullName") ?? "Student";
 }
 
 <style>
@@ -136,6 +136,218 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
             margin-bottom: 0;
             color: #008080;
         }
+
+    /* Modal Styles */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 1rem;
+        max-width: 500px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        animation: slideIn 0.3s ease;
+    }
+
+    .modal-header {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+        .modal-header h3 {
+            margin: 0;
+            color: #008080;
+        }
+
+            .modal-header h3 i {
+                margin-right: 0.5rem;
+            }
+
+    .modal-close {
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #6b7280;
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    .modal-footer {
+        padding: 1rem 1.5rem;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: #374151;
+        }
+
+            .form-group label i {
+                margin-right: 0.5rem;
+                color: #008080;
+            }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-family: inherit;
+        resize: vertical;
+        box-sizing: border-box;
+    }
+
+    .star-rating {
+        display: flex;
+        gap: 0.5rem;
+        font-size: 1.75rem;
+        cursor: pointer;
+        margin: 0.5rem 0;
+    }
+
+    .star {
+        cursor: pointer;
+        transition: transform 0.2s;
+        color: #d1d5db;
+    }
+
+        .star:hover {
+            transform: scale(1.2);
+        }
+
+    /* Improved Search Results Dropdown */
+    .search-container {
+        position: relative;
+    }
+
+    .search-results-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1001;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        margin-top: 0.25rem;
+    }
+
+    .search-result-item {
+        display: flex;
+        flex-direction: column;
+        padding: 0.6rem 0.75rem;
+        cursor: pointer;
+        border-bottom: 1px solid #f3f4f6;
+        transition: background 0.2s;
+    }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-result-item:hover {
+            background: #f0f9f9;
+        }
+
+    .search-result-name {
+        font-weight: 600;
+        font-size: 0.8rem;
+        color: #1f2937;
+        margin-bottom: 0.15rem;
+    }
+
+    .search-result-email {
+        font-size: 0.65rem;
+        color: #6b7280;
+        word-break: break-all;
+    }
+
+    /* Selected Helper Display */
+    .selected-helper-info {
+        background: #f0f9f9;
+        padding: 0.6rem 0.75rem;
+        border-radius: 0.5rem;
+        margin-top: 0.5rem;
+        border-left: 3px solid #008080;
+    }
+
+    .selected-helper-name {
+        font-weight: 600;
+        font-size: 0.8rem;
+        color: #008080;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .selected-helper-email {
+        font-size: 0.7rem;
+        color: #6b7280;
+        margin-top: 0.2rem;
+        word-break: break-all;
+    }
+
+    /* User Info Preview */
+    .user-info-preview {
+        background: #f0f9f9;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin: 1rem 0;
+        border-left: 3px solid #008080;
+    }
+
+        .user-info-preview p {
+            margin: 0.25rem 0;
+            font-size: 0.875rem;
+        }
+
+        .user-info-preview i {
+            width: 20px;
+            color: #008080;
+        }
+
+    @@keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-50px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 </style>
 
 <div class="page-header">
@@ -189,8 +401,135 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
     </div>
 </div>
 
+<!-- Modal for Mark as Found with Reward -->
+<div id="markFoundModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-check-circle"></i> Mark Item as Found</h3>
+            <span class="modal-close" onclick="closeMarkFoundModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p>Marking as found: <strong id="markFoundItemName"></strong></p>
+
+            <div id="searchStep" class="form-group">
+                <label><i class="fas fa-user-friends"></i> Who helped you find this item?</label>
+                <div class="search-container">
+                    <input type="text" id="helperSearch" class="form-control" placeholder="Type name or email..." autocomplete="off" />
+                    <div id="searchResults" class="search-results-dropdown" style="display: none;"></div>
+                </div>
+                <small style="color: #6B7280; display: block; margin-top: 0.5rem;">Search for the person who helped you, or click "Nobody helped" below.</small>
+            </div>
+
+            <div id="selectedHelperDisplay" style="display: none;" class="selected-helper-info">
+                <div class="selected-helper-name">
+                    <i class="fas fa-user-check"></i> <span id="selectedHelperDisplayName"></span>
+                </div>
+                <div class="selected-helper-email" id="selectedHelperDisplayEmail"></div>
+                <button type="button" class="btn btn-sm btn-outline" style="margin-top: 0.5rem; font-size: 0.7rem;" onclick="changeHelper()">
+                    <i class="fas fa-edit"></i> Change Helper
+                </button>
+            </div>
+
+            <input type="hidden" id="selectedHelperId" value="" />
+            <input type="hidden" id="selectedHelperName" value="" />
+
+            <div class="form-group" id="starRatingGroup" style="display: none;">
+                <label><i class="fas fa-star"></i> Rate the Helper (1-5 stars)</label>
+                <div class="star-rating">
+                    <span class="star" data-value="1">☆</span>
+                    <span class="star" data-value="2">☆</span>
+                    <span class="star" data-value="3">☆</span>
+                    <span class="star" data-value="4">☆</span>
+                    <span class="star" data-value="5">☆</span>
+                </div>
+                <input type="hidden" id="starRatingValue" value="0" />
+                <small style="color: #6B7280;">Your rating helps recognize helpful students!</small>
+            </div>
+
+            <div class="form-group" id="thankYouGroup" style="display: none;">
+                <label><i class="fas fa-comment"></i> Thank You Message (Optional):</label>
+                <textarea id="thankYouMessage" class="form-control" rows="3" placeholder="Thank you for helping me find my item! I really appreciate it..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-outline" onclick="skipReward()">🏃 Nobody helped, just found it</button>
+            <button type="button" class="btn btn-primary" onclick="submitMarkFoundWithReward()" id="confirmRewardBtn" style="display: none;">⭐ Confirm & Give Stars</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Claim -->
+<div id="claimModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-user-check"></i> Claim This Item</h3>
+            <span class="modal-close" onclick="closeClaimModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p>You are claiming: <strong id="claimItemName"></strong></p>
+            <p>Your information will be shared with the finder:</p>
+            <div class="user-info-preview">
+                <p><i class="fas fa-user"></i> Name: <span id="claimUserName"></span></p>
+                <p><i class="fas fa-envelope"></i> Email: <span id="claimUserEmail"></span></p>
+                <p><i class="fas fa-phone"></i> Phone: <span id="claimUserPhone"></span></p>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-comment"></i> Message to Finder:</label>
+                <textarea id="claimMessage" class="form-control" rows="3" placeholder="This item belongs to me! Please contact me to return it..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeClaimModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="submitClaim()">Send Notification</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Confirm Return -->
+<div id="confirmReturnModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-star"></i> Confirm Return & Rate Finder</h3>
+            <span class="modal-close" onclick="closeConfirmReturnModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p>You have received: <strong id="confirmItemName"></strong></p>
+            <p>Thank <strong id="finderName"></strong> for helping me!</p>
+
+            <div class="form-group">
+                <label><i class="fas fa-star"></i> Rate the Finder (1-5 stars)</label>
+                <div class="star-rating">
+                    <span class="star" data-value="1">☆</span>
+                    <span class="star" data-value="2">☆</span>
+                    <span class="star" data-value="3">☆</span>
+                    <span class="star" data-value="4">☆</span>
+                    <span class="star" data-value="5">☆</span>
+                </div>
+                <input type="hidden" id="starRatingValueConfirm" value="0" />
+                <small style="color: #6B7280;">Your rating helps recognize helpful students!</small>
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-comment"></i> Thank You Message (Optional):</label>
+                <textarea id="thankYouMessageConfirm" class="form-control" rows="3" placeholder="Thank you so much for finding my item! I really appreciate your help..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-outline" onclick="closeConfirmReturnModal()">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="submitConfirmReturn()">Send Stars & Confirm</button>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
 @section Scripts {
     <script>
+        let currentMarkFoundItemId = 0;
+        let currentClaimItemId = 0;
+        let currentReturnItemId = 0;
+        let searchTimeout;
+
         async function loadDashboard() {
             try {
                 const response = await fetch('/Home/GetDashboardData');
@@ -201,18 +540,16 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
                 document.getElementById('resolvedCount').textContent = data.resolvedCount;
                 document.getElementById('myItemsCount').textContent = data.myItemsCount;
 
-                // My Lost Items
                 const myLostContainer = document.getElementById('myLostItems');
                 if (data.myLostItems && data.myLostItems.length > 0) {
-                    myLostContainer.innerHTML = renderItemCards(data.myLostItems);
+                    myLostContainer.innerHTML = renderItemCards(data.myLostItems, 'lost');
                 } else {
                     myLostContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔴</div><h3>No lost items reported</h3><p>Go to the Report page to report a lost item.</p></div>';
                 }
 
-                // My Found Items
                 const myFoundContainer = document.getElementById('myFoundItems');
                 if (data.myFoundItems && data.myFoundItems.length > 0) {
-                    myFoundContainer.innerHTML = renderItemCards(data.myFoundItems);
+                    myFoundContainer.innerHTML = renderItemCards(data.myFoundItems, 'found');
                 } else {
                     myFoundContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🟢</div><h3>No found items reported</h3><p>Go to the Report page to report a found item.</p></div>';
                 }
@@ -223,28 +560,53 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
             }
         }
 
-        function renderItemCards(items) {
+        function renderItemCards(items, type) {
             return `<div class="cards-grid">
-                        ${items.map(item => `
-                            <div class="item-card" onclick="location.href='/Items/Detail/${item.id}'">
-                                <div class="card-image">
-                                    ${item.photoUrl
-                    ? `<img src="${item.photoUrl}" alt="${item.name}">`
-                    : (item.type === 'lost' ? '🔴' : '🟢')}
-                                </div>
-                                <div class="card-content">
-                                    <div class="card-title">${escapeHtml(item.name)}</div>
-                                    <div class="card-details">
-                                        <i class="fas fa-map-marker-alt"></i> ${escapeHtml(item.location)}<br/>
-                                        <i class="fas fa-calendar"></i> ${escapeHtml(item.date)}
-                                    </div>
-                                    <span class="badge ${item.type === 'lost' ? 'badge-lost' : 'badge-found'}">
-                                        ${item.type === 'lost' ? 'LOST' : 'FOUND'}
-                                    </span>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>`;
+                                ${items.map(item => {
+                let buttonHtml = '';
+                            
+                if (type === 'lost') {
+                    // For lost items - show Mark as Found button
+                    buttonHtml = `<button class="btn btn-success btn-sm btn-block" style="margin-top: 0.75rem; background: #10B981;" onclick="event.stopPropagation(); showMarkFoundModal(${item.id}, '${escapeHtml(item.name).replace(/'/g, "\\'")}')">
+                                            <i class="fas fa-check"></i> Mark as Found
+                                        </button>`;
+                } else if (type === 'found') {
+                    // For found items - show appropriate button based on status
+                    if (item.status === 'active' || !item.status) {
+                        buttonHtml = `<button class="btn btn-primary btn-sm btn-block" style="margin-top: 0.75rem; background: #008080;" onclick="event.stopPropagation(); markAsClaimed(${item.id})">
+                                                <i class="fas fa-gift"></i> Mark as Claimed
+                                            </button>`;
+                    } else if (item.status === 'claimed') {
+                        buttonHtml = `<div style="margin-top: 0.75rem; padding: 0.5rem; background: #fef3c7; border-radius: 0.5rem; text-align: center; font-size: 0.8rem;">
+                                                <i class="fas fa-clock"></i> ⏳ Awaiting owner confirmation
+                                            </div>`;
+                    } else if (item.status === 'returned') {
+                        buttonHtml = `<div style="margin-top: 0.75rem; padding: 0.5rem; background: #d1fae5; border-radius: 0.5rem; text-align: center; font-size: 0.8rem;">
+                                                <i class="fas fa-check-circle"></i> ✅ Returned! You received ${item.starRatingGiven || 0} stars
+                                            </div>`;
+                    }
+                }
+                            
+                return `
+                                        <div class="item-card">
+                                            <div class="card-image" onclick="location.href='/Items/Detail/${item.id}'">
+                                                ${item.photoUrl ? `<img src="${item.photoUrl}" alt="${item.name}">` : (type === 'lost' ? '🔴' : '🟢')}
+                                            </div>
+                                            <div class="card-content">
+                                                <div class="card-title">${escapeHtml(item.name)}</div>
+                                                <div class="card-details">
+                                                    <i class="fas fa-map-marker-alt"></i> ${escapeHtml(item.location)}<br/>
+                                                    <i class="fas fa-calendar"></i> ${escapeHtml(item.date)}
+                                                </div>
+                                                <span class="badge ${type === 'lost' ? 'badge-lost' : 'badge-found'}">
+                                                    ${type === 'lost' ? 'LOST' : 'FOUND'}
+                                                </span>
+                                                ${buttonHtml}
+                                            </div>
+                                        </div>
+                                    `;
+            }).join('')}
+                            </div>`;
         }
 
         function escapeHtml(str) {
@@ -255,6 +617,368 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
                 if (m === '>') return '&gt;';
                 return m;
             });
+        }
+
+        // ========== MARK AS CLAIMED ==========
+        async function markAsClaimed(itemId) {
+            if (confirm('Mark this item as claimed? The owner will be notified to confirm pickup and rate you.')) {
+                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                const response = await fetch(`/Items/MarkClaimed/${itemId}`, {
+                    method: 'POST',
+                    headers: { 'RequestVerificationToken': token }
+                });
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('Failed to mark item as claimed.');
+                }
+            }
+        }
+
+        // ========== MARK AS FOUND WITH REWARD ==========
+        function showMarkFoundModal(itemId, itemName) {
+            currentMarkFoundItemId = itemId;
+            document.getElementById('markFoundItemName').textContent = itemName;
+
+            document.getElementById('helperSearch').value = '';
+            document.getElementById('selectedHelperId').value = '';
+            document.getElementById('selectedHelperName').value = '';
+            document.getElementById('searchResults').style.display = 'none';
+            document.getElementById('selectedHelperDisplay').style.display = 'none';
+            document.getElementById('starRatingGroup').style.display = 'none';
+            document.getElementById('thankYouGroup').style.display = 'none';
+            document.getElementById('confirmRewardBtn').style.display = 'none';
+            document.getElementById('starRatingValue').value = 0;
+            document.getElementById('thankYouMessage').value = '';
+            
+            document.getElementById('searchStep').style.display = 'block';
+            
+            document.querySelectorAll('#markFoundModal .star').forEach(star => {
+                star.textContent = '☆';
+                star.style.color = '#d1d5db';
+            });
+
+            document.getElementById('markFoundModal').style.display = 'flex';
+        }
+
+        function closeMarkFoundModal() {
+            document.getElementById('markFoundModal').style.display = 'none';
+        }
+
+        function changeHelper() {
+            document.getElementById('selectedHelperDisplay').style.display = 'none';
+            document.getElementById('searchStep').style.display = 'block';
+            document.getElementById('selectedHelperId').value = '';
+            document.getElementById('selectedHelperName').value = '';
+            document.getElementById('helperSearch').value = '';
+            document.getElementById('starRatingGroup').style.display = 'none';
+            document.getElementById('thankYouGroup').style.display = 'none';
+            document.getElementById('confirmRewardBtn').style.display = 'none';
+        }
+
+        document.getElementById('helperSearch').addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const term = this.value.trim();
+            const resultsDiv = document.getElementById('searchResults');
+
+            document.getElementById('selectedHelperDisplay').style.display = 'none';
+            document.getElementById('selectedHelperId').value = '';
+            document.getElementById('selectedHelperName').value = '';
+
+            if (term.length < 2) {
+                resultsDiv.style.display = 'none';
+                resultsDiv.innerHTML = '';
+                return;
+            }
+
+            searchTimeout = setTimeout(async () => {
+                try {
+                    const response = await fetch(`/Items/GetUsersForSearch?term=${encodeURIComponent(term)}`);
+                    const users = await response.json();
+
+                    if (users.length === 0) {
+                        resultsDiv.innerHTML = '<div class="search-result-item" style="color: #6b7280;">No users found</div>';
+                        resultsDiv.style.display = 'block';
+                        return;
+                    }
+
+                    resultsDiv.innerHTML = users.map(user => `
+                                <div class="search-result-item" onclick="selectHelper(${user.id}, '${escapeHtml(user.name)}', '${escapeHtml(user.email)}')">
+                                    <div class="search-result-name">${escapeHtml(user.name)}</div>
+                                    <div class="search-result-email">${escapeHtml(user.email)}</div>
+                                </div>
+                            `).join('');
+                    resultsDiv.style.display = 'block';
+                } catch (error) {
+                    console.error('Search error:', error);
+                }
+            }, 300);
+        });
+
+        function selectHelper(id, name, email) {
+            document.getElementById('selectedHelperId').value = id;
+            document.getElementById('selectedHelperName').value = name;
+            
+            document.getElementById('searchStep').style.display = 'none';
+            document.getElementById('searchResults').style.display = 'none';
+            document.getElementById('searchResults').innerHTML = '';
+            
+            const displayDiv = document.getElementById('selectedHelperDisplay');
+            document.getElementById('selectedHelperDisplayName').innerHTML = `<i class="fas fa-user"></i> ${escapeHtml(name)}`;
+            document.getElementById('selectedHelperDisplayEmail').innerHTML = `<i class="fas fa-envelope"></i> ${escapeHtml(email)}`;
+            displayDiv.style.display = 'block';
+            
+            document.getElementById('starRatingGroup').style.display = 'block';
+            document.getElementById('thankYouGroup').style.display = 'block';
+            document.getElementById('confirmRewardBtn').style.display = 'block';
+        }
+
+        function skipReward() {
+            submitMarkFoundWithReward(true);
+        }
+
+        function setStarRating(rating) {
+            document.getElementById('starRatingValue').value = rating;
+            const stars = document.querySelectorAll('#markFoundModal .star');
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.textContent = '★';
+                    star.style.color = '#f59e0b';
+                } else {
+                    star.textContent = '☆';
+                    star.style.color = '#d1d5db';
+                }
+            });
+        }
+
+        async function submitMarkFoundWithReward(skip = false) {
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            let helperId = null;
+            let starRating = null;
+            let thankYouMessage = null;
+
+            if (!skip) {
+                helperId = parseInt(document.getElementById('selectedHelperId').value);
+                starRating = parseInt(document.getElementById('starRatingValue').value);
+                thankYouMessage = document.getElementById('thankYouMessage').value;
+
+                if (!helperId) {
+                    alert('Please search and select the person who helped you, or click "Nobody helped".');
+                    return;
+                }
+
+                if (starRating === 0) {
+                    alert('Please select a star rating (1-5).');
+                    return;
+                }
+            }
+
+            const requestBody = {
+                helperId: helperId,
+                starRating: starRating,
+                thankYouMessage: thankYouMessage
+            };
+
+            try {
+                const response = await fetch(`/Items/MarkFoundWithReward/${currentMarkFoundItemId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    if (skip) {
+                        alert('Item marked as found!');
+                    } else {
+                        alert(`Thank you! ${document.getElementById('selectedHelperName').value} has been notified and received ${starRating} stars.`);
+                    }
+                    closeMarkFoundModal();
+                    location.reload();
+                } else {
+                    alert(result.error || 'Failed to mark item as found. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            }
+        }
+
+        // ========== CLAIM MODAL FUNCTIONS ==========
+        function showClaimModal(itemId, itemName) {
+            currentClaimItemId = itemId;
+            document.getElementById('claimItemName').textContent = itemName;
+
+            fetch('/Profile/GetCurrentUser')
+                .then(res => res.json())
+                .then(user => {
+                    document.getElementById('claimUserName').textContent = user.fullName;
+                    document.getElementById('claimUserEmail').textContent = user.email;
+                    document.getElementById('claimUserPhone').textContent = user.contactNumber || 'Not provided';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('claimUserName').textContent = 'Error loading';
+                    document.getElementById('claimUserEmail').textContent = 'Error loading';
+                    document.getElementById('claimUserPhone').textContent = 'Error loading';
+                });
+
+            document.getElementById('claimModal').style.display = 'flex';
+            document.getElementById('claimMessage').value = '';
+        }
+
+        function closeClaimModal() {
+            document.getElementById('claimModal').style.display = 'none';
+        }
+
+        async function submitClaim() {
+            const message = document.getElementById('claimMessage').value;
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+            const requestBody = {
+                itemId: currentClaimItemId,
+                message: message
+            };
+
+            try {
+                const response = await fetch('/Items/ClaimFound', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('Notification sent! The finder will contact you soon.');
+                    closeClaimModal();
+                    location.reload();
+                } else {
+                    alert(result.error || 'Failed to send notification. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            }
+        }
+
+        // ========== CONFIRM RETURN MODAL FUNCTIONS ==========
+        function showConfirmReturnModal(itemId, itemName) {
+            currentReturnItemId = itemId;
+            document.getElementById('confirmItemName').textContent = itemName;
+
+            fetch(`/Items/GetFinderInfo/${itemId}`)
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('finderName').textContent = data.finderName;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('finderName').textContent = 'the finder';
+                });
+
+            document.getElementById('confirmReturnModal').style.display = 'flex';
+            document.getElementById('starRatingValueConfirm').value = 0;
+            document.getElementById('thankYouMessageConfirm').value = '';
+
+            document.querySelectorAll('#confirmReturnModal .star').forEach(star => {
+                star.textContent = '☆';
+                star.style.color = '#d1d5db';
+            });
+        }
+
+        function closeConfirmReturnModal() {
+            document.getElementById('confirmReturnModal').style.display = 'none';
+        }
+
+        function setStarRatingConfirm(rating) {
+            document.getElementById('starRatingValueConfirm').value = rating;
+            document.querySelectorAll('#confirmReturnModal .star').forEach((star, index) => {
+                if (index < rating) {
+                    star.textContent = '★';
+                    star.style.color = '#f59e0b';
+                } else {
+                    star.textContent = '☆';
+                    star.style.color = '#d1d5db';
+                }
+            });
+        }
+
+        async function submitConfirmReturn() {
+            const starRating = parseInt(document.getElementById('starRatingValueConfirm').value);
+            if (starRating === 0) {
+                alert('Please select a star rating (1-5).');
+                return;
+            }
+
+            const thankYouMessage = document.getElementById('thankYouMessageConfirm').value;
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+            try {
+                const response = await fetch(`/Items/ConfirmReturn/${currentReturnItemId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify({
+                        starRating: starRating,
+                        thankYouMessage: thankYouMessage
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('Thank you! The finder has been notified and received stars.');
+                    closeConfirmReturnModal();
+                    location.reload();
+                } else {
+                    alert(result.error || 'Failed to confirm return. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            }
+        }
+
+        // Star rating click handlers
+        document.addEventListener('click', function(e) {
+            if (e.target.classList && e.target.classList.contains('star')) {
+                if (e.target.closest('#markFoundModal')) {
+                    const value = parseInt(e.target.getAttribute('data-value'));
+                    setStarRating(value);
+                } else if (e.target.closest('#confirmReturnModal')) {
+                    const value = parseInt(e.target.getAttribute('data-value'));
+                    setStarRatingConfirm(value);
+                }
+            }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const searchInput = document.getElementById('helperSearch');
+            const resultsDiv = document.getElementById('searchResults');
+            if (searchInput && resultsDiv && !searchInput.contains(e.target) && !resultsDiv.contains(e.target)) {
+                resultsDiv.style.display = 'none';
+            }
+        });
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const markFoundModal = document.getElementById('markFoundModal');
+            if (event.target === markFoundModal) closeMarkFoundModal();
+            const claimModal = document.getElementById('claimModal');
+            if (event.target === claimModal) closeClaimModal();
+            const confirmModal = document.getElementById('confirmReturnModal');
+            if (event.target === confirmModal) closeConfirmReturnModal();
         }
 
         loadDashboard();

@@ -82,7 +82,7 @@ else
 
 @Html.AntiForgeryToken()
 
-<!-- Modal for I Found This Item (Existing) -->
+<!-- Modal for I Found This Item (when OTHER user found your item) -->
 <div id="foundModal" class="modal" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
@@ -109,7 +109,7 @@ else
     </div>
 </div>
 
-<!-- Modal for Mark as Found with Reward -->
+<!-- Modal for Mark as Found with Reward (when YOU mark YOUR item as found) -->
 <div id="markFoundModal" class="modal" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
@@ -119,15 +119,31 @@ else
         <div class="modal-body">
             <p>Marking as found: <strong id="markFoundItemName"></strong></p>
 
-            <div class="form-group">
+            <!-- Step 1: Search for helper -->
+            <div id="searchStep" class="form-group">
                 <label><i class="fas fa-user-friends"></i> Who helped you find this item?</label>
-                <input type="text" id="helperSearch" class="form-control" placeholder="Search by name or email..." autocomplete="off" />
-                <div id="searchResults" class="search-results-dropdown" style="display: none;"></div>
-                <input type="hidden" id="selectedHelperId" value="" />
-                <input type="hidden" id="selectedHelperName" value="" />
-                <small style="color: #6B7280;">Search for the person who helped you, or skip if nobody helped.</small>
+                <div class="search-container">
+                    <input type="text" id="helperSearch" class="form-control" placeholder="Type name or email..." autocomplete="off" />
+                    <div id="searchResults" class="search-results-dropdown" style="display: none;"></div>
+                </div>
+                <small style="color: #6B7280; display: block; margin-top: 0.5rem;">Search for the person who helped you, or click "Nobody helped" below.</small>
             </div>
 
+            <!-- Step 2: Selected helper display (replaces search after selection) -->
+            <div id="selectedHelperDisplay" style="display: none;" class="selected-helper-info">
+                <div class="selected-helper-name">
+                    <i class="fas fa-user-check"></i> <span id="selectedHelperDisplayName"></span>
+                </div>
+                <div class="selected-helper-email" id="selectedHelperDisplayEmail"></div>
+                <button type="button" class="btn btn-sm btn-outline" style="margin-top: 0.5rem; font-size: 0.7rem;" onclick="changeHelper()">
+                    <i class="fas fa-edit"></i> Change Helper
+                </button>
+            </div>
+
+            <input type="hidden" id="selectedHelperId" value="" />
+            <input type="hidden" id="selectedHelperName" value="" />
+
+            <!-- Step 3: Star rating (appears after helper selected) -->
             <div class="form-group" id="starRatingGroup" style="display: none;">
                 <label><i class="fas fa-star"></i> Rate the Helper (1-5 stars)</label>
                 <div class="star-rating">
@@ -141,6 +157,7 @@ else
                 <small style="color: #6B7280;">Your rating helps recognize helpful students!</small>
             </div>
 
+            <!-- Step 4: Thank you message (appears after helper selected) -->
             <div class="form-group" id="thankYouGroup" style="display: none;">
                 <label><i class="fas fa-comment"></i> Thank You Message (Optional):</label>
                 <textarea id="thankYouMessage" class="form-control" rows="3" placeholder="Thank you for helping me find my item! I really appreciate it..."></textarea>
@@ -260,6 +277,7 @@ else
         font-size: 0.875rem;
         font-family: inherit;
         resize: vertical;
+        box-sizing: border-box;
     }
 
         .form-control:focus {
@@ -306,24 +324,38 @@ else
         outline: none;
     }
 
-    /* Search Results Dropdown */
+    /* Improved Search Results Dropdown */
+    .search-container {
+        position: relative;
+    }
+
     .search-results-dropdown {
         position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
         background: white;
         border: 1px solid #e5e7eb;
         border-radius: 0.5rem;
         max-height: 200px;
         overflow-y: auto;
         z-index: 1001;
-        width: calc(100% - 3rem);
         box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        margin-top: 0.25rem;
     }
 
     .search-result-item {
-        padding: 0.75rem;
+        display: flex;
+        flex-direction: column;
+        padding: 0.6rem 0.75rem;
         cursor: pointer;
         border-bottom: 1px solid #f3f4f6;
+        transition: background 0.2s;
     }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
 
         .search-result-item:hover {
             background: #f0f9f9;
@@ -331,20 +363,40 @@ else
 
     .search-result-name {
         font-weight: 600;
-        font-size: 0.875rem;
+        font-size: 0.8rem;
+        color: #1f2937;
+        margin-bottom: 0.15rem;
     }
 
     .search-result-email {
-        font-size: 0.7rem;
+        font-size: 0.65rem;
         color: #6b7280;
+        word-break: break-all;
     }
 
-    .selected-helper {
+    /* Selected Helper Display */
+    .selected-helper-info {
         background: #f0f9f9;
-        padding: 0.75rem;
+        padding: 0.6rem 0.75rem;
         border-radius: 0.5rem;
         margin-top: 0.5rem;
         border-left: 3px solid #008080;
+    }
+
+    .selected-helper-name {
+        font-weight: 600;
+        font-size: 0.8rem;
+        color: #008080;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .selected-helper-email {
+        font-size: 0.7rem;
+        color: #6b7280;
+        margin-top: 0.2rem;
+        word-break: break-all;
     }
 
     @@keyframes slideIn {
@@ -385,22 +437,7 @@ else
         let currentMarkFoundItemId = 0;
         let searchTimeout;
 
-        // ========== I FOUND THIS ITEM (EXISTING) ==========
-        async function markAsFound(itemId) {
-            if (confirm('Mark this item as found? It will be removed from lost items.')) {
-                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-                const response = await fetch(`/Items/MarkFound/${itemId}`, {
-                    method: 'POST',
-                    headers: { 'RequestVerificationToken': token }
-                });
-                if (response.ok) {
-                    location.reload();
-                } else {
-                    alert('Failed to mark item as found.');
-                }
-            }
-        }
-
+        // ========== I FOUND THIS ITEM (OTHER USER) ==========
         function showFoundModal(itemId, itemName) {
             currentItemId = itemId;
             document.getElementById('modalItemName').textContent = itemName;
@@ -460,21 +497,27 @@ else
             }
         }
 
-        // ========== MARK AS FOUND WITH REWARD ==========
+        // ========== MARK AS FOUND WITH REWARD (OWNER) ==========
         function showMarkFoundModal(itemId, itemName) {
             currentMarkFoundItemId = itemId;
             document.getElementById('markFoundItemName').textContent = itemName;
 
+            // Reset all fields
             document.getElementById('helperSearch').value = '';
             document.getElementById('selectedHelperId').value = '';
             document.getElementById('selectedHelperName').value = '';
             document.getElementById('searchResults').style.display = 'none';
+            document.getElementById('selectedHelperDisplay').style.display = 'none';
             document.getElementById('starRatingGroup').style.display = 'none';
             document.getElementById('thankYouGroup').style.display = 'none';
             document.getElementById('confirmRewardBtn').style.display = 'none';
             document.getElementById('starRatingValue').value = 0;
             document.getElementById('thankYouMessage').value = '';
-
+            
+            // Make sure search step is visible
+            document.getElementById('searchStep').style.display = 'block';
+            
+            // Reset stars
             document.querySelectorAll('#markFoundModal .star').forEach(star => {
                 star.textContent = '☆';
                 star.style.color = '#d1d5db';
@@ -485,6 +528,24 @@ else
 
         function closeMarkFoundModal() {
             document.getElementById('markFoundModal').style.display = 'none';
+        }
+
+        function changeHelper() {
+            // Hide selected display
+            document.getElementById('selectedHelperDisplay').style.display = 'none';
+            
+            // Show search step again
+            document.getElementById('searchStep').style.display = 'block';
+            
+            // Clear selections
+            document.getElementById('selectedHelperId').value = '';
+            document.getElementById('selectedHelperName').value = '';
+            document.getElementById('helperSearch').value = '';
+            
+            // Hide star rating and thank you
+            document.getElementById('starRatingGroup').style.display = 'none';
+            document.getElementById('thankYouGroup').style.display = 'none';
+            document.getElementById('confirmRewardBtn').style.display = 'none';
         }
 
         document.getElementById('helperSearch').addEventListener('input', function() {
@@ -510,11 +571,11 @@ else
                     }
 
                     resultsDiv.innerHTML = users.map(user => `
-                        <div class="search-result-item" onclick="selectHelper(${user.id}, '${user.name.replace(/'/g, "\\'")}', '${user.email}')">
-                            <div class="search-result-name">${user.name}</div>
-                            <div class="search-result-email">${user.email}</div>
-                        </div>
-                    `).join('');
+                                <div class="search-result-item" onclick="selectHelper(${user.id}, '${escapeHtml(user.name)}', '${escapeHtml(user.email)}')">
+                                    <div class="search-result-name">${escapeHtml(user.name)}</div>
+                                    <div class="search-result-email">${escapeHtml(user.email)}</div>
+                                </div>
+                            `).join('');
                     resultsDiv.style.display = 'block';
                 } catch (error) {
                     console.error('Search error:', error);
@@ -522,13 +583,33 @@ else
             }, 300);
         });
 
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
         function selectHelper(id, name, email) {
+            // Set hidden fields
             document.getElementById('selectedHelperId').value = id;
             document.getElementById('selectedHelperName').value = name;
-            document.getElementById('helperSearch').value = `${name} (${email})`;
+            
+            // Hide search step
+            document.getElementById('searchStep').style.display = 'none';
             document.getElementById('searchResults').style.display = 'none';
             document.getElementById('searchResults').innerHTML = '';
-
+            
+            // Show selected helper display
+            const displayDiv = document.getElementById('selectedHelperDisplay');
+            document.getElementById('selectedHelperDisplayName').innerHTML = `<i class="fas fa-user"></i> ${escapeHtml(name)}`;
+            document.getElementById('selectedHelperDisplayEmail').innerHTML = `<i class="fas fa-envelope"></i> ${escapeHtml(email)}`;
+            displayDiv.style.display = 'block';
+            
+            // Show star rating and thank you message
             document.getElementById('starRatingGroup').style.display = 'block';
             document.getElementById('thankYouGroup').style.display = 'block';
             document.getElementById('confirmRewardBtn').style.display = 'block';
@@ -609,14 +690,15 @@ else
             }
         }
 
+        // Star rating click handler
         document.addEventListener('click', function(e) {
-            if (e.target.classList && e.target.classList.contains('star') &&
-                e.target.closest('#markFoundModal')) {
+            if (e.target.classList && e.target.classList.contains('star') && e.target.closest('#markFoundModal')) {
                 const value = parseInt(e.target.getAttribute('data-value'));
                 setStarRating(value);
             }
         });
 
+        // Close dropdown when clicking outside
         document.addEventListener('click', function(e) {
             const searchInput = document.getElementById('helperSearch');
             const resultsDiv = document.getElementById('searchResults');
@@ -625,6 +707,7 @@ else
             }
         });
 
+        // Close modals when clicking outside
         window.onclick = function(event) {
             const foundModal = document.getElementById('foundModal');
             if (event.target === foundModal) closeFoundModal();

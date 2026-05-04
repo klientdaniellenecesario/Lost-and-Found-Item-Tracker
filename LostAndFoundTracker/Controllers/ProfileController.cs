@@ -34,17 +34,17 @@ namespace LostAndFoundTracker.Controllers
                 return RedirectToAction("Login", "Account");
 
             var myLostItems = await _context.Items
-                .Where(i => i.UserId == userId.Value && i.Type == "lost" && !i.IsResolved)
+                .Where(i => i.UserId == userId.Value && i.Type == "lost" && i.Status != "returned")
                 .OrderByDescending(i => i.Date)
                 .ToListAsync();
 
             var myFoundItems = await _context.Items
-                .Where(i => i.UserId == userId.Value && i.Type == "found" && !i.IsResolved)
+                .Where(i => i.UserId == userId.Value && i.Type == "found" && i.Status != "returned")
                 .OrderByDescending(i => i.Date)
                 .ToListAsync();
 
             var myResolvedItems = await _context.Items
-                .Where(i => i.UserId == userId.Value && i.IsResolved)
+                .Where(i => i.UserId == userId.Value && i.Status == "returned")
                 .OrderByDescending(i => i.Date)
                 .ToListAsync();
 

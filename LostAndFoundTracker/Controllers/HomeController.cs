@@ -64,15 +64,15 @@ namespace LostAndFoundTracker.Controllers
                 });
             }
 
-            // Stats counts
-            var lostCount = await _context.Items.CountAsync(i => i.Type == "lost" && !i.IsResolved);
-            var foundCount = await _context.Items.CountAsync(i => i.Type == "found" && !i.IsResolved);
-            var resolvedCount = await _context.Items.CountAsync(i => i.IsResolved);
+            // Stats counts - FIXED: replaced !i.IsResolved with i.Status != "returned"
+            var lostCount = await _context.Items.CountAsync(i => i.Type == "lost" && i.Status != "returned");
+            var foundCount = await _context.Items.CountAsync(i => i.Type == "found" && i.Status != "returned");
+            var resolvedCount = await _context.Items.CountAsync(i => i.Status == "returned");
             var myItemsCount = await _context.Items.CountAsync(i => i.UserId == userId.Value);
 
-            // MY LOST ITEMS (only items the current user reported as lost)
+            // MY LOST ITEMS - FIXED: replaced !i.IsResolved with i.Status != "returned"
             var myLostItems = await _context.Items
-                .Where(i => i.UserId == userId.Value && i.Type == "lost" && !i.IsResolved)
+                .Where(i => i.UserId == userId.Value && i.Type == "lost" && i.Status != "returned")
                 .OrderByDescending(i => i.Date)
                 .Take(6)
                 .Select(i => new
@@ -82,13 +82,14 @@ namespace LostAndFoundTracker.Controllers
                     location = i.Location,
                     date = i.Date.ToString("MMM dd, yyyy"),
                     type = i.Type,
-                    photoUrl = i.PhotoUrl ?? ""
+                    photoUrl = i.PhotoUrl ?? "",
+                    status = i.Status ?? "active"
                 })
                 .ToListAsync();
 
-            // MY FOUND ITEMS (only items the current user reported as found)
+            // MY FOUND ITEMS - FIXED: replaced !i.IsResolved with i.Status != "returned"
             var myFoundItems = await _context.Items
-                .Where(i => i.UserId == userId.Value && i.Type == "found" && !i.IsResolved)
+                .Where(i => i.UserId == userId.Value && i.Type == "found" && i.Status != "returned")
                 .OrderByDescending(i => i.Date)
                 .Take(6)
                 .Select(i => new
@@ -98,7 +99,9 @@ namespace LostAndFoundTracker.Controllers
                     location = i.Location,
                     date = i.Date.ToString("MMM dd, yyyy"),
                     type = i.Type,
-                    photoUrl = i.PhotoUrl ?? ""
+                    photoUrl = i.PhotoUrl ?? "",
+                    status = i.Status ?? "active",
+                    starRatingGiven = i.StarRatingGiven ?? 0
                 })
                 .ToListAsync();
 
@@ -143,7 +146,7 @@ namespace LostAndFoundTracker.Controllers
                     i.Id,
                     i.Name,
                     i.Type,
-                    i.IsResolved,
+                    Status = i.Status,  // Changed from IsResolved
                     i.UserId,
                     i.Date,
                     i.Location

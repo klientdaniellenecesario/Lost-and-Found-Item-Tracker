@@ -203,5 +203,17 @@
             }
             return true;
         });
+
+        // Auto-select based on where user came from
+        document.addEventListener('DOMContentLoaded', function() {
+            const referrer = document.referrer;
+            if (referrer.includes('/Items/LostItems')) {
+                setType('lost');
+            } else if (referrer.includes('/Items/FoundItems')) {
+                setType('found');
+            } else {
+                setType('lost');
+            }
+        });
     </script>
 }

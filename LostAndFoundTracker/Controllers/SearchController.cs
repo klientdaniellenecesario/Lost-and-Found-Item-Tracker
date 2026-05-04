@@ -28,7 +28,8 @@ namespace LostAndFoundTracker.Controllers
         [HttpGet]
         public async Task<IActionResult> Results(string keyword, string category, string location, string type)
         {
-            var query = _context.Items.Where(i => !i.IsResolved).AsQueryable();
+            // Changed: !i.IsResolved to i.Status != "returned"
+            var query = _context.Items.Where(i => i.Status != "returned").AsQueryable();
 
             if (!string.IsNullOrEmpty(keyword))
                 query = query.Where(i => i.Name.Contains(keyword) || i.Description.Contains(keyword));

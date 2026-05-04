@@ -53,135 +53,25 @@
                 <p style="font-size: 0.75rem; margin-top: 0.5rem;"><i class="fas fa-shield-alt"></i> This information is only visible to logged-in users</p>
             </div>
 
-            @* ========== NON-OWNER BUTTONS ========== *@
-            @if (!isOwner)
-            {
-                if (Model.Type == "lost" && !Model.IsResolved)
-                {
-                    <button type="button" class="btn btn-warning btn-block" style="background: #f59e0b; border-color: #f59e0b;" onclick="showFoundModal(@Model.Id, '@Model.Name.Replace("'", "\\'")')">
-                        <i class="fas fa-hand-holding-heart"></i> I found this item
-                    </button>
-                    <p style="font-size: 0.8rem; margin-top: 0.5rem; margin-bottom: 1rem; color: #6B7280;">
-                        Clicking this will notify the owner that you have found their item.
-                    </p>
-                }
-                else if (Model.Type == "found" && !Model.IsResolved)
-                {
-                    <button type="button" class="btn btn-success btn-block" style="background: #10B981; border-color: #10B981;" onclick="showClaimModal(@Model.Id, '@Model.Name.Replace("'", "\\'")')">
-                        <i class="fas fa-user-check"></i> This is my item
-                    </button>
-                    <p style="font-size: 0.8rem; margin-top: 0.5rem; margin-bottom: 1rem; color: #6B7280;">
-                        Clicking this will notify the finder that this item belongs to you.
-                    </p>
-                }
-            }
-
-            @* ========== OWNER BUTTONS ========== *@
+            @* ========== OWNER BUTTONS ONLY ========== *@
             @if (isOwner)
             {
-                if (!Model.IsResolved)
-                {
-                    <a href="/Items/Edit/@Model.Id" class="btn btn-warning btn-block" style="margin-bottom: 0.5rem; background: #f59e0b; border-color: #f59e0b;">
-                        <i class="fas fa-edit"></i> Edit Item
-                    </a>
+                <a href="/Items/Edit/@Model.Id" class="btn btn-warning btn-block" style="margin-bottom: 0.75rem; background: #f59e0b; border-color: #f59e0b;">
+                    <i class="fas fa-edit"></i> Edit Item
+                </a>
 
-                    <form asp-action="Delete" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('Are you sure you want to delete this report? This action cannot be undone.');" style="margin-bottom: 0.5rem;">
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="btn btn-danger btn-block" style="background: #dc2626; border-color: #dc2626;">
-                            <i class="fas fa-trash"></i> Delete Item
-                        </button>
-                    </form>
-
-                    if (Model.Type == "lost")
-                    {
-                        <form asp-action="MarkFound" asp-route-id="@Model.Id" method="post">
-                            @Html.AntiForgeryToken()
-                            <button type="submit" class="btn btn-success btn-block">
-                                <i class="fas fa-check"></i> Mark as Found
-                            </button>
-                        </form>
-                    }
-                    else if (Model.Type == "found")
-                    {
-                        <form asp-action="MarkClaimed" asp-route-id="@Model.Id" method="post">
-                            @Html.AntiForgeryToken()
-                            <button type="submit" class="btn btn-primary btn-block">
-                                <i class="fas fa-gift"></i> Mark as Claimed
-                            </button>
-                        </form>
-                    }
-                }
-                else
-                {
-                    // Resolved: only Delete (Reuse removed)
-                    <form asp-action="Delete" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('Are you sure you want to delete this report? This action cannot be undone.');" style="margin-bottom: 0.5rem;">
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="btn btn-danger btn-block" style="background: #dc2626; border-color: #dc2626;">
-                            <i class="fas fa-trash"></i> Delete Item
-                        </button>
-                    </form>
-                }
+                <form asp-action="Delete" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('Are you sure you want to delete this report? This action cannot be undone.');">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger btn-block" style="background: #dc2626; border-color: #dc2626;">
+                        <i class="fas fa-trash"></i> Delete Item
+                    </button>
+                </form>
             }
 
-            <!-- Back button uses ViewBag.ReturnUrl -->
-            <a href="@ViewBag.ReturnUrl" class="btn btn-outline btn-block">
+            <!-- Back button -->
+            <a href="@ViewBag.ReturnUrl" class="btn btn-outline btn-block" style="margin-top: 1rem;">
                 <i class="fas fa-arrow-left"></i> Back to Results
             </a>
-        </div>
-    </div>
-</div>
-
-<!-- Modals (unchanged) -->
-@Html.AntiForgeryToken()
-
-<div id="foundModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3><i class="fas fa-hand-holding-heart"></i> Report Found Item</h3>
-            <span class="modal-close" onclick="closeFoundModal()">&times;</span>
-        </div>
-        <div class="modal-body">
-            <p>You found: <strong id="modalItemName"></strong></p>
-            <p>Your information will be shared with the owner:</p>
-            <div class="user-info-preview">
-                <p><i class="fas fa-user"></i> Name: <span id="userName"></span></p>
-                <p><i class="fas fa-envelope"></i> Email: <span id="userEmail"></span></p>
-                <p><i class="fas fa-phone"></i> Phone: <span id="userPhone"></span></p>
-            </div>
-            <div class="form-group">
-                <label><i class="fas fa-comment"></i> Message to Owner:</label>
-                <textarea id="foundMessage" class="form-control" rows="3" placeholder="I found your item! Please contact me to arrange pickup..."></textarea>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-outline" onclick="closeFoundModal()">Cancel</button>
-            <button class="btn btn-primary" onclick="submitFoundMatch()">Send Notification</button>
-        </div>
-    </div>
-</div>
-
-<div id="claimModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3><i class="fas fa-user-check"></i> Claim This Item</h3>
-            <span class="modal-close" onclick="closeClaimModal()">&times;</span>
-        </div>
-        <div class="modal-body">
-            <p>You are claiming: <strong id="claimItemName"></strong></p>
-            <p>Your information will be shared with the finder:</p>
-            <div class="user-info-preview">
-                <p><i class="fas fa-user"></i> Name: <span id="claimUserName"></span></p>
-                <p><i class="fas fa-envelope"></i> Email: <span id="claimUserEmail"></span></p>
-                <p><i class="fas fa-phone"></i> Phone: <span id="claimUserPhone"></span></p>
-            </div>
-            <div class="form-group">
-                <label><i class="fas fa-comment"></i> Message to Finder:</label>
-                <textarea id="claimMessage" class="form-control" rows="3" placeholder="This item belongs to me! Please contact me to return it..."></textarea>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-outline" onclick="closeClaimModal()">Cancel</button>
-            <button class="btn btn-primary" onclick="submitClaim()">Send Notification</button>
         </div>
     </div>
 </div>
@@ -189,151 +79,11 @@
 <style>
     .badge-lost { background: #fee2e2; color: #dc2626; }
     .badge-found { background: #d1fae5; color: #10b981; }
-    .btn-warning { color: white; background: #f59e0b; border-color: #f59e0b; }
+    .btn-warning { color: white; background: #f59e0b; border-color: #f59e0b; padding: 0.75rem; border-radius: 0.5rem; font-weight: 500; cursor: pointer; border: none; display: block; width: 100%; text-align: center; text-decoration: none; }
     .btn-warning:hover { background: #d97706; }
-    .btn-danger { color: white; background: #dc2626; border-color: #dc2626; }
+    .btn-danger { color: white; background: #dc2626; border-color: #dc2626; padding: 0.75rem; border-radius: 0.5rem; font-weight: 500; cursor: pointer; border: none; display: block; width: 100%; text-align: center; }
     .btn-danger:hover { background: #b91c1c; }
-    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 2000; }
-    .modal-content { background: white; border-radius: 1rem; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; animation: slideIn 0.3s ease; }
-    .modal-header { padding: 1rem 1.5rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; }
-    .modal-header h3 { margin: 0; color: #008080; }
-    .modal-header h3 i { margin-right: 0.5rem; }
-    .modal-close { font-size: 1.5rem; cursor: pointer; color: #6b7280; }
-    .modal-close:hover { color: #374151; }
-    .modal-body { padding: 1.5rem; }
-    .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 0.5rem; }
-    .user-info-preview { background: #f0f9f9; padding: 1rem; border-radius: 0.5rem; margin: 1rem 0; border-left: 3px solid #008080; }
-    .user-info-preview p { margin: 0.25rem 0; font-size: 0.875rem; }
-    .user-info-preview i { width: 20px; color: #008080; }
-    .form-group { margin-bottom: 1rem; }
-    .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.875rem; color: #374151; }
-    .form-group label i { margin-right: 0.5rem; color: #008080; }
-    .form-control { width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 0.875rem; font-family: inherit; resize: vertical; }
-    .form-control:focus { outline: none; border-color: #008080; box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.1); }
-    @@keyframes slideIn { from { opacity: 0; transform: translateY(-50px); } to { opacity: 1; transform: translateY(0); } }
-    @@media (max-width: 640px) { .modal-content { width: 95%; margin: 1rem; } .modal-footer { flex-direction: column; } .modal-footer .btn { width: 100%; } }
+    .btn-outline { background: transparent; border: 1px solid #008080; color: #008080; border-radius: 0.5rem; padding: 0.75rem; text-decoration: none; display: block; width: 100%; text-align: center; cursor: pointer; font-weight: 500; }
+    .btn-outline:hover { background: #e6f3f3; }
+    .btn-block { width: 100%; display: block; text-align: center; }
 </style>
-
-@section Scripts {
-    <script>
-        let currentItemId = 0;
-        let currentClaimItemId = 0;
-
-        function showFoundModal(itemId, itemName) {
-            currentItemId = itemId;
-            document.getElementById('modalItemName').textContent = itemName;
-
-            fetch('/Profile/GetCurrentUser')
-                .then(res => res.json())
-                .then(user => {
-                    document.getElementById('userName').textContent = user.fullName;
-                    document.getElementById('userEmail').textContent = user.email;
-                    document.getElementById('userPhone').textContent = user.contactNumber || 'Not provided';
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    document.getElementById('userName').textContent = 'Error loading';
-                    document.getElementById('userEmail').textContent = 'Error loading';
-                    document.getElementById('userPhone').textContent = 'Error loading';
-                });
-
-            document.getElementById('foundModal').style.display = 'flex';
-            document.getElementById('foundMessage').value = '';
-        }
-
-        function closeFoundModal() {
-            document.getElementById('foundModal').style.display = 'none';
-        }
-
-        async function submitFoundMatch() {
-            const message = document.getElementById('foundMessage').value;
-            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-
-            try {
-                const response = await fetch('/Items/ReportFoundMatch', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'RequestVerificationToken': token
-                    },
-                    body: JSON.stringify({ itemId: currentItemId, message: message })
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    alert('Notification sent! The owner will contact you soon.');
-                    closeFoundModal();
-                } else {
-                    alert(result.error || 'Failed to send notification. Please try again.');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('An error occurred. Please try again.');
-            }
-        }
-
-        function showClaimModal(itemId, itemName) {
-            currentClaimItemId = itemId;
-            document.getElementById('claimItemName').textContent = itemName;
-
-            fetch('/Profile/GetCurrentUser')
-                .then(res => res.json())
-                .then(user => {
-                    document.getElementById('claimUserName').textContent = user.fullName;
-                    document.getElementById('claimUserEmail').textContent = user.email;
-                    document.getElementById('claimUserPhone').textContent = user.contactNumber || 'Not provided';
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    document.getElementById('claimUserName').textContent = 'Error loading';
-                    document.getElementById('claimUserEmail').textContent = 'Error loading';
-                    document.getElementById('claimUserPhone').textContent = 'Error loading';
-                });
-
-            document.getElementById('claimModal').style.display = 'flex';
-            document.getElementById('claimMessage').value = '';
-        }
-
-        function closeClaimModal() {
-            document.getElementById('claimModal').style.display = 'none';
-        }
-
-        async function submitClaim() {
-            const message = document.getElementById('claimMessage').value;
-            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-
-            try {
-                const response = await fetch('/Items/ClaimFound', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'RequestVerificationToken': token
-                    },
-                    body: JSON.stringify({ itemId: currentClaimItemId, message: message })
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    alert('Notification sent! The finder will contact you soon.');
-                    closeClaimModal();
-                    location.reload();
-                } else {
-                    alert(result.error || 'Failed to send notification. Please try again.');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('An error occurred. Please try again.');
-            }
-        }
-
-        window.onclick = function(event) {
-            const foundModal = document.getElementById('foundModal');
-            if (event.target === foundModal) closeFoundModal();
-
-            const claimModal = document.getElementById('claimModal');
-            if (event.target === claimModal) closeClaimModal();
-        }
-    </script>
-}
