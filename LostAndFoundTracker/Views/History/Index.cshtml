@@ -1,227 +1,401 @@
 ﻿@{
-    ViewData["Title"] = "My History";
+    ViewData["Title"] = "System History";
     Layout = "~/Views/Shared/_Layout.cshtml";
-    var myLostItems = ViewBag.MyLostItems as List<LostAndFoundTracker.Models.Item> 
-                      ?? new List<LostAndFoundTracker.Models.Item>();
-    var myFoundItems = ViewBag.MyFoundItems as List<LostAndFoundTracker.Models.Item> 
-                       ?? new List<LostAndFoundTracker.Models.Item>();
-    var myResolvedItems = ViewBag.MyResolvedItems as List<LostAndFoundTracker.Models.Item> 
-                          ?? new List<LostAndFoundTracker.Models.Item>();
+    var resolvedItems = ViewBag.ResolvedItems as List<LostAndFoundTracker.Controllers.ResolvedItemDetails>
+                        ?? new List<LostAndFoundTracker.Controllers.ResolvedItemDetails>();
+    var starTransactions = ViewBag.StarTransactions as List<LostAndFoundTracker.Models.StarTransaction>
+                           ?? new List<LostAndFoundTracker.Models.StarTransaction>();
 }
 
-<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-    <div>
-        <h1><i class="fas fa-history"></i> My History</h1>
-        <p>All your lost, found, and resolved item posts.</p>
-    </div>
-    <a href="/Profile/Index" class="btn btn-outline">
-        <i class="fas fa-arrow-left"></i> Back to Profile
-    </a>
+<div class="page-header">
+    <h1><i class="fas fa-history"></i> System History</h1>
+    <p>All resolved items and community transactions</p>
 </div>
 
-<!-- Stats Summary Cards -->
-<div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 2rem; margin-bottom: 0;">
-    <div class="stat-card" style="background: white; border-radius: 1rem; padding: 1.5rem; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-        <div class="stat-icon"><i class="fas fa-frown" style="font-size: 2rem; color: #dc2626;"></i></div>
-        <div class="stat-value" style="font-size: 2rem; font-weight: 800;">@myLostItems.Count</div>
-        <div class="stat-label">Active Lost Items</div>
-    </div>
-    <div class="stat-card" style="background: white; border-radius: 1rem; padding: 1.5rem; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-        <div class="stat-icon"><i class="fas fa-smile" style="font-size: 2rem; color: #10b981;"></i></div>
-        <div class="stat-value" style="font-size: 2rem; font-weight: 800;">@myFoundItems.Count</div>
-        <div class="stat-label">Active Found Items</div>
-    </div>
-    <div class="stat-card" style="background: white; border-radius: 1rem; padding: 1.5rem; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-        <div class="stat-icon"><i class="fas fa-check-circle" style="font-size: 2rem; color: #008080;"></i></div>
-        <div class="stat-value" style="font-size: 2rem; font-weight: 800;">@myResolvedItems.Count</div>
-        <div class="stat-label">Resolved Items</div>
-    </div>
-    <div class="stat-card" style="background: white; border-radius: 1rem; padding: 1.5rem; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-        <div class="stat-icon"><i class="fas fa-clipboard-list" style="font-size: 2rem; color: #6b7280;"></i></div>
-        <div class="stat-value" style="font-size: 2rem; font-weight: 800;">@(myLostItems.Count + myFoundItems.Count + myResolvedItems.Count)</div>
-        <div class="stat-label">Your Total Reports</div>
-    </div>
-</div>
+<!-- ========== RESOLVED ITEMS SECTION ========== -->
+<div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-bottom: 2rem;">
+    <h3 style="margin-bottom: 1rem; color: #008080;">
+        <i class="fas fa-check-circle"></i> Resolved Items
+    </h3>
 
-<!-- ========== LOST POSTS ========== -->
-<div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-top: 2rem;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-        <h3 style="margin-bottom: 0; color: #dc2626;"><i class="fas fa-frown"></i> My Lost Posts</h3>
-        <a href="/Items/ReportItem" class="btn btn-sm btn-primary" style="font-size: 0.75rem;">
-            <i class="fas fa-plus"></i> Report Lost
-        </a>
-    </div>
-    @if (myLostItems.Any())
+    @if (resolvedItems.Any())
     {
-        <div class="scrollable-container">
-            <div class="cards-grid">
-                @foreach (var item in myLostItems)
-                {
-                    <div class="item-card">
-                        <div class="card-image" onclick="location.href='/Items/Detail/@item.Id?returnUrl=/History/Index'" style="cursor:pointer;">
-                            @if (!string.IsNullOrEmpty(item.PhotoUrl))
-                            {
-                                <img src="@item.PhotoUrl" alt="@item.Name" style="width: 100%; height: 150px; object-fit: cover;">
-                            }
-                            else { <span>🔴</span> }
-                        </div>
-                        <div class="card-content">
-                            <div class="card-title">@item.Name</div>
-                            <div class="card-details">
-                                <i class="fas fa-map-marker-alt"></i> @item.Location<br />
-                                <i class="fas fa-calendar"></i> @item.Date.ToString("MMM dd, yyyy")
-                            </div>
-                            <span class="badge badge-lost">LOST</span>
-                            <form method="post" action="/Items/MarkFound/@item.Id" style="margin-top: 0.75rem;">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-sm" style="width: 100%; background: #d1fae5; color: #10b981; border: none; padding: 0.5rem;">
-                                    <i class="fas fa-check"></i> Mark as Found
-                                </button>
-                            </form>
-                        </div>
+        <div class="history-list">
+            @foreach (var detail in resolvedItems)
+            {
+                var item = detail.Item;
+                var isLost = item?.Type == "lost";
+
+                <div class="history-card">
+                    <!-- Item Image -->
+                    <div class="history-card-image">
+                        @if (!string.IsNullOrEmpty(item?.PhotoUrl))
+                        {
+                            <img src="@item.PhotoUrl" alt="@item?.Name" style="width: 100%; height: 100%; object-fit: cover;">
+                        }
+                        else
+                        {
+                            <span style="font-size: 2rem;">@(isLost ? "🔴" : "🟢")</span>
+                        }
                     </div>
-                }
-            </div>
+
+                    <!-- Item Details -->
+                    <div class="history-card-content">
+                        <div class="history-card-header">
+                            <h4>@item?.Name</h4>
+                            <span class="badge @(isLost ? "badge-lost" : "badge-found")">
+                                @(isLost ? "LOST → FOUND" : "FOUND → CLAIMED")
+                            </span>
+                        </div>
+
+                        <div class="history-card-details">
+                            <p><i class="fas fa-map-marker-alt"></i> @item?.Location</p>
+                            <p><i class="fas fa-calendar"></i> Date: @(item?.Date.ToString("MMMM dd, yyyy"))</p>
+                            <p><i class="fas fa-check-circle"></i> Resolved: @(item?.ConfirmedReturnDate?.ToString("MMMM dd, yyyy") ?? "Unknown")</p>
+                        </div>
+
+                        <!-- Who was involved -->
+                        <div class="history-card-involved">
+                            @if (isLost)
+                            {
+                                <div class="involved-item">
+                                    <i class="fas fa-user-circle"></i>
+                                    <span><strong>Reported by:</strong> @detail.Poster?.FullName</span>
+                                </div>
+                                if (!string.IsNullOrEmpty(detail.HelperName))
+                                {
+                                    <div class="involved-item">
+                                        <i class="fas fa-hand-holding-heart"></i>
+                                        <span><strong>Found by:</strong> @detail.HelperName</span>
+                                    </div>
+                                    <div class="involved-contact">
+                                        <span><i class="fas fa-envelope"></i> @detail.HelperEmail</span>
+                                        <span><i class="fas fa-phone"></i> @detail.HelperContact</span>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="involved-item">
+                                    <i class="fas fa-user-circle"></i>
+                                    <span><strong>Found by:</strong> @detail.Poster?.FullName</span>
+                                </div>
+                                if (!string.IsNullOrEmpty(detail.ClaimantName))
+                                {
+                                    <div class="involved-item">
+                                        <i class="fas fa-user-check"></i>
+                                        <span><strong>Claimed by:</strong> @detail.ClaimantName</span>
+                                    </div>
+                                    <div class="involved-contact">
+                                        <span><i class="fas fa-envelope"></i> @detail.ClaimantEmail</span>
+                                        <span><i class="fas fa-phone"></i> @detail.ClaimantContact</span>
+                                    </div>
+                                }
+                            }
+
+                            @if (detail.StarsGiven.HasValue)
+                            {
+                                <div class="involved-item stars">
+                                    <i class="fas fa-star" style="color: #f59e0b;"></i>
+                                    <span><strong>Stars awarded:</strong> @detail.StarsGiven.Value ⭐</span>
+                                </div>
+                                if (!string.IsNullOrEmpty(detail.ThankYouMessage))
+                                {
+                                    <div class="thank-you-message">
+                                        <i class="fas fa-quote-left"></i> "@detail.ThankYouMessage"
+                                    </div>
+                                }
+                            }
+                        </div>
+
+                        <a href="/Items/Detail/@item?.Id" class="btn btn-outline btn-sm">
+                            <i class="fas fa-eye"></i> View Details
+                        </a>
+                    </div>
+                </div>
+            }
         </div>
     }
     else
     {
-        <div class="empty-state" style="margin: 1rem 0;">
-            <div class="empty-state-icon">🔴</div>
-            <p>No active lost posts.</p>
-            <a href="/Items/ReportItem" class="btn btn-primary" style="margin-top: 1rem;">
-                <i class="fas fa-plus-circle"></i> Report Lost Item
-            </a>
-        </div>
-    }
-</div>
-
-<!-- ========== FOUND POSTS ========== -->
-<div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-top: 2rem;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-        <h3 style="margin-bottom: 0; color: #10b981;"><i class="fas fa-smile"></i> My Found Posts</h3>
-        <a href="/Items/ReportItem" class="btn btn-sm btn-primary" style="font-size: 0.75rem;">
-            <i class="fas fa-plus"></i> Report Found
-        </a>
-    </div>
-    @if (myFoundItems.Any())
-    {
-        <div class="scrollable-container">
-            <div class="cards-grid">
-                @foreach (var item in myFoundItems)
-                {
-                    <div class="item-card">
-                        <div class="card-image" onclick="location.href='/Items/Detail/@item.Id?returnUrl=/History/Index'" style="cursor:pointer;">
-                            @if (!string.IsNullOrEmpty(item.PhotoUrl))
-                            {
-                                <img src="@item.PhotoUrl" alt="@item.Name" style="width: 100%; height: 150px; object-fit: cover;">
-                            }
-                            else { <span>🟢</span> }
-                        </div>
-                        <div class="card-content">
-                            <div class="card-title">@item.Name</div>
-                            <div class="card-details">
-                                <i class="fas fa-map-marker-alt"></i> @item.Location<br />
-                                <i class="fas fa-calendar"></i> @item.Date.ToString("MMM dd, yyyy")
-                            </div>
-                            <span class="badge badge-found">FOUND</span>
-                            <form method="post" action="/Items/MarkClaimed/@item.Id" style="margin-top: 0.75rem;">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-sm" style="width: 100%; background: #d1fae5; color: #10b981; border: none; padding: 0.5rem;">
-                                    <i class="fas fa-check"></i> Mark as Claimed
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                }
-            </div>
-        </div>
-    }
-    else
-    {
-        <div class="empty-state" style="margin: 1rem 0;">
-            <div class="empty-state-icon">🟢</div>
-            <p>No active found posts.</p>
-            <a href="/Items/ReportItem" class="btn btn-primary" style="margin-top: 1rem;">
-                <i class="fas fa-plus-circle"></i> Report Found Item
-            </a>
-        </div>
-    }
-</div>
-
-<!-- ========== RESOLVED ========== -->
-<div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-top: 2rem; margin-bottom: 2rem;">
-    <h3 style="margin-bottom: 0.5rem; color: #008080;"><i class="fas fa-check-circle"></i> Resolved</h3>
-    @if (myResolvedItems.Any())
-    {
-        <div class="scrollable-container">
-            <div class="cards-grid">
-                @foreach (var item in myResolvedItems)
-                {
-                    <div class="item-card" style="opacity: 0.85;">
-                        <div class="card-image" onclick="location.href='/Items/Detail/@item.Id?returnUrl=/History/Index'" style="cursor:pointer;">
-                            @if (!string.IsNullOrEmpty(item.PhotoUrl))
-                            {
-                                <img src="@item.PhotoUrl" alt="@item.Name" style="width: 100%; height: 150px; object-fit: cover;">
-                            }
-                            else { <span>✅</span> }
-                        </div>
-                        <div class="card-content">
-                            <div class="card-title">@item.Name</div>
-                            <div class="card-details">
-                                <i class="fas fa-map-marker-alt"></i> @item.Location<br />
-                                <i class="fas fa-calendar"></i> @item.Date.ToString("MMM dd, yyyy")
-                            </div>
-                            <span class="badge" style="background: #e0f2fe; color: #0284c7;">✅ RESOLVED</span>
-                        </div>
-                    </div>
-                }
-            </div>
-        </div>
-    }
-    else
-    {
-        <div class="empty-state" style="margin: 1rem 0;">
+        <div class="empty-state">
             <div class="empty-state-icon">✅</div>
-            <p>No resolved items yet.</p>
+            <h3>No Resolved Items Yet</h3>
+            <p>When items get resolved, they will appear here.</p>
+        </div>
+    }
+</div>
+
+<!-- ========== STAR TRANSACTIONS SECTION ========== -->
+<div style="background: white; border-radius: 1rem; padding: 1.5rem;">
+    <h3 style="margin-bottom: 1rem; color: #f59e0b;">
+        <i class="fas fa-star"></i> Recent Star Transactions
+    </h3>
+
+    @if (starTransactions.Any())
+    {
+        <div class="transactions-list">
+            <table class="transactions-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Giver</th>
+                        <th>Receiver</th>
+                        <th>Stars</th>
+                        <th>Item</th>
+                        <th>Message</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var transaction in starTransactions)
+                    {
+                        <tr>
+                            <td class="transaction-date-cell">@transaction.CreatedAt.ToString("MMM dd, yyyy")</td>
+                            <td>@(transaction.Giver?.FullName ?? "Unknown")</td>
+                            <td>@(transaction.Receiver?.FullName ?? "Unknown")</td>
+                            <td class="transaction-stars-cell">⭐ @transaction.StarsGiven</td>
+                            <td>@(transaction.Item?.Name ?? "Unknown")</td>
+                            <td class="transaction-message-cell">@(transaction.ThankYouMessage?.Length > 50 ? transaction.ThankYouMessage.Substring(0, 50) + "..." : transaction.ThankYouMessage)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <div class="empty-state-icon">⭐</div>
+            <h3>No Star Transactions Yet</h3>
+            <p>When users give stars for returned items, they will appear here.</p>
         </div>
     }
 </div>
 
 <style>
-    .cards-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    .history-list {
+        display: flex;
+        flex-direction: column;
         gap: 1.5rem;
-        margin-top: 1.5rem;
     }
-    .item-card {
-        background: white;
-        border-radius: 0.75rem;
+
+    .history-card {
+        display: flex;
+        gap: 1.5rem;
+        background: #f9fafb;
+        border-radius: 1rem;
         overflow: hidden;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        transition: transform 0.2s;
+        border: 1px solid #e5e7eb;
+        transition: transform 0.2s, box-shadow 0.2s;
     }
-    .item-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-    }
-    .card-image {
-        height: 150px;
-        background: #f3f4f6;
+
+        .history-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+    .history-card-image {
+        width: 120px;
+        min-width: 120px;
+        background: linear-gradient(135deg, #008080, #20B2AA);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 3rem;
+        color: white;
     }
-    .card-content { padding: 1rem; }
-    .card-title { font-weight: 700; font-size: 1.1rem; margin-bottom: 0.5rem; }
-    .card-details { font-size: 0.85rem; color: #4b5563; margin-bottom: 0.75rem; }
-    .badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
-    .badge-lost { background: #fee2e2; color: #dc2626; }
-    .badge-found { background: #d1fae5; color: #10b981; }
-    .empty-state { text-align: center; padding: 3rem; background: #f9fafb; border-radius: 0.75rem; }
-    .empty-state-icon { font-size: 3rem; margin-bottom: 1rem; }
-    .scrollable-container { max-height: 650px; overflow-y: auto; padding-right: 0.5rem; margin-top: 1rem; }
-    .scrollable-container .cards-grid { margin-top: 0; }
+
+        .history-card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+    .history-card-content {
+        flex: 1;
+        padding: 1rem 1rem 1rem 0;
+    }
+
+    .history-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 0.75rem;
+    }
+
+        .history-card-header h4 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: #1f2937;
+        }
+
+    .history-card-details {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 0.75rem;
+    }
+
+        .history-card-details p {
+            margin: 0;
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+
+        .history-card-details i {
+            width: 20px;
+            color: #008080;
+        }
+
+    .history-card-involved {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        margin: 0.75rem 0;
+        border-left: 3px solid #008080;
+    }
+
+    .involved-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-right: 1rem;
+        margin-bottom: 0.5rem;
+        font-size: 0.8rem;
+    }
+
+        .involved-item i {
+            width: 20px;
+            color: #008080;
+        }
+
+        .involved-item.stars i {
+            color: #f59e0b;
+        }
+
+    .involved-contact {
+        display: flex;
+        gap: 1rem;
+        margin-top: 0.25rem;
+        font-size: 0.7rem;
+        color: #6b7280;
+        flex-wrap: wrap;
+    }
+
+        .involved-contact i {
+            width: 16px;
+            color: #008080;
+        }
+
+        .involved-contact span {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+    .thank-you-message {
+        margin-top: 0.5rem;
+        padding: 0.5rem;
+        background: #f0f9f9;
+        border-radius: 0.5rem;
+        font-size: 0.8rem;
+        font-style: italic;
+        color: #374151;
+    }
+
+    .transactions-list {
+        overflow-x: auto;
+    }
+
+    .transactions-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8rem;
+    }
+
+        .transactions-table th,
+        .transactions-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .transactions-table th {
+            background: #f3f4f6;
+            font-weight: 600;
+            color: #374151;
+        }
+
+    .transaction-date-cell {
+        white-space: nowrap;
+    }
+
+    .transaction-stars-cell {
+        color: #f59e0b;
+        font-weight: 600;
+    }
+
+    .transaction-message-cell {
+        max-width: 200px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .badge-lost {
+        background: #fee2e2;
+        color: #dc2626;
+        font-size: 0.7rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 9999px;
+    }
+
+    .badge-found {
+        background: #d1fae5;
+        color: #10b981;
+        font-size: 0.7rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 9999px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 2rem;
+        background: #f9fafb;
+        border-radius: 0.75rem;
+    }
+
+    .empty-state-icon {
+        font-size: 3rem;
+        margin-bottom: 0.5rem;
+    }
+
+    @@media (max-width: 768px) {
+        .history-card {
+            flex-direction: column;
+        }
+
+        .history-card-image {
+            width: 100%;
+            height: 150px;
+        }
+
+        .history-card-content {
+            padding: 1rem;
+        }
+
+        .involved-contact {
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .transactions-table {
+            font-size: 0.7rem;
+        }
+
+            .transactions-table th,
+            .transactions-table td {
+                padding: 0.5rem;
+            }
+    }
 </style>
