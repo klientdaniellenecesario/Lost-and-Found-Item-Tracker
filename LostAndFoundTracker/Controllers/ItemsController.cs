@@ -26,35 +26,50 @@ namespace LostAndFoundTracker.Controllers
         }
 
         // GET: /Items/LostItems
-        public async Task<IActionResult> LostItems()
+        public async Task<IActionResult> LostItems(string sort = "recent")
         {
             int? userId = HttpContext.Session.GetInt32("UserId");
             if (userId == null)
                 return RedirectToAction("Login", "Account");
 
-            var lostItems = await _context.Items
-                .Where(i => i.Type == "lost" && !i.IsResolved)
-                .OrderByDescending(i => i.Date)
-                .ToListAsync();
+            var query = _context.Items.Where(i => i.Type == "lost" && !i.IsResolved);
+
+            // Apply sorting
+            query = sort switch
+            {
+                "oldest" => query.OrderBy(i => i.Date),
+                _ => query.OrderByDescending(i => i.Date) // "recent" is default
+            };
+
+            var lostItems = await query.ToListAsync();
 
             ViewBag.CurrentUserId = userId;
+            ViewBag.CurrentSort = sort;
             return View(lostItems);
         }
 
         // GET: /Items/FoundItems
-        public async Task<IActionResult> FoundItems()
+        public async Task<IActionResult> FoundItems(string sort = "recent")
         {
             int? userId = HttpContext.Session.GetInt32("UserId");
             if (userId == null)
                 return RedirectToAction("Login", "Account");
 
-            var foundItems = await _context.Items
+            var query = _context.Items
                 .Include(i => i.User)
-                .Where(i => i.Type == "found" && !i.IsResolved)
-                .OrderByDescending(i => i.Date)
-                .ToListAsync();
+                .Where(i => i.Type == "found" && !i.IsResolved);
+
+            // Apply sorting
+            query = sort switch
+            {
+                "oldest" => query.OrderBy(i => i.Date),
+                _ => query.OrderByDescending(i => i.Date) // "recent" is default
+            };
+
+            var foundItems = await query.ToListAsync();
 
             ViewBag.CurrentUserId = userId;
+            ViewBag.CurrentSort = sort;
             return View(foundItems);
         }
 
@@ -193,7 +208,6 @@ namespace LostAndFoundTracker.Controllers
                     return NotFound(new { error = "Item not found" });
                 }
 
-                // Verify the current user is the owner of this lost item
                 if (item.UserId != userId.Value)
                 {
                     return BadRequest(new { error = "You are not the owner of this item" });
@@ -204,27 +218,22 @@ namespace LostAndFoundTracker.Controllers
                     return BadRequest(new { error = "Only lost items can be marked as found" });
                 }
 
-                // Check if already resolved
                 if (item.IsResolved || item.Status == "returned")
                 {
                     return BadRequest(new { error = "This item has already been marked as found" });
                 }
 
-                // Update item status
                 item.IsResolved = true;
                 item.Status = "returned";
                 item.ConfirmedReturnDate = DateTime.Now;
 
-                // If someone helped (reward given)
                 if (request.HelperId.HasValue && request.HelperId.Value > 0 && request.StarRating.HasValue)
                 {
-                    // Validate star rating
                     if (request.StarRating.Value < 1 || request.StarRating.Value > 5)
                     {
                         return BadRequest(new { error = "Star rating must be between 1 and 5" });
                     }
 
-                    // Don't allow giving stars to self
                     if (request.HelperId.Value == userId.Value)
                     {
                         return BadRequest(new { error = "You cannot give stars to yourself" });
@@ -237,7 +246,6 @@ namespace LostAndFoundTracker.Controllers
                         return BadRequest(new { error = "Helper not found" });
                     }
 
-                    // Create star transaction
                     var starTransaction = new StarTransaction
                     {
                         ReceiverId = helperId,
@@ -249,17 +257,14 @@ namespace LostAndFoundTracker.Controllers
                     };
                     _context.StarTransactions.Add(starTransaction);
 
-                    // Update helper's total star points
                     int oldStars = helper.TotalStarPoints;
                     helper.TotalStarPoints += request.StarRating.Value;
 
-                    // Check for certificate milestones
                     var newCertificateType = CertificateMilestone.GetCertificateType(helper.TotalStarPoints);
                     var oldCertificateType = CertificateMilestone.GetCertificateType(oldStars);
 
                     if (newCertificateType != oldCertificateType && newCertificateType != "None")
                     {
-                        // Award new certificate
                         var certificate = new Certificate
                         {
                             UserId = helperId,
@@ -277,7 +282,6 @@ namespace LostAndFoundTracker.Controllers
                         else if (newCertificateType == "Silver") helper.SilverCertificates++;
                         else if (newCertificateType == "Gold") helper.GoldCertificates++;
 
-                        // Send certificate notification
                         var certificateNotification = new Notification
                         {
                             ReceiverId = helperId,
@@ -293,7 +297,6 @@ namespace LostAndFoundTracker.Controllers
 
                     await _context.SaveChangesAsync();
 
-                    // Send notification to helper about stars received
                     var owner = await _context.Users.FindAsync(userId.Value);
                     var starNotification = new Notification
                     {
@@ -310,7 +313,6 @@ namespace LostAndFoundTracker.Controllers
                 }
                 else
                 {
-                    // No reward - just mark as found
                     await _context.SaveChangesAsync();
                 }
 
@@ -369,13 +371,11 @@ namespace LostAndFoundTracker.Controllers
             if (item.Type != "found")
                 return BadRequest("Only found items can be marked as claimed.");
 
-            // Update status to "claimed"
             item.Status = "claimed";
             item.IsResolved = false;
 
             await _context.SaveChangesAsync();
 
-            // Find who claimed this item (the owner who reported it as theirs)
             var claimNotification = await _context.Notifications
                 .FirstOrDefaultAsync(n => n.ItemId == id && n.NotificationType == "Claim");
 
@@ -425,7 +425,6 @@ namespace LostAndFoundTracker.Controllers
                     return NotFound(new { error = "Item not found" });
                 }
 
-                // Check if user is the owner/claimer of this item
                 bool isClaimer = false;
 
                 if (item.Type == "found")
@@ -440,29 +439,24 @@ namespace LostAndFoundTracker.Controllers
                     return BadRequest(new { error = "You are not authorized to confirm return for this item" });
                 }
 
-                // Check if already confirmed
                 if (item.Status == "returned")
                 {
                     return BadRequest(new { error = "This item has already been confirmed as returned" });
                 }
 
-                // Validate star rating
                 if (request.StarRating < 1 || request.StarRating > 5)
                 {
                     return BadRequest(new { error = "Star rating must be between 1 and 5" });
                 }
 
-                // Determine who is the finder (the one who should receive stars)
                 int finderId = item.UserId;
 
-                // Update item
                 item.Status = "returned";
                 item.IsResolved = true;
                 item.StarRatingGiven = request.StarRating;
                 item.ConfirmedByUserId = userId;
                 item.ConfirmedReturnDate = DateTime.Now;
 
-                // Create star transaction
                 var starTransaction = new StarTransaction
                 {
                     ReceiverId = finderId,
@@ -474,20 +468,17 @@ namespace LostAndFoundTracker.Controllers
                 };
                 _context.StarTransactions.Add(starTransaction);
 
-                // Update finder's total star points
                 var finder = await _context.Users.FindAsync(finderId);
                 if (finder != null)
                 {
                     int oldStars = finder.TotalStarPoints;
                     finder.TotalStarPoints += request.StarRating;
 
-                    // Check for certificate milestones
                     var newCertificateType = CertificateMilestone.GetCertificateType(finder.TotalStarPoints);
                     var oldCertificateType = CertificateMilestone.GetCertificateType(oldStars);
 
                     if (newCertificateType != oldCertificateType && newCertificateType != "None")
                     {
-                        // Award new certificate
                         var certificate = new Certificate
                         {
                             UserId = finderId,
@@ -505,7 +496,6 @@ namespace LostAndFoundTracker.Controllers
                         else if (newCertificateType == "Silver") finder.SilverCertificates++;
                         else if (newCertificateType == "Gold") finder.GoldCertificates++;
 
-                        // Send certificate notification
                         var certificateNotification = new Notification
                         {
                             ReceiverId = finderId,
@@ -522,7 +512,6 @@ namespace LostAndFoundTracker.Controllers
 
                 await _context.SaveChangesAsync();
 
-                // Send notification to finder about stars received
                 var giver = await _context.Users.FindAsync(userId.Value);
                 var starNotification = new Notification
                 {
@@ -826,7 +815,6 @@ namespace LostAndFoundTracker.Controllers
             if (item.UserId != userId.Value)
                 return Forbid();
 
-            // Delete all notifications that reference this item
             var relatedNotifications = _context.Notifications.Where(n => n.ItemId == id);
             _context.Notifications.RemoveRange(relatedNotifications);
 
