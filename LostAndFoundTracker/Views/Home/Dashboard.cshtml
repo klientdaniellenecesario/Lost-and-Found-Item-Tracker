@@ -1,7 +1,7 @@
-﻿@{
-    ViewData["Title"] = "Dashboard";
-    Layout = "~/Views/Shared/_Layout.cshtml";
-    var userName = Context.Session.GetString("UserFullName") ?? "Student";
+﻿﻿@{
+ViewData["Title"] = "Dashboard";
+Layout = "~/Views/Shared/_Layout.cshtml";
+var userName = Context.Session.GetString("UserFullName") ?? "Student";
 }
 
 <style>
@@ -40,6 +40,12 @@
         justify-content: center;
         font-size: 3rem;
     }
+
+        .card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
     .card-content {
         padding: 1rem;
@@ -101,14 +107,14 @@
 
     .empty-state {
         text-align: center;
-        padding: 3rem;
+        padding: 2rem;
         background: #f9fafb;
         border-radius: 0.75rem;
     }
 
     .empty-state-icon {
         font-size: 3rem;
-        margin-bottom: 1rem;
+        margin-bottom: 0.5rem;
     }
 
     .alert-error {
@@ -119,63 +125,22 @@
         text-align: center;
     }
 
-    .quick-actions {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1rem;
-        margin-bottom: 2rem;
-    }
-
-    .quick-action-btn {
+    .section-title {
         display: flex;
+        justify-content: space-between;
         align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        padding: 1rem;
-        border-radius: 0.75rem;
-        font-weight: 600;
-        font-size: 0.95rem;
-        text-decoration: none;
-        transition: opacity 0.2s;
+        margin-bottom: 1rem;
     }
 
-        .quick-action-btn:hover {
-            opacity: 0.85;
-            text-decoration: none;
+        .section-title h3 {
+            margin-bottom: 0;
+            color: #008080;
         }
-
-    .quick-action-lost {
-        background: #fee2e2;
-        color: #dc2626;
-        border: 1.5px solid #fca5a5;
-    }
-
-    .quick-action-found {
-        background: #dcfce7;
-        color: #16a34a;
-        border: 1.5px solid #86efac;
-    }
-
-    @@media (max-width: 480px) {
-        .quick-actions {
-            grid-template-columns: 1fr;
-        }
-    }
 </style>
 
 <div class="page-header">
     <h1><i class="fas fa-chart-line"></i> Dashboard</h1>
-    <p>Welcome back, @userName! Here's an overview of lost and found activity.</p>
-</div>
-
-<!-- Quick Actions -->
-<div class="quick-actions">
-    <a href="/Items/ReportItem?type=lost" class="quick-action-btn quick-action-lost">
-        <i class="fas fa-plus-circle"></i> Report Lost Item
-    </a>
-    <a href="/Items/ReportItem?type=found" class="quick-action-btn quick-action-found">
-        <i class="fas fa-plus-circle"></i> Report Found Item
-    </a>
+    <p>Welcome back, @userName! Here's an overview of your activity.</p>
 </div>
 
 <!-- Stats -->
@@ -202,25 +167,25 @@
     </div>
 </div>
 
-<!-- Recent Lost Items -->
+<!-- My Lost Items -->
 <div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-top: 2rem;">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h3 style="margin-bottom: 0; color: #008080;"><i class="fas fa-frown"></i> Recent Lost Items</h3>
-        <a href="/Items/LostItems" class="btn btn-sm btn-outline" style="font-size: 0.75rem;">View all →</a>
+    <div class="section-title">
+        <h3><i class="fas fa-frown"></i> My Lost Items</h3>
+        <a href="/Items/LostItems" class="btn btn-sm btn-outline" style="font-size: 0.75rem;">Browse all lost items →</a>
     </div>
-    <div id="recentLostItems" style="margin-top: 1rem;">
-        <div class="loading"><div class="spinner"></div> Loading recent lost items...</div>
+    <div id="myLostItems" style="margin-top: 1rem;">
+        <div class="loading"><div class="spinner"></div> Loading your lost items...</div>
     </div>
 </div>
 
-<!-- Recent Found Items -->
+<!-- My Found Items -->
 <div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-top: 2rem; margin-bottom: 2rem;">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h3 style="margin-bottom: 0; color: #008080;"><i class="fas fa-smile"></i> Recent Found Items</h3>
-        <a href="/Items/FoundItems" class="btn btn-sm btn-outline" style="font-size: 0.75rem;">View all →</a>
+    <div class="section-title">
+        <h3><i class="fas fa-smile"></i> My Found Items</h3>
+        <a href="/Items/FoundItems" class="btn btn-sm btn-outline" style="font-size: 0.75rem;">Browse all found items →</a>
     </div>
-    <div id="recentFoundItems" style="margin-top: 1rem;">
-        <div class="loading"><div class="spinner"></div> Loading recent found items...</div>
+    <div id="myFoundItems" style="margin-top: 1rem;">
+        <div class="loading"><div class="spinner"></div> Loading your found items...</div>
     </div>
 </div>
 
@@ -236,23 +201,25 @@
                 document.getElementById('resolvedCount').textContent = data.resolvedCount;
                 document.getElementById('myItemsCount').textContent = data.myItemsCount;
 
-                const lostContainer = document.getElementById('recentLostItems');
-                if (data.recentLostItems && data.recentLostItems.length > 0) {
-                    lostContainer.innerHTML = renderItemCards(data.recentLostItems);
+                // My Lost Items
+                const myLostContainer = document.getElementById('myLostItems');
+                if (data.myLostItems && data.myLostItems.length > 0) {
+                    myLostContainer.innerHTML = renderItemCards(data.myLostItems);
                 } else {
-                    lostContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔴</div><h3>No recent lost items</h3><p>Report a lost item to help others.</p></div>';
+                    myLostContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔴</div><h3>No lost items reported</h3><p>Go to the Report page to report a lost item.</p></div>';
                 }
 
-                const foundContainer = document.getElementById('recentFoundItems');
-                if (data.recentFoundItems && data.recentFoundItems.length > 0) {
-                    foundContainer.innerHTML = renderItemCards(data.recentFoundItems);
+                // My Found Items
+                const myFoundContainer = document.getElementById('myFoundItems');
+                if (data.myFoundItems && data.myFoundItems.length > 0) {
+                    myFoundContainer.innerHTML = renderItemCards(data.myFoundItems);
                 } else {
-                    foundContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🟢</div><h3>No recent found items</h3><p>Found something? Report it!</p></div>';
+                    myFoundContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🟢</div><h3>No found items reported</h3><p>Go to the Report page to report a found item.</p></div>';
                 }
             } catch (error) {
                 console.error('Error loading dashboard:', error);
-                document.getElementById('recentLostItems').innerHTML = '<div class="alert-error">Failed to load data.</div>';
-                document.getElementById('recentFoundItems').innerHTML = '<div class="alert-error">Failed to load data.</div>';
+                document.getElementById('myLostItems').innerHTML = '<div class="alert-error">Failed to load data.</div>';
+                document.getElementById('myFoundItems').innerHTML = '<div class="alert-error">Failed to load data.</div>';
             }
         }
 
@@ -262,7 +229,7 @@
                             <div class="item-card" onclick="location.href='/Items/Detail/${item.id}'">
                                 <div class="card-image">
                                     ${item.photoUrl
-                    ? `<img src="${item.photoUrl}" alt="${item.name}" style="width:100%; height:150px; object-fit:cover;">`
+                    ? `<img src="${item.photoUrl}" alt="${item.name}">`
                     : (item.type === 'lost' ? '🔴' : '🟢')}
                                 </div>
                                 <div class="card-content">

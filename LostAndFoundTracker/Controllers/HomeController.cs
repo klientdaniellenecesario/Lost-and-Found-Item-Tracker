@@ -35,7 +35,6 @@ namespace LostAndFoundTracker.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            // Debug: Log session info
             System.Diagnostics.Debug.WriteLine($"=== DASHBOARD DEBUG ===");
             System.Diagnostics.Debug.WriteLine($"User ID from session: {userId}");
             System.Diagnostics.Debug.WriteLine($"User Email: {HttpContext.Session.GetString("UserEmail")}");
@@ -54,70 +53,61 @@ namespace LostAndFoundTracker.Controllers
 
             if (userId == null)
             {
-                System.Diagnostics.Debug.WriteLine("UserId is null - returning empty data");
-                return Json(new { lostCount = 0, foundCount = 0, resolvedCount = 0, myItemsCount = 0, recentLostItems = new object[0], recentFoundItems = new object[0] });
-            }
-
-            // Get all items first to debug
-            var allItems = await _context.Items.ToListAsync();
-            System.Diagnostics.Debug.WriteLine($"Total items in database: {allItems.Count}");
-
-            if (allItems.Any())
-            {
-                foreach (var item in allItems)
+                return Json(new
                 {
-                    System.Diagnostics.Debug.WriteLine($"Item: ID={item.Id}, Name={item.Name}, Type={item.Type}, IsResolved={item.IsResolved}, UserId={item.UserId}");
-                }
-            }
-            else
-            {
-                System.Diagnostics.Debug.WriteLine("No items found in database!");
+                    lostCount = 0,
+                    foundCount = 0,
+                    resolvedCount = 0,
+                    myItemsCount = 0,
+                    myLostItems = new object[0],
+                    myFoundItems = new object[0]
+                });
             }
 
+            // Stats counts
             var lostCount = await _context.Items.CountAsync(i => i.Type == "lost" && !i.IsResolved);
             var foundCount = await _context.Items.CountAsync(i => i.Type == "found" && !i.IsResolved);
             var resolvedCount = await _context.Items.CountAsync(i => i.IsResolved);
             var myItemsCount = await _context.Items.CountAsync(i => i.UserId == userId.Value);
 
+            // MY LOST ITEMS (only items the current user reported as lost)
+            var myLostItems = await _context.Items
+                .Where(i => i.UserId == userId.Value && i.Type == "lost" && !i.IsResolved)
+                .OrderByDescending(i => i.Date)
+                .Take(6)
+                .Select(i => new
+                {
+                    id = i.Id,
+                    name = i.Name,
+                    location = i.Location,
+                    date = i.Date.ToString("MMM dd, yyyy"),
+                    type = i.Type,
+                    photoUrl = i.PhotoUrl ?? ""
+                })
+                .ToListAsync();
+
+            // MY FOUND ITEMS (only items the current user reported as found)
+            var myFoundItems = await _context.Items
+                .Where(i => i.UserId == userId.Value && i.Type == "found" && !i.IsResolved)
+                .OrderByDescending(i => i.Date)
+                .Take(6)
+                .Select(i => new
+                {
+                    id = i.Id,
+                    name = i.Name,
+                    location = i.Location,
+                    date = i.Date.ToString("MMM dd, yyyy"),
+                    type = i.Type,
+                    photoUrl = i.PhotoUrl ?? ""
+                })
+                .ToListAsync();
+
             System.Diagnostics.Debug.WriteLine($"Lost count: {lostCount}");
             System.Diagnostics.Debug.WriteLine($"Found count: {foundCount}");
             System.Diagnostics.Debug.WriteLine($"Resolved count: {resolvedCount}");
             System.Diagnostics.Debug.WriteLine($"My items count: {myItemsCount}");
-
-            // Recent Lost Items (unresolved, limit 6)   <-- CHANGED from 4 to 6
-            var recentLostItems = await _context.Items
-                .Where(i => i.Type == "lost" && !i.IsResolved)
-                .OrderByDescending(i => i.Date)
-                .Take(6)
-                .Select(i => new
-                {
-                    id = i.Id,
-                    name = i.Name,
-                    location = i.Location,
-                    date = i.Date.ToString("MMM dd, yyyy"),
-                    type = i.Type,
-                    photoUrl = i.PhotoUrl ?? ""
-                })
-                .ToListAsync();
-
-            // Recent Found Items (unresolved, limit 6)  <-- CHANGED from 4 to 6
-            var recentFoundItems = await _context.Items
-                .Where(i => i.Type == "found" && !i.IsResolved)
-                .OrderByDescending(i => i.Date)
-                .Take(6)
-                .Select(i => new
-                {
-                    id = i.Id,
-                    name = i.Name,
-                    location = i.Location,
-                    date = i.Date.ToString("MMM dd, yyyy"),
-                    type = i.Type,
-                    photoUrl = i.PhotoUrl ?? ""
-                })
-                .ToListAsync();
-
-            System.Diagnostics.Debug.WriteLine($"Recent lost items found: {recentLostItems.Count}");
-            System.Diagnostics.Debug.WriteLine($"Recent found items found: {recentFoundItems.Count}");
+            System.Diagnostics.Debug.WriteLine($"My lost items found: {myLostItems.Count}");
+            System.Diagnostics.Debug.WriteLine($"My found items found: {myFoundItems.Count}");
 
             return Json(new
             {
@@ -125,8 +115,8 @@ namespace LostAndFoundTracker.Controllers
                 foundCount,
                 resolvedCount,
                 myItemsCount,
-                recentLostItems,
-                recentFoundItems
+                myLostItems,
+                myFoundItems
             });
         }
 
@@ -135,7 +125,6 @@ namespace LostAndFoundTracker.Controllers
             return RedirectToAction("Landing");
         }
 
-        // GET: /Home/DebugDatabase - Debug endpoint to check database contents
         [HttpGet]
         public async Task<IActionResult> DebugDatabase()
         {
@@ -171,7 +160,6 @@ namespace LostAndFoundTracker.Controllers
             return Json(debug);
         }
 
-        // GET: /Home/CheckItems - Quick check of items
         [HttpGet]
         public async Task<IActionResult> CheckItems()
         {
