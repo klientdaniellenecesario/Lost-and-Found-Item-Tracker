@@ -36,11 +36,35 @@ namespace LostAndFoundTracker.Controllers
         [HttpPost]
         public async Task<IActionResult> Login(LoginViewModel model)
         {
+            // Add null check
+            if (model == null)
+            {
+                ViewBag.Error = "Invalid form data. Please try again.";
+                return View();
+            }
+
             System.Diagnostics.Debug.WriteLine("=== LOGIN ATTEMPT ===");
             System.Diagnostics.Debug.WriteLine($"Email: {model.Email}");
 
+            // Check if email or password is empty
+            if (string.IsNullOrEmpty(model.Email) || string.IsNullOrEmpty(model.Password))
+            {
+                ViewBag.Error = "Email and password are required.";
+                return View(model);
+            }
+
             if (ModelState.IsValid)
             {
+                // First check if email exists
+                var userExists = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == model.Email.ToLower());
+
+                if (userExists == null)
+                {
+                    ViewBag.Error = "No account found with this email address. Please register first.";
+                    return View(model);
+                }
+
+                // Check password
                 var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == model.Email.ToLower() && u.PasswordHash == model.Password);
 
                 if (user != null)
@@ -58,7 +82,7 @@ namespace LostAndFoundTracker.Controllers
                 }
                 else
                 {
-                    ViewBag.Error = "Invalid email or password.";
+                    ViewBag.Error = "Incorrect password. Please try again.";
                 }
             }
             else
@@ -86,6 +110,12 @@ namespace LostAndFoundTracker.Controllers
         {
             System.Diagnostics.Debug.WriteLine("=== REGISTER ATTEMPT ===");
 
+            if (model == null)
+            {
+                ViewBag.Error = "Invalid form data.";
+                return View();
+            }
+
             if (ModelState.IsValid)
             {
                 if (model.Password != model.ConfirmPassword)
@@ -97,7 +127,7 @@ namespace LostAndFoundTracker.Controllers
                 var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == model.Email.ToLower());
                 if (existingUser != null)
                 {
-                    ModelState.AddModelError("Email", "Email already registered.");
+                    ViewBag.Error = "Email already registered. Please login instead.";
                     return View(model);
                 }
 
@@ -136,7 +166,7 @@ namespace LostAndFoundTracker.Controllers
         public IActionResult Logout()
         {
             HttpContext.Session.Clear();
-            TempData["Success"] = "Logged out.";
+            TempData["Success"] = "Logged out successfully.";
             return RedirectToAction("Landing", "Home");
         }
 
@@ -149,26 +179,26 @@ namespace LostAndFoundTracker.Controllers
         {
             int? userId = HttpContext.Session.GetInt32("UserId");
             if (userId == null)
-                return Unauthorized();
+                return Unauthorized(new { error = "Please login first" });
 
             var user = await _context.Users.FindAsync(userId.Value);
             if (user == null)
-                return NotFound();
+                return NotFound(new { error = "User not found" });
 
             if (user.PasswordHash != request.CurrentPassword)
-                return BadRequest("Current password is incorrect.");
+                return BadRequest(new { error = "Current password is incorrect" });
 
             if (string.IsNullOrEmpty(request.NewPassword) || request.NewPassword.Length < 6)
-                return BadRequest("New password must be at least 6 characters.");
+                return BadRequest(new { error = "New password must be at least 6 characters" });
 
             user.PasswordHash = request.NewPassword;
             await _context.SaveChangesAsync();
 
-            return Ok();
+            return Ok(new { message = "Password changed successfully" });
         }
 
         // ─────────────────────────────────────────
-        // DELETE ACCOUNT
+        // DELETE ACCOUNT - FIXED
         // ─────────────────────────────────────────
         [Route("DeleteAccount")]
         [HttpPost]
@@ -182,15 +212,29 @@ namespace LostAndFoundTracker.Controllers
             if (user == null)
                 return NotFound();
 
-            // Remove user's items first
+            // 1. Delete user's items
             var userItems = _context.Items.Where(i => i.UserId == userId.Value);
             _context.Items.RemoveRange(userItems);
 
+            // 2. Delete user's notifications
+            var notifications = _context.Notifications
+                .Where(n => n.SenderId == userId.Value || n.ReceiverId == userId.Value);
+            _context.Notifications.RemoveRange(notifications);
+
+            // 3. Delete all star transactions
+            var starTransactions = _context.StarTransactions
+                .Where(st => st.GiverId == userId.Value || st.ReceiverId == userId.Value);
+            _context.StarTransactions.RemoveRange(starTransactions);
+
+            // Save all deletions
+            await _context.SaveChangesAsync();
+
+            // 4. Delete the user
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();
 
             HttpContext.Session.Clear();
-            return Ok();
+            return Ok(new { message = "Account deleted successfully" });
         }
 
         // ─────────────────────────────────────────
@@ -207,7 +251,7 @@ namespace LostAndFoundTracker.Controllers
         [HttpPost]
         public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
         {
-            if (string.IsNullOrWhiteSpace(model.Email))
+            if (model == null || string.IsNullOrWhiteSpace(model.Email))
             {
                 ViewBag.Error = "Please enter your email address.";
                 return View(model);
@@ -218,11 +262,12 @@ namespace LostAndFoundTracker.Controllers
 
             if (user == null)
             {
-                ViewBag.Info = "If that email is registered, you can now reset your password.";
+                ViewBag.Info = "If that email is registered, you will receive a reset link.";
                 return View(model);
             }
 
             TempData["ResetEmail"] = user.Email;
+            TempData["Success"] = "Email verified! Please enter your new password.";
             return RedirectToAction("ResetPassword", "Account");
         }
 
@@ -245,9 +290,16 @@ namespace LostAndFoundTracker.Controllers
         [HttpPost]
         public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
         {
-            if (string.IsNullOrWhiteSpace(model.NewPassword) || model.NewPassword != model.ConfirmPassword)
+            if (model == null || string.IsNullOrWhiteSpace(model.NewPassword) || model.NewPassword != model.ConfirmPassword)
             {
                 ViewBag.Error = "Passwords do not match or are empty.";
+                TempData["ResetEmail"] = model?.Email;
+                return View(model);
+            }
+
+            if (model.NewPassword.Length < 6)
+            {
+                ViewBag.Error = "Password must be at least 6 characters.";
                 TempData["ResetEmail"] = model.Email;
                 return View(model);
             }
@@ -256,7 +308,10 @@ namespace LostAndFoundTracker.Controllers
                 .FirstOrDefaultAsync(u => u.Email.ToLower() == model.Email.ToLower());
 
             if (user == null)
+            {
+                ViewBag.Error = "User not found.";
                 return RedirectToAction("ForgotPassword");
+            }
 
             user.PasswordHash = model.NewPassword;
             await _context.SaveChangesAsync();

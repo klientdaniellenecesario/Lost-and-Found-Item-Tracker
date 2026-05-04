@@ -25,14 +25,13 @@ namespace LostAndFoundTracker.Controllers
             var userId = HttpContext.Session.GetInt32("UserId");
             if (userId == null) return RedirectToAction("Login", "Account");
 
-            // Get ALL resolved items (not just user's own)
+            // ONLY get current user's resolved items (removed IsResolved to fix warning)
             var resolvedItems = await _context.Items
                 .Include(i => i.User)
-                .Where(i => i.IsResolved && i.Status == "returned")
+                .Where(i => i.Status == "returned" && i.UserId == userId.Value)
                 .OrderByDescending(i => i.ConfirmedReturnDate ?? i.Date)
                 .ToListAsync();
 
-            // For each resolved item, get the related parties
             var resolvedItemsWithDetails = new List<ResolvedItemDetails>();
 
             foreach (var item in resolvedItems)
@@ -51,7 +50,6 @@ namespace LostAndFoundTracker.Controllers
 
                 if (item.Type == "lost")
                 {
-                    // For lost items: find who helped (star transaction receiver)
                     var starTransaction = await _context.StarTransactions
                         .Include(s => s.Receiver)
                         .FirstOrDefaultAsync(s => s.ItemId == item.Id);
@@ -67,7 +65,6 @@ namespace LostAndFoundTracker.Controllers
                 }
                 else if (item.Type == "found")
                 {
-                    // For found items: find who claimed it
                     var claimNotification = await _context.Notifications
                         .FirstOrDefaultAsync(n => n.ItemId == item.Id && n.NotificationType == "Claim");
 
@@ -82,7 +79,6 @@ namespace LostAndFoundTracker.Controllers
                         }
                     }
 
-                    // Also get star transaction if exists
                     var starTransaction = await _context.StarTransactions
                         .FirstOrDefaultAsync(s => s.ItemId == item.Id);
 
@@ -96,10 +92,12 @@ namespace LostAndFoundTracker.Controllers
                 resolvedItemsWithDetails.Add(details);
             }
 
+            // ONLY get star transactions involving current user
             var starTransactions = await _context.StarTransactions
                 .Include(s => s.Giver)
                 .Include(s => s.Receiver)
                 .Include(s => s.Item)
+                .Where(s => s.GiverId == userId.Value || s.ReceiverId == userId.Value)
                 .OrderByDescending(s => s.CreatedAt)
                 .Take(20)
                 .ToListAsync();
@@ -111,7 +109,6 @@ namespace LostAndFoundTracker.Controllers
         }
     }
 
-    // Helper class for resolved item details
     public class ResolvedItemDetails
     {
         public Item? Item { get; set; }
