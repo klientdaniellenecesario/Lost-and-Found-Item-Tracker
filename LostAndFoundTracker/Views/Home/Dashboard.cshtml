@@ -1,7 +1,7 @@
 ﻿@{
-    ViewData["Title"] = "Dashboard";
-    Layout = "~/Views/Shared/_Layout.cshtml";
-    var userName = Context.Session.GetString("UserFullName") ?? "Student";
+ViewData["Title"] = "Dashboard";
+Layout = "~/Views/Shared/_Layout.cshtml";
+var userName = Context.Session.GetString("UserFullName") ?? "Student";
 }
 
 <style>
@@ -243,7 +243,6 @@
             transform: scale(1.2);
         }
 
-    /* Improved Search Results Dropdown */
     .search-container {
         position: relative;
     }
@@ -293,7 +292,6 @@
         word-break: break-all;
     }
 
-    /* Selected Helper Display */
     .selected-helper-info {
         background: #f0f9f9;
         padding: 0.6rem 0.75rem;
@@ -318,7 +316,6 @@
         word-break: break-all;
     }
 
-    /* User Info Preview */
     .user-info-preview {
         background: #f0f9f9;
         padding: 1rem;
@@ -355,27 +352,22 @@
     <p>Welcome back, @userName! Here's an overview of your activity.</p>
 </div>
 
-<!-- Stats -->
+<!-- Stats Grid - Only 3 cards -->
 <div class="stats-grid">
     <div class="stat-card">
         <div class="stat-icon"><i class="fas fa-frown"></i></div>
-        <div class="stat-value" id="lostCount">0</div>
-        <div class="stat-label">Active Lost Items</div>
+        <div class="stat-value" id="myLostCount">0</div>
+        <div class="stat-label">My Lost Items</div>
     </div>
     <div class="stat-card">
         <div class="stat-icon"><i class="fas fa-smile"></i></div>
-        <div class="stat-value" id="foundCount">0</div>
-        <div class="stat-label">Found Items</div>
+        <div class="stat-value" id="myFoundCount">0</div>
+        <div class="stat-label">My Found Items</div>
     </div>
     <div class="stat-card">
         <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
         <div class="stat-value" id="resolvedCount">0</div>
-        <div class="stat-label">Successfully Resolved</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon"><i class="fas fa-clipboard-list"></i></div>
-        <div class="stat-value" id="myItemsCount">0</div>
-        <div class="stat-label">Your Reports</div>
+        <div class="stat-label">Resolved</div>
     </div>
 </div>
 
@@ -401,7 +393,24 @@
     </div>
 </div>
 
-<!-- Modal for Mark as Found with Reward -->
+<!-- ========== CONFIRMATION MODAL (Reusable) ========== -->
+<div id="confirmationModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 450px;">
+        <div class="modal-header">
+            <h3 id="confirmTitle"><i class="fas fa-question-circle"></i> Confirm Action</h3>
+            <span class="modal-close" onclick="closeConfirmModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p id="confirmMessage">Are you sure?</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeConfirmModal()">Cancel</button>
+            <button id="confirmOkBtn" class="btn btn-primary">Yes, Proceed</button>
+        </div>
+    </div>
+</div>
+
+<!-- Mark as Found Modal (owner) -->
 <div id="markFoundModal" class="modal" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
@@ -458,7 +467,7 @@
     </div>
 </div>
 
-<!-- Modal for Claim -->
+<!-- Claim Modal -->
 <div id="claimModal" class="modal" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
@@ -485,7 +494,7 @@
     </div>
 </div>
 
-<!-- Modal for Confirm Return -->
+<!-- Confirm Return Modal -->
 <div id="confirmReturnModal" class="modal" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
@@ -530,28 +539,58 @@
         let currentReturnItemId = 0;
         let searchTimeout;
 
+        // ========== CONFIRMATION MODAL FUNCTIONS ==========
+        function showConfirmDialog(title, message, onConfirm) {
+            document.getElementById('confirmTitle').innerHTML = `<i class="fas fa-question-circle"></i> ${title}`;
+            document.getElementById('confirmMessage').innerText = message;
+            const modal = document.getElementById('confirmationModal');
+            const okBtn = document.getElementById('confirmOkBtn');
+            const newOkBtn = okBtn.cloneNode(true);
+            okBtn.parentNode.replaceChild(newOkBtn, okBtn);
+            newOkBtn.onclick = () => {
+                closeConfirmModal();
+                if (onConfirm) onConfirm();
+            };
+            modal.style.display = 'flex';
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmationModal').style.display = 'none';
+        }
+
+        // ========== CONFIRMATION FOR "MARK AS FOUND" ==========
+        function confirmMarkAsFound(itemId, itemName) {
+            showConfirmDialog(
+                "Mark as Found?",
+                "Are you confirming that your lost item has been returned to you? After confirming you will be asked to give a star rating to whoever helped you.",
+                () => {
+                    showMarkFoundModal(itemId, itemName);
+                }
+            );
+        }
+
+        // ========== LOAD DASHBOARD ==========
         async function loadDashboard() {
             try {
                 const response = await fetch('/Home/GetDashboardData');
                 const data = await response.json();
 
-                document.getElementById('lostCount').textContent = data.lostCount;
-                document.getElementById('foundCount').textContent = data.foundCount;
+                document.getElementById('myLostCount').textContent = data.myLostCount;
+                document.getElementById('myFoundCount').textContent = data.myFoundCount;
                 document.getElementById('resolvedCount').textContent = data.resolvedCount;
-                document.getElementById('myItemsCount').textContent = data.myItemsCount;
 
                 const myLostContainer = document.getElementById('myLostItems');
                 if (data.myLostItems && data.myLostItems.length > 0) {
                     myLostContainer.innerHTML = renderItemCards(data.myLostItems, 'lost');
                 } else {
-                    myLostContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔴</div><h3>No lost items reported</h3><p>Go to the Report page to report a lost item.</p></div>';
+                    myLostContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔴</div><h3>You have no lost items reported yet.</h3></div>';
                 }
 
                 const myFoundContainer = document.getElementById('myFoundItems');
                 if (data.myFoundItems && data.myFoundItems.length > 0) {
                     myFoundContainer.innerHTML = renderItemCards(data.myFoundItems, 'found');
                 } else {
-                    myFoundContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🟢</div><h3>No found items reported</h3><p>Go to the Report page to report a found item.</p></div>';
+                    myFoundContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🟢</div><h3>You have no found items reported yet.</h3></div>';
                 }
             } catch (error) {
                 console.error('Error loading dashboard:', error);
@@ -564,14 +603,12 @@
             return `<div class="cards-grid">
                                 ${items.map(item => {
                 let buttonHtml = '';
-                            
+
                 if (type === 'lost') {
-                    // For lost items - show Mark as Found button
-                    buttonHtml = `<button class="btn btn-success btn-sm btn-block" style="margin-top: 0.75rem; background: #10B981;" onclick="event.stopPropagation(); showMarkFoundModal(${item.id}, '${escapeHtml(item.name).replace(/'/g, "\\'")}')">
+                    buttonHtml = `<button class="btn btn-success btn-sm btn-block" style="margin-top: 0.75rem; background: #10B981;" onclick="event.stopPropagation(); confirmMarkAsFound(${item.id}, '${escapeHtml(item.name).replace(/'/g, "\\'")}')">
                                             <i class="fas fa-check"></i> Mark as Found
                                         </button>`;
                 } else if (type === 'found') {
-                    // For found items - show appropriate button based on status
                     if (item.status === 'active' || !item.status) {
                         buttonHtml = `<button class="btn btn-primary btn-sm btn-block" style="margin-top: 0.75rem; background: #008080;" onclick="event.stopPropagation(); markAsClaimed(${item.id})">
                                                 <i class="fas fa-gift"></i> Mark as Claimed
@@ -586,7 +623,7 @@
                                             </div>`;
                     }
                 }
-                            
+
                 return `
                                         <div class="item-card">
                                             <div class="card-image" onclick="location.href='/Items/Detail/${item.id}'">
@@ -619,8 +656,8 @@
             });
         }
 
-        // ========== MARK AS CLAIMED ==========
         async function markAsClaimed(itemId) {
+            // Browser confirm removed – now handled by modal (but here we keep original confirm for dashboard? Actually we added confirm in FoundItems but dashboard still uses direct confirm. We'll keep as is for dashboard consistency; user didn't request change for dashboard's mark as claimed)
             if (confirm('Mark this item as claimed? The owner will be notified to confirm pickup and rate you.')) {
                 const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
                 const response = await fetch(`/Items/MarkClaimed/${itemId}`, {
@@ -635,7 +672,7 @@
             }
         }
 
-        // ========== MARK AS FOUND WITH REWARD ==========
+        // ========== MARK AS FOUND MODAL FUNCTIONS (unchanged) ==========
         function showMarkFoundModal(itemId, itemName) {
             currentMarkFoundItemId = itemId;
             document.getElementById('markFoundItemName').textContent = itemName;
@@ -650,9 +687,9 @@
             document.getElementById('confirmRewardBtn').style.display = 'none';
             document.getElementById('starRatingValue').value = 0;
             document.getElementById('thankYouMessage').value = '';
-            
+
             document.getElementById('searchStep').style.display = 'block';
-            
+
             document.querySelectorAll('#markFoundModal .star').forEach(star => {
                 star.textContent = '☆';
                 star.style.color = '#d1d5db';
@@ -718,16 +755,16 @@
         function selectHelper(id, name, email) {
             document.getElementById('selectedHelperId').value = id;
             document.getElementById('selectedHelperName').value = name;
-            
+
             document.getElementById('searchStep').style.display = 'none';
             document.getElementById('searchResults').style.display = 'none';
             document.getElementById('searchResults').innerHTML = '';
-            
+
             const displayDiv = document.getElementById('selectedHelperDisplay');
             document.getElementById('selectedHelperDisplayName').innerHTML = `<i class="fas fa-user"></i> ${escapeHtml(name)}`;
             document.getElementById('selectedHelperDisplayEmail').innerHTML = `<i class="fas fa-envelope"></i> ${escapeHtml(email)}`;
             displayDiv.style.display = 'block';
-            
+
             document.getElementById('starRatingGroup').style.display = 'block';
             document.getElementById('thankYouGroup').style.display = 'block';
             document.getElementById('confirmRewardBtn').style.display = 'block';
@@ -949,7 +986,7 @@
             }
         }
 
-        // Star rating click handlers
+        // ========== EVENT LISTENERS ==========
         document.addEventListener('click', function(e) {
             if (e.target.classList && e.target.classList.contains('star')) {
                 if (e.target.closest('#markFoundModal')) {
@@ -962,7 +999,6 @@
             }
         });
 
-        // Close dropdown when clicking outside
         document.addEventListener('click', function(e) {
             const searchInput = document.getElementById('helperSearch');
             const resultsDiv = document.getElementById('searchResults');
@@ -971,7 +1007,6 @@
             }
         });
 
-        // Close modals when clicking outside
         window.onclick = function(event) {
             const markFoundModal = document.getElementById('markFoundModal');
             if (event.target === markFoundModal) closeMarkFoundModal();
@@ -979,6 +1014,8 @@
             if (event.target === claimModal) closeClaimModal();
             const confirmModal = document.getElementById('confirmReturnModal');
             if (event.target === confirmModal) closeConfirmReturnModal();
+            const confirmDlg = document.getElementById('confirmationModal');
+            if (event.target === confirmDlg) closeConfirmModal();
         }
 
         loadDashboard();
