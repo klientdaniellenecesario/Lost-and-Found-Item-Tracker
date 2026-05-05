@@ -96,13 +96,23 @@
 
                     <div class="form-group">
                         <label><i class="fas fa-lock"></i> Password</label>
-                        <input asp-for="Password" type="password" placeholder="Create a password" required />
+                        <div style="position: relative;">
+                            <input asp-for="Password" type="password" placeholder="Create a password" required style="padding-right: 2.5rem;" />
+                            <span onclick="togglePassword('Password')" onmouseover="this.style.color='#008080'" onmouseout="this.style.color='#9ca3af'" style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: #9ca3af;">
+                                <i class="fas fa-eye" id="Password-icon"></i>
+                            </span>
+                        </div>
                         <small style="color: #6B7280; font-size: 0.7rem;">Password must be at least 6 characters</small>
                     </div>
 
                     <div class="form-group">
                         <label><i class="fas fa-check-circle"></i> Confirm Password</label>
-                        <input asp-for="ConfirmPassword" type="password" placeholder="Confirm your password" required />
+                        <div style="position: relative;">
+                            <input asp-for="ConfirmPassword" type="password" placeholder="Confirm your password" required style="padding-right: 2.5rem;" />
+                            <span onclick="togglePassword('ConfirmPassword')" onmouseover="this.style.color='#008080'" onmouseout="this.style.color='#9ca3af'" style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); cursor: pointer; color: #9ca3af;">
+                                <i class="fas fa-eye" id="ConfirmPassword-icon"></i>
+                            </span>
+                        </div>
                     </div>
 
                     <button type="submit" class="btn btn-primary btn-block">
@@ -116,5 +126,20 @@
             </div>
         </div>
     </div>
+
+    <script>
+            function togglePassword(fieldName) {
+                const input = document.getElementById(fieldName);
+                const icon = document.getElementById(fieldName + '-icon');
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.replace('fa-eye', 'fa-eye-slash');
+                } else {
+                    input.type = 'password';
+                    icon.classList.replace('fa-eye-slash', 'fa-eye');
+                }
+            }
+    </script>
+
 </body>
 </html>
