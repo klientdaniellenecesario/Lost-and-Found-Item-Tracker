@@ -55,22 +55,27 @@ namespace LostAndFoundTracker.Controllers
             {
                 return Json(new
                 {
-                    lostCount = 0,
-                    foundCount = 0,
+                    myLostCount = 0,
+                    myFoundCount = 0,
                     resolvedCount = 0,
-                    myItemsCount = 0,
                     myLostItems = new object[0],
                     myFoundItems = new object[0]
                 });
             }
 
-            // Stats counts - FIXED: replaced !i.IsResolved with i.Status != "returned"
-            var lostCount = await _context.Items.CountAsync(i => i.Type == "lost" && i.Status != "returned");
-            var foundCount = await _context.Items.CountAsync(i => i.Type == "found" && i.Status != "returned");
-            var resolvedCount = await _context.Items.CountAsync(i => i.Status == "returned");
-            var myItemsCount = await _context.Items.CountAsync(i => i.UserId == userId.Value);
+            // Count user's own lost items (active, not yet resolved)
+            var myLostCount = await _context.Items
+                .CountAsync(i => i.UserId == userId.Value && i.Type == "lost" && i.Status != "returned");
 
-            // MY LOST ITEMS - FIXED: replaced !i.IsResolved with i.Status != "returned"
+            // Count user's own found items (active, not yet resolved)
+            var myFoundCount = await _context.Items
+                .CountAsync(i => i.UserId == userId.Value && i.Type == "found" && i.Status != "returned");
+
+            // Count user's own resolved items (status = "returned")
+            var resolvedCount = await _context.Items
+                .CountAsync(i => i.UserId == userId.Value && i.Status == "returned");
+
+            // MY LOST ITEMS (only user's own, not yet resolved)
             var myLostItems = await _context.Items
                 .Where(i => i.UserId == userId.Value && i.Type == "lost" && i.Status != "returned")
                 .OrderByDescending(i => i.Date)
@@ -87,7 +92,7 @@ namespace LostAndFoundTracker.Controllers
                 })
                 .ToListAsync();
 
-            // MY FOUND ITEMS - FIXED: replaced !i.IsResolved with i.Status != "returned"
+            // MY FOUND ITEMS (only user's own, not yet resolved)
             var myFoundItems = await _context.Items
                 .Where(i => i.UserId == userId.Value && i.Type == "found" && i.Status != "returned")
                 .OrderByDescending(i => i.Date)
@@ -105,19 +110,17 @@ namespace LostAndFoundTracker.Controllers
                 })
                 .ToListAsync();
 
-            System.Diagnostics.Debug.WriteLine($"Lost count: {lostCount}");
-            System.Diagnostics.Debug.WriteLine($"Found count: {foundCount}");
+            System.Diagnostics.Debug.WriteLine($"My lost count: {myLostCount}");
+            System.Diagnostics.Debug.WriteLine($"My found count: {myFoundCount}");
             System.Diagnostics.Debug.WriteLine($"Resolved count: {resolvedCount}");
-            System.Diagnostics.Debug.WriteLine($"My items count: {myItemsCount}");
             System.Diagnostics.Debug.WriteLine($"My lost items found: {myLostItems.Count}");
             System.Diagnostics.Debug.WriteLine($"My found items found: {myFoundItems.Count}");
 
             return Json(new
             {
-                lostCount,
-                foundCount,
+                myLostCount,
+                myFoundCount,
                 resolvedCount,
-                myItemsCount,
                 myLostItems,
                 myFoundItems
             });
@@ -146,7 +149,7 @@ namespace LostAndFoundTracker.Controllers
                     i.Id,
                     i.Name,
                     i.Type,
-                    Status = i.Status,  // Changed from IsResolved
+                    Status = i.Status,
                     i.UserId,
                     i.Date,
                     i.Location
