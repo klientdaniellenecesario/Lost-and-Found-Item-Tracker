@@ -28,7 +28,7 @@ namespace LostAndFoundTracker.Models
         // Navigation property
         public User? User { get; set; }
 
-        // Item Status: "active", "claimed", "returned"
+        // Item Status: "active", "claimed", "ready_for_rating", "returned"
         public string Status { get; set; } = "active";
 
         [Obsolete("Use Status property instead. IsResolved will be removed in future.")]
@@ -40,5 +40,8 @@ namespace LostAndFoundTracker.Models
         // Who confirmed return (the owner who received the item back)
         public int? ConfirmedByUserId { get; set; }
         public DateTime? ConfirmedReturnDate { get; set; }
+
+        // ✅ ADD THIS - The real owner selected by finder when multiple people claimed
+        public int? SelectedClaimantId { get; set; }
     }
 }

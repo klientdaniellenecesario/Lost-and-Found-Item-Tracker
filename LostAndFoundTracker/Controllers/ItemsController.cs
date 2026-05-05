@@ -27,21 +27,18 @@ namespace LostAndFoundTracker.Controllers
         }
 
         // GET: /Items/LostItems
-        // Shows lost items reported by OTHER users (not the currently logged-in user)
         public async Task<IActionResult> LostItems(string sort = "recent")
         {
             int? userId = HttpContext.Session.GetInt32("UserId");
             if (userId == null)
                 return RedirectToAction("Login", "Account");
 
-            // Exclude current user's own lost items
             var query = _context.Items.Where(i => i.Type == "lost" && i.Status != "returned" && i.UserId != userId.Value);
 
-            // Apply sorting
             query = sort switch
             {
                 "oldest" => query.OrderBy(i => i.Date),
-                _ => query.OrderByDescending(i => i.Date) // "recent" is default
+                _ => query.OrderByDescending(i => i.Date)
             };
 
             var lostItems = await query.ToListAsync();
@@ -52,39 +49,52 @@ namespace LostAndFoundTracker.Controllers
         }
 
         // GET: /Items/FoundItems
-        // Shows found items reported by OTHER users (not the currently logged-in user)
         public async Task<IActionResult> FoundItems(string sort = "recent")
         {
             int? userId = HttpContext.Session.GetInt32("UserId");
             if (userId == null)
                 return RedirectToAction("Login", "Account");
 
-            // Exclude current user's own found items
             var query = _context.Items
                 .Include(i => i.User)
                 .Where(i => i.Type == "found" && i.Status != "returned" && i.UserId != userId.Value);
 
-            // Apply sorting
             query = sort switch
             {
                 "oldest" => query.OrderBy(i => i.Date),
-                _ => query.OrderByDescending(i => i.Date) // "recent" is default
+                _ => query.OrderByDescending(i => i.Date)
             };
 
             var foundItems = await query.ToListAsync();
 
-            // Get IDs of items that the current user has claimed (via "Claim" notification)
-            var claimedItemIds = await _context.Notifications
-                .Where(n => n.NotificationType == "Claim" && n.SenderId == userId.Value)
-                .Select(n => n.ItemId)
-                .Distinct()
-                .ToListAsync();
-
             ViewBag.CurrentUserId = userId;
             ViewBag.CurrentSort = sort;
-            ViewBag.ClaimedItemIds = claimedItemIds;
 
             return View(foundItems);
+        }
+
+        // GET: /Items/GetClaimantsForItem/{id}
+        [HttpGet]
+        public async Task<IActionResult> GetClaimantsForItem(int id)
+        {
+            int? userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
+                return Unauthorized();
+
+            var claims = await _context.Notifications
+                .Where(n => n.ItemId == id && n.NotificationType == "Claim")
+                .Include(n => n.Sender)
+                .Select(n => new
+                {
+                    id = n.SenderId,
+                    name = n.Sender!.FullName,
+                    email = n.Sender.Email,
+                    message = n.Message,
+                    claimedAt = n.CreatedAt
+                })
+                .ToListAsync();
+
+            return Json(claims);
         }
 
         // GET: /Items/ReportItem
@@ -162,8 +172,6 @@ namespace LostAndFoundTracker.Controllers
                     await _context.SaveChangesAsync();
 
                     TempData["Success"] = $"Your {model.ItemType} item has been reported successfully!";
-
-                    // ✅ Redirect to Dashboard instead of LostItems/FoundItems
                     return RedirectToAction("Dashboard", "Home");
                 }
                 catch (Exception ex)
@@ -175,7 +183,7 @@ namespace LostAndFoundTracker.Controllers
             return View(model);
         }
 
-        // GET: /Items/GetUsersForSearch - Search users for reward modal
+        // GET: /Items/GetUsersForSearch
         [HttpGet]
         public async Task<IActionResult> GetUsersForSearch(string term)
         {
@@ -201,7 +209,7 @@ namespace LostAndFoundTracker.Controllers
             return Json(users);
         }
 
-        // POST: /Items/MarkFoundWithReward/{id} - Lost item reward flow
+        // POST: /Items/MarkFoundWithReward/{id} - FOR LOST ITEMS ONLY
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkFoundWithReward(int id, [FromBody] MarkFoundRewardRequest request)
@@ -238,6 +246,7 @@ namespace LostAndFoundTracker.Controllers
                     return BadRequest(new { error = "This item has already been marked as found" });
                 }
 
+                // ✅ FIX: Lost items go directly to "returned" (disappear immediately)
                 item.Status = "returned";
                 item.ConfirmedReturnDate = DateTime.Now;
 
@@ -330,7 +339,7 @@ namespace LostAndFoundTracker.Controllers
                     await _context.SaveChangesAsync();
                 }
 
-                return Ok(new { success = true, message = "Item marked as found!" });
+                return Ok(new { success = true, message = "Item marked as found and removed from lost items!" });
             }
             catch (Exception ex)
             {
@@ -338,7 +347,7 @@ namespace LostAndFoundTracker.Controllers
             }
         }
 
-        // POST: /Items/MarkFound/{id} - Keep original for backward compatibility
+        // POST: /Items/MarkFound/{id}
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkFound(int id)
@@ -362,10 +371,10 @@ namespace LostAndFoundTracker.Controllers
             return RedirectToAction("LostItems");
         }
 
-        // POST: /Items/MarkClaimed/{id}
+        // POST: /Items/MarkClaimed/{id} - Finder selects the REAL owner
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> MarkClaimed(int id)
+        public async Task<IActionResult> MarkClaimed(int id, [FromBody] MarkClaimedRequest request)
         {
             int? userId = HttpContext.Session.GetInt32("UserId");
             if (userId == null)
@@ -384,38 +393,41 @@ namespace LostAndFoundTracker.Controllers
             if (item.Type != "found")
                 return BadRequest("Only found items can be marked as claimed.");
 
-            item.Status = "claimed";
+            int selectedClaimantId = request.SelectedClaimantId;
+
+            // Verify this claimant actually claimed the item
+            var claimExists = await _context.Notifications
+                .AnyAsync(n => n.ItemId == id && n.NotificationType == "Claim" && n.SenderId == selectedClaimantId);
+
+            if (!claimExists)
+            {
+                return BadRequest("Invalid claimant selected.");
+            }
+
+            item.Status = "ready_for_rating";
+            item.SelectedClaimantId = selectedClaimantId;
 
             await _context.SaveChangesAsync();
 
-            var claimNotification = await _context.Notifications
-                .FirstOrDefaultAsync(n => n.ItemId == id && n.NotificationType == "Claim");
-
-            int claimerId = claimNotification?.SenderId ?? 0;
-            var claimer = await _context.Users.FindAsync(claimerId);
-            var finder = item.User;
-
-            if (claimer != null && claimer.Id != finder?.Id && claimerId > 0)
+            // Send notification ONLY to the SELECTED owner
+            var notification = new Notification
             {
-                var notification = new Notification
-                {
-                    ReceiverId = claimerId,
-                    SenderId = userId.Value,
-                    ItemId = id,
-                    NotificationType = "ClaimConfirmed",
-                    Message = $"{finder?.FullName ?? "The finder"} has marked the item '{item.Name}' as claimed. Please confirm pickup and rate them!",
-                    Status = "Unread",
-                    CreatedAt = DateTime.Now
-                };
-                _context.Notifications.Add(notification);
-                await _context.SaveChangesAsync();
-            }
+                ReceiverId = selectedClaimantId,
+                SenderId = userId.Value,
+                ItemId = id,
+                NotificationType = "ClaimConfirmed",
+                Message = $"The finder has confirmed that '{item.Name}' belongs to you! Please confirm pickup and rate them.",
+                Status = "Unread",
+                CreatedAt = DateTime.Now
+            };
+            _context.Notifications.Add(notification);
+            await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Item marked as claimed. The owner has been notified to confirm pickup.";
+            TempData["Success"] = "Owner has been notified to confirm pickup.";
             return RedirectToAction("FoundItems");
         }
 
-        // POST: /Items/ConfirmReturn/{id}
+        // POST: /Items/ConfirmReturn/{id} - Owner rates finder
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ConfirmReturn(int id, [FromBody] ConfirmReturnRequest request)
@@ -437,16 +449,10 @@ namespace LostAndFoundTracker.Controllers
                     return NotFound(new { error = "Item not found" });
                 }
 
-                bool isClaimer = false;
+                // Check if current user is the SELECTED claimant
+                bool isSelectedClaimant = (item.SelectedClaimantId == userId.Value);
 
-                if (item.Type == "found")
-                {
-                    var claimNotification = await _context.Notifications
-                        .FirstOrDefaultAsync(n => n.ItemId == id && n.NotificationType == "Claim" && n.SenderId == userId);
-                    isClaimer = claimNotification != null;
-                }
-
-                if (!isClaimer && item.UserId != userId)
+                if (!isSelectedClaimant && item.UserId != userId)
                 {
                     return BadRequest(new { error = "You are not authorized to confirm return for this item" });
                 }
@@ -609,7 +615,7 @@ namespace LostAndFoundTracker.Controllers
             }
         }
 
-        // POST: /Items/ClaimFound
+        // POST: /Items/ClaimFound - Owner claims item
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ClaimFound([FromBody] ClaimFoundRequest request)
@@ -663,6 +669,9 @@ namespace LostAndFoundTracker.Controllers
                 };
 
                 _context.Notifications.Add(notification);
+
+                foundItem.Status = "claimed";
+
                 await _context.SaveChangesAsync();
 
                 return Ok(new { success = true, message = "Finder notified successfully!" });
@@ -836,14 +845,12 @@ namespace LostAndFoundTracker.Controllers
             return RedirectToAction("Index", "Profile");
         }
 
-        // Helper method to generate certificate code
         private string GenerateCertificateCode(int userId, string certificateType)
         {
             return $"{certificateType.ToUpper()}-{userId}-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}";
         }
     }
 
-    // Request models for notifications
     public class FoundMatchRequest
     {
         public int ItemId { get; set; }
@@ -867,5 +874,10 @@ namespace LostAndFoundTracker.Controllers
         public int? HelperId { get; set; }
         public int? StarRating { get; set; }
         public string? ThankYouMessage { get; set; }
+    }
+
+    public class MarkClaimedRequest
+    {
+        public int SelectedClaimantId { get; set; }
     }
 }

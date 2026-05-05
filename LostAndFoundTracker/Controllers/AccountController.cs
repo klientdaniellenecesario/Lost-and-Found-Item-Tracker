@@ -198,7 +198,7 @@ namespace LostAndFoundTracker.Controllers
         }
 
         // ─────────────────────────────────────────
-        // DELETE ACCOUNT - FIXED
+        // DELETE ACCOUNT - FIXED (includes Certificates)
         // ─────────────────────────────────────────
         [Route("DeleteAccount")]
         [HttpPost]
@@ -221,15 +221,20 @@ namespace LostAndFoundTracker.Controllers
                 .Where(n => n.SenderId == userId.Value || n.ReceiverId == userId.Value);
             _context.Notifications.RemoveRange(notifications);
 
-            // 3. Delete all star transactions
+            // 3. Delete star transactions
             var starTransactions = _context.StarTransactions
                 .Where(st => st.GiverId == userId.Value || st.ReceiverId == userId.Value);
             _context.StarTransactions.RemoveRange(starTransactions);
 
+            // 4. ✅ DELETE CERTIFICATES (THIS WAS MISSING!)
+            var certificates = _context.Certificates
+                .Where(c => c.UserId == userId.Value);
+            _context.Certificates.RemoveRange(certificates);
+
             // Save all deletions
             await _context.SaveChangesAsync();
 
-            // 4. Delete the user
+            // 5. Delete the user
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();
 

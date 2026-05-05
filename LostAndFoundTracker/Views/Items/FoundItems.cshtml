@@ -1,4 +1,4 @@
-﻿﻿@using LostAndFoundTracker.Models
+﻿@using LostAndFoundTracker.Models
 @model List<Item>
 @{
     ViewData["Title"] = "Found Items";
@@ -12,7 +12,7 @@
     <p>Items that have been found on campus. Could something here belong to you?</p>
 </div>
 
-<!-- Sort Dropdown (same design as Lost Items page) -->
+<!-- Sort Dropdown -->
 <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
     <div class="sort-container">
         <label for="sortOrder" style="margin-right: 0.5rem; font-size: 0.8rem; color: #6b7280;">
@@ -63,9 +63,9 @@ else
 
                     @if (!string.IsNullOrEmpty(currentUserId) && currentUserId == item.UserId.ToString())
                     {
+                        @* Finder's view - their own found items *@
                         if (item.Status == "active")
                         {
-                            <!-- Changed to confirmation function -->
                             <button class="btn btn-primary btn-sm btn-block" style="margin-top: 0.75rem; background: #008080;" onclick="confirmMarkAsClaimed(@item.Id)">
                                 <i class="fas fa-gift"></i> Mark as Claimed
                             </button>
@@ -85,14 +85,13 @@ else
                     }
                     else if (!string.IsNullOrEmpty(currentUserId) && item.Status == "claimed" && claimedItemIds.Contains(item.Id))
                     {
-                        <!-- Changed to confirmation function -->
                         <button class="btn btn-success btn-sm btn-block" style="margin-top: 0.75rem; background: #10B981;" onclick="confirmConfirmReturn(@item.Id, '@item.Name.Replace("'", "\\'")')">
                             <i class="fas fa-check-double"></i> Confirm I Got It Back
                         </button>
                     }
-                    else if (!string.IsNullOrEmpty(currentUserId) && item.Status == "active")
+                    else if (!string.IsNullOrEmpty(currentUserId) && item.Status != "returned")
                     {
-                        <!-- Changed to confirmation function -->
+                        @* ✅ FIXED: Button shows for ALL active AND claimed items (not just active) *@
                         <button class="btn btn-primary btn-sm btn-block" style="margin-top: 0.75rem; background: #10B981;" onclick="confirmClaimThisItem(@item.Id, '@item.Name.Replace("'", "\\'")')">
                             <i class="fas fa-user-check"></i> This Is My Item
                         </button>
@@ -192,7 +191,6 @@ else
 </div>
 
 <style>
-    /* Sort dropdown styles – same as Lost Items page */
     .sort-container {
         display: flex;
         align-items: center;
@@ -211,7 +209,6 @@ else
         outline: none;
     }
 
-    /* Rest of the styles (cards, modals, etc.) – identical to your current FoundItems */
     .cards-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -326,7 +323,6 @@ else
         opacity: 0.5;
     }
 
-    /* Modal styles – identical to your existing */
     .modal {
         position: fixed;
         top: 0;
@@ -464,7 +460,6 @@ else
             document.getElementById('confirmMessage').innerText = message;
             const modal = document.getElementById('confirmationModal');
             const okBtn = document.getElementById('confirmOkBtn');
-            // Replace button to remove previous event listeners
             const newOkBtn = okBtn.cloneNode(true);
             okBtn.parentNode.replaceChild(newOkBtn, okBtn);
             newOkBtn.onclick = () => {
@@ -511,9 +506,8 @@ else
             );
         }
 
-        // ========== ORIGINAL FUNCTIONS (unchanged except markAsClaimed removes browser confirm) ==========
+        // ========== ORIGINAL FUNCTIONS ==========
         async function markAsClaimed(itemId) {
-            // Original browser confirm removed – now handled by modal
             const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
             const response = await fetch(`/Items/MarkClaimed/${itemId}`, {
                 method: 'POST',

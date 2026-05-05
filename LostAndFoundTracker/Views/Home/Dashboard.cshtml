@@ -1,7 +1,7 @@
 ﻿@{
-ViewData["Title"] = "Dashboard";
-Layout = "~/Views/Shared/_Layout.cshtml";
-var userName = Context.Session.GetString("UserFullName") ?? "Student";
+    ViewData["Title"] = "Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var userName = Context.Session.GetString("UserFullName") ?? "Student";
 }
 
 <style>
@@ -137,7 +137,6 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
             color: #008080;
         }
 
-    /* Modal Styles */
     .modal {
         position: fixed;
         top: 0;
@@ -345,6 +344,16 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
             transform: translateY(0);
         }
     }
+
+    .btn-loading {
+        opacity: 0.6;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    .fa-spinner {
+        animation: spin 1s linear infinite;
+    }
 </style>
 
 <div class="page-header">
@@ -352,7 +361,6 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
     <p>Welcome back, @userName! Here's an overview of your activity.</p>
 </div>
 
-<!-- Stats Grid - Only 3 cards -->
 <div class="stats-grid">
     <div class="stat-card">
         <div class="stat-icon"><i class="fas fa-frown"></i></div>
@@ -371,7 +379,6 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
     </div>
 </div>
 
-<!-- My Lost Items -->
 <div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-top: 2rem;">
     <div class="section-title">
         <h3><i class="fas fa-frown"></i> My Lost Items</h3>
@@ -382,8 +389,7 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
     </div>
 </div>
 
-<!-- My Found Items -->
-<div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-top: 2rem; margin-bottom: 2rem;">
+<div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-top: 2rem;">
     <div class="section-title">
         <h3><i class="fas fa-smile"></i> My Found Items</h3>
         <a href="/Items/FoundItems" class="btn btn-sm btn-outline" style="font-size: 0.75rem;">Browse all found items →</a>
@@ -393,7 +399,16 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
     </div>
 </div>
 
-<!-- ========== CONFIRMATION MODAL (Reusable) ========== -->
+<div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-top: 2rem; margin-bottom: 2rem; border-left: 4px solid #f59e0b;">
+    <div class="section-title">
+        <h3><i class="fas fa-hand-holding"></i> My Claims <small style="font-size: 0.7rem; color: #6b7280; font-weight: 400; margin-left: 0.5rem;">Items you claimed from finders</small></h3>
+        <a href="/Items/FoundItems" class="btn btn-sm btn-outline" style="font-size: 0.75rem;">Browse found items →</a>
+    </div>
+    <div id="myClaimedItems" style="margin-top: 1rem;">
+        <div class="loading"><div class="spinner"></div> Loading your claims...</div>
+    </div>
+</div>
+
 <div id="confirmationModal" class="modal" style="display: none;">
     <div class="modal-content" style="max-width: 450px;">
         <div class="modal-header">
@@ -410,7 +425,6 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
     </div>
 </div>
 
-<!-- Mark as Found Modal (owner) -->
 <div id="markFoundModal" class="modal" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
@@ -419,7 +433,6 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
         </div>
         <div class="modal-body">
             <p>Marking as found: <strong id="markFoundItemName"></strong></p>
-
             <div id="searchStep" class="form-group">
                 <label><i class="fas fa-user-friends"></i> Who helped you find this item?</label>
                 <div class="search-container">
@@ -428,7 +441,6 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
                 </div>
                 <small style="color: #6B7280; display: block; margin-top: 0.5rem;">Search for the person who helped you, or click "Nobody helped" below.</small>
             </div>
-
             <div id="selectedHelperDisplay" style="display: none;" class="selected-helper-info">
                 <div class="selected-helper-name">
                     <i class="fas fa-user-check"></i> <span id="selectedHelperDisplayName"></span>
@@ -438,10 +450,8 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
                     <i class="fas fa-edit"></i> Change Helper
                 </button>
             </div>
-
             <input type="hidden" id="selectedHelperId" value="" />
             <input type="hidden" id="selectedHelperName" value="" />
-
             <div class="form-group" id="starRatingGroup" style="display: none;">
                 <label><i class="fas fa-star"></i> Rate the Helper (1-5 stars)</label>
                 <div class="star-rating">
@@ -454,7 +464,6 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
                 <input type="hidden" id="starRatingValue" value="0" />
                 <small style="color: #6B7280;">Your rating helps recognize helpful students!</small>
             </div>
-
             <div class="form-group" id="thankYouGroup" style="display: none;">
                 <label><i class="fas fa-comment"></i> Thank You Message (Optional):</label>
                 <textarea id="thankYouMessage" class="form-control" rows="3" placeholder="Thank you for helping me find my item! I really appreciate it..."></textarea>
@@ -467,7 +476,47 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
     </div>
 </div>
 
-<!-- Claim Modal -->
+<div id="markAsClaimedModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-gift"></i> Select the Owner</h3>
+            <span class="modal-close" onclick="closeMarkAsClaimedModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p>Item: <strong id="markAsClaimedItemName"></strong></p>
+            <p>Multiple people claimed this item. Please select the <strong>real owner</strong>:</p>
+            <div id="claimantSearchStep" class="form-group">
+                <label><i class="fas fa-search"></i> Search claimants by name or email:</label>
+                <div class="search-container">
+                    <input type="text" id="claimantSearch" class="form-control" placeholder="Type name or email..." autocomplete="off" />
+                    <div id="claimantSearchResults" class="search-results-dropdown" style="display: none;"></div>
+                </div>
+            </div>
+            <div id="selectedClaimantDisplay" style="display: none;" class="selected-helper-info">
+                <div class="selected-helper-name">
+                    <i class="fas fa-user-check"></i> <span id="selectedClaimantDisplayName"></span>
+                </div>
+                <div class="selected-helper-email" id="selectedClaimantDisplayEmail"></div>
+                <button type="button" class="btn btn-sm btn-outline" style="margin-top: 0.5rem; font-size: 0.7rem;" onclick="changeClaimant()">
+                    <i class="fas fa-edit"></i> Change Selection
+                </button>
+            </div>
+            <input type="hidden" id="selectedClaimantId" value="" />
+            <input type="hidden" id="selectedClaimantName" value="" />
+            <div style="padding: 0.75rem 1rem; background: #f0f9f9; border-radius: 0.5rem; border-left: 3px solid #008080; font-size: 0.875rem; color: #374151; margin-top: 1rem;">
+                <i class="fas fa-info-circle" style="color: #008080;"></i>
+                After selecting the real owner, they will be asked to rate you and give you stars for your help!
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeMarkAsClaimedModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="submitMarkAsClaimedWithOwner()" id="confirmClaimantBtn" style="display: none;">
+                <i class="fas fa-check"></i> Confirm & Notify Owner
+            </button>
+        </div>
+    </div>
+</div>
+
 <div id="claimModal" class="modal" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
@@ -494,7 +543,6 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
     </div>
 </div>
 
-<!-- Confirm Return Modal -->
 <div id="confirmReturnModal" class="modal" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
@@ -504,7 +552,6 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
         <div class="modal-body">
             <p>You have received: <strong id="confirmItemName"></strong></p>
             <p>Thank <strong id="finderName"></strong> for helping me!</p>
-
             <div class="form-group">
                 <label><i class="fas fa-star"></i> Rate the Finder (1-5 stars)</label>
                 <div class="star-rating">
@@ -517,7 +564,6 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
                 <input type="hidden" id="starRatingValueConfirm" value="0" />
                 <small style="color: #6B7280;">Your rating helps recognize helpful students!</small>
             </div>
-
             <div class="form-group">
                 <label><i class="fas fa-comment"></i> Thank You Message (Optional):</label>
                 <textarea id="thankYouMessageConfirm" class="form-control" rows="3" placeholder="Thank you so much for finding my item! I really appreciate your help..."></textarea>
@@ -537,7 +583,27 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
         let currentMarkFoundItemId = 0;
         let currentClaimItemId = 0;
         let currentReturnItemId = 0;
+        let currentMarkAsClaimedItemId = 0;
         let searchTimeout;
+        let claimantSearchTimeout;
+
+        // ========== BUTTON LOADING STATE ==========
+        function disableButton(btn, loadingText = "Processing...") {
+            if (!btn) return null;
+            if (btn.disabled) return null;
+            btn.disabled = true;
+            btn.classList.add('btn-loading');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${loadingText}`;
+            return originalText;
+        }
+
+        function enableButton(btn, originalText) {
+            if (!btn) return;
+            btn.disabled = false;
+            btn.classList.remove('btn-loading');
+            if (originalText) btn.innerHTML = originalText;
+        }
 
         // ========== CONFIRMATION MODAL FUNCTIONS ==========
         function showConfirmDialog(title, message, onConfirm) {
@@ -558,14 +624,11 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
             document.getElementById('confirmationModal').style.display = 'none';
         }
 
-        // ========== CONFIRMATION FOR "MARK AS FOUND" ==========
         function confirmMarkAsFound(itemId, itemName) {
             showConfirmDialog(
                 "Mark as Found?",
                 "Are you confirming that your lost item has been returned to you? After confirming you will be asked to give a star rating to whoever helped you.",
-                () => {
-                    showMarkFoundModal(itemId, itemName);
-                }
+                () => { showMarkFoundModal(itemId, itemName); }
             );
         }
 
@@ -592,58 +655,120 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
                 } else {
                     myFoundContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🟢</div><h3>You have no found items reported yet.</h3></div>';
                 }
+
+                const myClaimedContainer = document.getElementById('myClaimedItems');
+                if (data.myClaimedItems && data.myClaimedItems.length > 0) {
+                    myClaimedContainer.innerHTML = renderClaimedCards(data.myClaimedItems);
+                } else {
+                    myClaimedContainer.innerHTML = `<div class="empty-state">
+                                <div class="empty-state-icon">👌</div>
+                                <h3>You have not claimed any found items yet.</h3>
+                                <p style="color: #6b7280; font-size: 0.875rem;">Browse found items and click <strong>Claim This Item</strong> if you recognize something that belongs to you.</p>
+                            </div>`;
+                }
+
             } catch (error) {
                 console.error('Error loading dashboard:', error);
                 document.getElementById('myLostItems').innerHTML = '<div class="alert-error">Failed to load data.</div>';
                 document.getElementById('myFoundItems').innerHTML = '<div class="alert-error">Failed to load data.</div>';
+                document.getElementById('myClaimedItems').innerHTML = '<div class="alert-error">Failed to load data.</div>';
             }
         }
 
         function renderItemCards(items, type) {
             return `<div class="cards-grid">
-                                ${items.map(item => {
+                        ${items.map(item => {
                 let buttonHtml = '';
-
                 if (type === 'lost') {
                     buttonHtml = `<button class="btn btn-success btn-sm btn-block" style="margin-top: 0.75rem; background: #10B981;" onclick="event.stopPropagation(); confirmMarkAsFound(${item.id}, '${escapeHtml(item.name).replace(/'/g, "\\'")}')">
-                                            <i class="fas fa-check"></i> Mark as Found
-                                        </button>`;
+                                    <i class="fas fa-check"></i> Mark as Found
+                                </button>`;
                 } else if (type === 'found') {
                     if (item.status === 'active' || !item.status) {
-                        buttonHtml = `<button class="btn btn-primary btn-sm btn-block" style="margin-top: 0.75rem; background: #008080;" onclick="event.stopPropagation(); markAsClaimed(${item.id})">
-                                                <i class="fas fa-gift"></i> Mark as Claimed
-                                            </button>`;
+                        buttonHtml = `<div style="margin-top: 0.75rem; padding: 0.5rem; background: #f0f9f9; border-radius: 0.5rem; text-align: center; font-size: 0.8rem; color: #008080;">
+                                        <i class="fas fa-eye"></i> Visible to others — waiting for a claim
+                                    </div>`;
                     } else if (item.status === 'claimed') {
-                        buttonHtml = `<div style="margin-top: 0.75rem; padding: 0.5rem; background: #fef3c7; border-radius: 0.5rem; text-align: center; font-size: 0.8rem;">
-                                                <i class="fas fa-clock"></i> ⏳ Awaiting owner confirmation
-                                            </div>`;
-                    } else if (item.status === 'returned') {
-                        buttonHtml = `<div style="margin-top: 0.75rem; padding: 0.5rem; background: #d1fae5; border-radius: 0.5rem; text-align: center; font-size: 0.8rem;">
-                                                <i class="fas fa-check-circle"></i> ✅ Returned! You received ${item.starRatingGiven || 0} stars
-                                            </div>`;
+                        buttonHtml = `<button class="btn btn-primary btn-sm btn-block" style="margin-top: 0.75rem; background: #008080;" onclick="event.stopPropagation(); showMarkAsClaimedModalWithClaimants(${item.id}, '${escapeHtml(item.name).replace(/'/g, "\\'")}')">
+                                        <i class="fas fa-gift"></i> Mark as Claimed
+                                    </button>`;
                     }
                 }
-
                 return `
-                                        <div class="item-card">
-                                            <div class="card-image" onclick="location.href='/Items/Detail/${item.id}'">
-                                                ${item.photoUrl ? `<img src="${item.photoUrl}" alt="${item.name}">` : (type === 'lost' ? '🔴' : '🟢')}
-                                            </div>
-                                            <div class="card-content">
-                                                <div class="card-title">${escapeHtml(item.name)}</div>
-                                                <div class="card-details">
-                                                    <i class="fas fa-map-marker-alt"></i> ${escapeHtml(item.location)}<br/>
-                                                    <i class="fas fa-calendar"></i> ${escapeHtml(item.date)}
-                                                </div>
-                                                <span class="badge ${type === 'lost' ? 'badge-lost' : 'badge-found'}">
-                                                    ${type === 'lost' ? 'LOST' : 'FOUND'}
-                                                </span>
-                                                ${buttonHtml}
-                                            </div>
+                                <div class="item-card">
+                                    <div class="card-image" onclick="location.href='/Items/Detail/${item.id}'">
+                                        ${item.photoUrl ? `<img src="${item.photoUrl}" alt="${item.name}">` : (type === 'lost' ? '🔴' : '🟢')}
+                                    </div>
+                                    <div class="card-content">
+                                        <div class="card-title">${escapeHtml(item.name)}</div>
+                                        <div class="card-details">
+                                            <i class="fas fa-map-marker-alt"></i> ${escapeHtml(item.location)}<br/>
+                                            <i class="fas fa-calendar"></i> ${escapeHtml(item.date)}
                                         </div>
-                                    `;
+                                        <span class="badge ${type === 'lost' ? 'badge-lost' : 'badge-found'}">
+                                            ${type === 'lost' ? 'LOST' : 'FOUND'}
+                                        </span>
+                                        ${buttonHtml}
+                                    </div>
+                                </div>
+                            `;
             }).join('')}
-                            </div>`;
+                    </div>`;
+        }
+
+        function renderClaimedCards(items) {
+            return `<div class="cards-grid">
+                        ${items.map(item => {
+                let statusBadge = '';
+                let actionBtn = '';
+                if (item.status === 'active') {
+                    statusBadge = `<span class="badge" style="background: #fef3c7; color: #b45309;">
+                                    <i class="fas fa-clock"></i> Awaiting Finder Response
+                                </span>`;
+                    actionBtn = `<div style="margin-top: 0.75rem; padding: 0.5rem; background: #fef9c3; border-radius: 0.5rem; font-size: 0.78rem; color: #92400e; text-align: center;">
+                                    <i class="fas fa-hourglass-half"></i> Your claim was sent — waiting for the finder to accept it.
+                                </div>`;
+                } else if (item.status === 'claimed') {
+                    statusBadge = `<span class="badge" style="background: #dbeafe; color: #1d4ed8;">
+                                    <i class="fas fa-check"></i> Claim Sent
+                                </span>`;
+                    actionBtn = `<div style="margin-top: 0.75rem; padding: 0.5rem; background: #fef9c3; border-radius: 0.5rem; font-size: 0.78rem; color: #92400e; text-align: center;">
+                                    <i class="fas fa-hourglass-half"></i> Your claim was sent — waiting for the finder to confirm and return the item.
+                                </div>`;
+                } else if (item.status === 'ready_for_rating' && item.isSelectedClaimant === true) {
+                    statusBadge = `<span class="badge" style="background: #d1fae5; color: #10b981;">
+                                    <i class="fas fa-check-circle"></i> Item Returned
+                                </span>`;
+                    actionBtn = `<button class="btn btn-primary btn-sm btn-block" style="margin-top: 0.75rem; background: #10B981;" onclick="event.stopPropagation(); showConfirmReturnModal(${item.id}, '${escapeHtml(item.name).replace(/'/g, "\\'")}')">
+                                    <i class="fas fa-star"></i> Confirm Pickup & Rate Finder
+                                </button>`;
+                } else if (item.status === 'ready_for_rating' && item.isSelectedClaimant === false) {
+                    statusBadge = `<span class="badge" style="background: #fef3c7; color: #b45309;">
+                                    <i class="fas fa-clock"></i> Returned to Another Owner
+                                </span>`;
+                    actionBtn = `<div style="margin-top: 0.75rem; padding: 0.5rem; background: #fef9c3; border-radius: 0.5rem; font-size: 0.78rem; color: #92400e; text-align: center;">
+                                    <i class="fas fa-check-circle"></i> This item has been returned to another owner.
+                                </div>`;
+                }
+                return `
+                                <div class="item-card">
+                                    <div class="card-image" onclick="location.href='/Items/Detail/${item.id}'">
+                                        ${item.photoUrl ? `<img src="${item.photoUrl}" alt="${item.name}">` : '🟢'}
+                                    </div>
+                                    <div class="card-content">
+                                        <div class="card-title">${escapeHtml(item.name)}</div>
+                                        <div class="card-details">
+                                            <i class="fas fa-map-marker-alt"></i> ${escapeHtml(item.location)}<br/>
+                                            <i class="fas fa-calendar"></i> ${escapeHtml(item.date)}<br/>
+                                            <i class="fas fa-user"></i> Found by: <strong>${escapeHtml(item.finderName)}</strong>
+                                        </div>
+                                        ${statusBadge}
+                                        ${actionBtn}
+                                    </div>
+                                </div>
+                            `;
+            }).join('')}
+                    </div>`;
         }
 
         function escapeHtml(str) {
@@ -656,27 +781,119 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
             });
         }
 
-        async function markAsClaimed(itemId) {
-            // Browser confirm removed – now handled by modal (but here we keep original confirm for dashboard? Actually we added confirm in FoundItems but dashboard still uses direct confirm. We'll keep as is for dashboard consistency; user didn't request change for dashboard's mark as claimed)
-            if (confirm('Mark this item as claimed? The owner will be notified to confirm pickup and rate you.')) {
-                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-                const response = await fetch(`/Items/MarkClaimed/${itemId}`, {
+        // ========== MARK AS CLAIMED MODAL ==========
+        async function showMarkAsClaimedModalWithClaimants(itemId, itemName) {
+            currentMarkAsClaimedItemId = itemId;
+            document.getElementById('markAsClaimedItemName').textContent = itemName;
+            document.getElementById('claimantSearch').value = '';
+            document.getElementById('selectedClaimantId').value = '';
+            document.getElementById('selectedClaimantName').value = '';
+            document.getElementById('claimantSearchResults').style.display = 'none';
+            document.getElementById('selectedClaimantDisplay').style.display = 'none';
+            document.getElementById('claimantSearchStep').style.display = 'block';
+            document.getElementById('confirmClaimantBtn').style.display = 'none';
+            document.getElementById('markAsClaimedModal').style.display = 'flex';
+        }
+
+        function closeMarkAsClaimedModal() {
+            document.getElementById('markAsClaimedModal').style.display = 'none';
+        }
+
+        function changeClaimant() {
+            document.getElementById('selectedClaimantDisplay').style.display = 'none';
+            document.getElementById('claimantSearchStep').style.display = 'block';
+            document.getElementById('selectedClaimantId').value = '';
+            document.getElementById('selectedClaimantName').value = '';
+            document.getElementById('claimantSearch').value = '';
+            document.getElementById('confirmClaimantBtn').style.display = 'none';
+        }
+
+        document.getElementById('claimantSearch').addEventListener('input', function() {
+            clearTimeout(claimantSearchTimeout);
+            const term = this.value.trim();
+            const resultsDiv = document.getElementById('claimantSearchResults');
+            if (term.length < 2) {
+                resultsDiv.style.display = 'none';
+                resultsDiv.innerHTML = '';
+                return;
+            }
+            claimantSearchTimeout = setTimeout(async () => {
+                try {
+                    const response = await fetch(`/Items/GetClaimantsForItem/${currentMarkAsClaimedItemId}?term=${encodeURIComponent(term)}`);
+                    const claimants = await response.json();
+                    if (claimants.length === 0) {
+                        resultsDiv.innerHTML = '<div class="search-result-item" style="color: #6b7280;">No claimants found</div>';
+                        resultsDiv.style.display = 'block';
+                        return;
+                    }
+                    resultsDiv.innerHTML = claimants.map(claimant => `
+                                <div class="search-result-item" onclick="selectClaimant(${claimant.id}, '${escapeHtml(claimant.name)}', '${escapeHtml(claimant.email)}')">
+                                    <div class="search-result-name">${escapeHtml(claimant.name)}</div>
+                                    <div class="search-result-email">${escapeHtml(claimant.email)}</div>
+                                    <div style="font-size: 0.7rem; color: #6b7280; margin-top: 0.15rem;">
+                                        <i class="fas fa-calendar"></i> Claimed: ${new Date(claimant.claimedAt).toLocaleDateString()}
+                                    </div>
+                                </div>
+                            `).join('');
+                    resultsDiv.style.display = 'block';
+                } catch (error) {
+                    console.error('Search error:', error);
+                }
+            }, 300);
+        });
+
+        function selectClaimant(id, name, email) {
+            document.getElementById('selectedClaimantId').value = id;
+            document.getElementById('selectedClaimantName').value = name;
+            document.getElementById('claimantSearchStep').style.display = 'none';
+            document.getElementById('claimantSearchResults').style.display = 'none';
+            document.getElementById('claimantSearchResults').innerHTML = '';
+            const displayDiv = document.getElementById('selectedClaimantDisplay');
+            document.getElementById('selectedClaimantDisplayName').innerHTML = `<i class="fas fa-user"></i> ${escapeHtml(name)}`;
+            document.getElementById('selectedClaimantDisplayEmail').innerHTML = `<i class="fas fa-envelope"></i> ${escapeHtml(email)}`;
+            displayDiv.style.display = 'block';
+            document.getElementById('confirmClaimantBtn').style.display = 'block';
+        }
+
+        async function submitMarkAsClaimedWithOwner() {
+            const selectedClaimantId = parseInt(document.getElementById('selectedClaimantId').value);
+            if (!selectedClaimantId) {
+                alert('Please search and select the real owner from the claimants list.');
+                return;
+            }
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            const confirmBtn = document.getElementById('confirmClaimantBtn');
+            let originalText = null;
+            try {
+                originalText = disableButton(confirmBtn, "Notifying...");
+                const response = await fetch(`/Items/MarkClaimed/${currentMarkAsClaimedItemId}`, {
                     method: 'POST',
-                    headers: { 'RequestVerificationToken': token }
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify({ selectedClaimantId: selectedClaimantId })
                 });
                 if (response.ok) {
+                    closeMarkAsClaimedModal();
+                    alert('Great! The owner has been notified to confirm pickup and rate you.');
                     location.reload();
                 } else {
-                    alert('Failed to mark item as claimed.');
+                    const error = await response.json();
+                    alert(error.error || 'Failed to mark item as claimed. Please try again.');
                 }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            } finally {
+                if (originalText) enableButton(confirmBtn, originalText);
             }
         }
 
-        // ========== MARK AS FOUND MODAL FUNCTIONS (unchanged) ==========
+        // ========== MARK AS FOUND MODAL ==========
         function showMarkFoundModal(itemId, itemName) {
             currentMarkFoundItemId = itemId;
             document.getElementById('markFoundItemName').textContent = itemName;
-
             document.getElementById('helperSearch').value = '';
             document.getElementById('selectedHelperId').value = '';
             document.getElementById('selectedHelperName').value = '';
@@ -687,14 +904,11 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
             document.getElementById('confirmRewardBtn').style.display = 'none';
             document.getElementById('starRatingValue').value = 0;
             document.getElementById('thankYouMessage').value = '';
-
             document.getElementById('searchStep').style.display = 'block';
-
             document.querySelectorAll('#markFoundModal .star').forEach(star => {
                 star.textContent = '☆';
                 star.style.color = '#d1d5db';
             });
-
             document.getElementById('markFoundModal').style.display = 'flex';
         }
 
@@ -717,28 +931,23 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
             clearTimeout(searchTimeout);
             const term = this.value.trim();
             const resultsDiv = document.getElementById('searchResults');
-
             document.getElementById('selectedHelperDisplay').style.display = 'none';
             document.getElementById('selectedHelperId').value = '';
             document.getElementById('selectedHelperName').value = '';
-
             if (term.length < 2) {
                 resultsDiv.style.display = 'none';
                 resultsDiv.innerHTML = '';
                 return;
             }
-
             searchTimeout = setTimeout(async () => {
                 try {
                     const response = await fetch(`/Items/GetUsersForSearch?term=${encodeURIComponent(term)}`);
                     const users = await response.json();
-
                     if (users.length === 0) {
                         resultsDiv.innerHTML = '<div class="search-result-item" style="color: #6b7280;">No users found</div>';
                         resultsDiv.style.display = 'block';
                         return;
                     }
-
                     resultsDiv.innerHTML = users.map(user => `
                                 <div class="search-result-item" onclick="selectHelper(${user.id}, '${escapeHtml(user.name)}', '${escapeHtml(user.email)}')">
                                     <div class="search-result-name">${escapeHtml(user.name)}</div>
@@ -755,16 +964,13 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
         function selectHelper(id, name, email) {
             document.getElementById('selectedHelperId').value = id;
             document.getElementById('selectedHelperName').value = name;
-
             document.getElementById('searchStep').style.display = 'none';
             document.getElementById('searchResults').style.display = 'none';
             document.getElementById('searchResults').innerHTML = '';
-
             const displayDiv = document.getElementById('selectedHelperDisplay');
             document.getElementById('selectedHelperDisplayName').innerHTML = `<i class="fas fa-user"></i> ${escapeHtml(name)}`;
             document.getElementById('selectedHelperDisplayEmail').innerHTML = `<i class="fas fa-envelope"></i> ${escapeHtml(email)}`;
             displayDiv.style.display = 'block';
-
             document.getElementById('starRatingGroup').style.display = 'block';
             document.getElementById('thankYouGroup').style.display = 'block';
             document.getElementById('confirmRewardBtn').style.display = 'block';
@@ -776,64 +982,34 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
 
         function setStarRating(rating) {
             document.getElementById('starRatingValue').value = rating;
-            const stars = document.querySelectorAll('#markFoundModal .star');
-            stars.forEach((star, index) => {
-                if (index < rating) {
-                    star.textContent = '★';
-                    star.style.color = '#f59e0b';
-                } else {
-                    star.textContent = '☆';
-                    star.style.color = '#d1d5db';
-                }
+            document.querySelectorAll('#markFoundModal .star').forEach((star, index) => {
+                star.textContent = index < rating ? '★' : '☆';
+                star.style.color = index < rating ? '#f59e0b' : '#d1d5db';
             });
         }
 
         async function submitMarkFoundWithReward(skip = false) {
             const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-            let helperId = null;
-            let starRating = null;
-            let thankYouMessage = null;
-
+            const confirmBtn = document.getElementById('confirmRewardBtn');
+            let originalText = null;
+            let helperId = null, starRating = null, thankYouMessage = null;
             if (!skip) {
                 helperId = parseInt(document.getElementById('selectedHelperId').value);
                 starRating = parseInt(document.getElementById('starRatingValue').value);
                 thankYouMessage = document.getElementById('thankYouMessage').value;
-
-                if (!helperId) {
-                    alert('Please search and select the person who helped you, or click "Nobody helped".');
-                    return;
-                }
-
-                if (starRating === 0) {
-                    alert('Please select a star rating (1-5).');
-                    return;
-                }
+                if (!helperId) { alert('Please search and select the person who helped you, or click "Nobody helped".'); return; }
+                if (starRating === 0) { alert('Please select a star rating (1-5).'); return; }
             }
-
-            const requestBody = {
-                helperId: helperId,
-                starRating: starRating,
-                thankYouMessage: thankYouMessage
-            };
-
             try {
+                originalText = disableButton(confirmBtn, skip ? "Processing..." : "Giving Stars...");
                 const response = await fetch(`/Items/MarkFoundWithReward/${currentMarkFoundItemId}`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'RequestVerificationToken': token
-                    },
-                    body: JSON.stringify(requestBody)
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+                    body: JSON.stringify({ helperId, starRating, thankYouMessage })
                 });
-
                 const result = await response.json();
-
                 if (response.ok) {
-                    if (skip) {
-                        alert('Item marked as found!');
-                    } else {
-                        alert(`Thank you! ${document.getElementById('selectedHelperName').value} has been notified and received ${starRating} stars.`);
-                    }
+                    alert(skip ? 'Item marked as found!' : `Thank you! ${document.getElementById('selectedHelperName').value} has been notified and received ${starRating} stars.`);
                     closeMarkFoundModal();
                     location.reload();
                 } else {
@@ -842,14 +1018,15 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
             } catch (error) {
                 console.error('Error:', error);
                 alert('An error occurred. Please try again.');
+            } finally {
+                if (originalText) enableButton(confirmBtn, originalText);
             }
         }
 
-        // ========== CLAIM MODAL FUNCTIONS ==========
+        // ========== CLAIM MODAL ==========
         function showClaimModal(itemId, itemName) {
             currentClaimItemId = itemId;
             document.getElementById('claimItemName').textContent = itemName;
-
             fetch('/Profile/GetCurrentUser')
                 .then(res => res.json())
                 .then(user => {
@@ -857,13 +1034,11 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
                     document.getElementById('claimUserEmail').textContent = user.email;
                     document.getElementById('claimUserPhone').textContent = user.contactNumber || 'Not provided';
                 })
-                .catch(error => {
-                    console.error('Error:', error);
+                .catch(() => {
                     document.getElementById('claimUserName').textContent = 'Error loading';
                     document.getElementById('claimUserEmail').textContent = 'Error loading';
                     document.getElementById('claimUserPhone').textContent = 'Error loading';
                 });
-
             document.getElementById('claimModal').style.display = 'flex';
             document.getElementById('claimMessage').value = '';
         }
@@ -875,24 +1050,16 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
         async function submitClaim() {
             const message = document.getElementById('claimMessage').value;
             const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-
-            const requestBody = {
-                itemId: currentClaimItemId,
-                message: message
-            };
-
+            const submitBtn = document.querySelector('#claimModal .btn-primary');
+            let originalText = null;
             try {
+                originalText = disableButton(submitBtn, "Sending...");
                 const response = await fetch('/Items/ClaimFound', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'RequestVerificationToken': token
-                    },
-                    body: JSON.stringify(requestBody)
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+                    body: JSON.stringify({ itemId: currentClaimItemId, message })
                 });
-
                 const result = await response.json();
-
                 if (response.ok) {
                     alert('Notification sent! The finder will contact you soon.');
                     closeClaimModal();
@@ -903,28 +1070,22 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
             } catch (error) {
                 console.error('Error:', error);
                 alert('An error occurred. Please try again.');
+            } finally {
+                if (originalText) enableButton(submitBtn, originalText);
             }
         }
 
-        // ========== CONFIRM RETURN MODAL FUNCTIONS ==========
+        // ========== CONFIRM RETURN MODAL ==========
         function showConfirmReturnModal(itemId, itemName) {
             currentReturnItemId = itemId;
             document.getElementById('confirmItemName').textContent = itemName;
-
             fetch(`/Items/GetFinderInfo/${itemId}`)
                 .then(res => res.json())
-                .then(data => {
-                    document.getElementById('finderName').textContent = data.finderName;
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    document.getElementById('finderName').textContent = 'the finder';
-                });
-
+                .then(data => { document.getElementById('finderName').textContent = data.finderName; })
+                .catch(() => { document.getElementById('finderName').textContent = 'the finder'; });
             document.getElementById('confirmReturnModal').style.display = 'flex';
             document.getElementById('starRatingValueConfirm').value = 0;
             document.getElementById('thankYouMessageConfirm').value = '';
-
             document.querySelectorAll('#confirmReturnModal .star').forEach(star => {
                 star.textContent = '☆';
                 star.style.color = '#d1d5db';
@@ -938,41 +1099,26 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
         function setStarRatingConfirm(rating) {
             document.getElementById('starRatingValueConfirm').value = rating;
             document.querySelectorAll('#confirmReturnModal .star').forEach((star, index) => {
-                if (index < rating) {
-                    star.textContent = '★';
-                    star.style.color = '#f59e0b';
-                } else {
-                    star.textContent = '☆';
-                    star.style.color = '#d1d5db';
-                }
+                star.textContent = index < rating ? '★' : '☆';
+                star.style.color = index < rating ? '#f59e0b' : '#d1d5db';
             });
         }
 
         async function submitConfirmReturn() {
             const starRating = parseInt(document.getElementById('starRatingValueConfirm').value);
-            if (starRating === 0) {
-                alert('Please select a star rating (1-5).');
-                return;
-            }
-
+            if (starRating === 0) { alert('Please select a star rating (1-5).'); return; }
             const thankYouMessage = document.getElementById('thankYouMessageConfirm').value;
             const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-
+            const confirmBtn = document.querySelector('#confirmReturnModal .btn-primary');
+            let originalText = null;
             try {
+                originalText = disableButton(confirmBtn, "Sending Stars...");
                 const response = await fetch(`/Items/ConfirmReturn/${currentReturnItemId}`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'RequestVerificationToken': token
-                    },
-                    body: JSON.stringify({
-                        starRating: starRating,
-                        thankYouMessage: thankYouMessage
-                    })
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+                    body: JSON.stringify({ starRating, thankYouMessage })
                 });
-
                 const result = await response.json();
-
                 if (response.ok) {
                     alert('Thank you! The finder has been notified and received stars.');
                     closeConfirmReturnModal();
@@ -983,6 +1129,8 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
             } catch (error) {
                 console.error('Error:', error);
                 alert('An error occurred. Please try again.');
+            } finally {
+                if (originalText) enableButton(confirmBtn, originalText);
             }
         }
 
@@ -990,11 +1138,9 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
         document.addEventListener('click', function(e) {
             if (e.target.classList && e.target.classList.contains('star')) {
                 if (e.target.closest('#markFoundModal')) {
-                    const value = parseInt(e.target.getAttribute('data-value'));
-                    setStarRating(value);
+                    setStarRating(parseInt(e.target.getAttribute('data-value')));
                 } else if (e.target.closest('#confirmReturnModal')) {
-                    const value = parseInt(e.target.getAttribute('data-value'));
-                    setStarRatingConfirm(value);
+                    setStarRatingConfirm(parseInt(e.target.getAttribute('data-value')));
                 }
             }
         });
@@ -1007,15 +1153,20 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
             }
         });
 
+        document.addEventListener('click', function(e) {
+            const claimantSearch = document.getElementById('claimantSearch');
+            const claimantResults = document.getElementById('claimantSearchResults');
+            if (claimantSearch && claimantResults && !claimantSearch.contains(e.target) && !claimantResults.contains(e.target)) {
+                claimantResults.style.display = 'none';
+            }
+        });
+
         window.onclick = function(event) {
-            const markFoundModal = document.getElementById('markFoundModal');
-            if (event.target === markFoundModal) closeMarkFoundModal();
-            const claimModal = document.getElementById('claimModal');
-            if (event.target === claimModal) closeClaimModal();
-            const confirmModal = document.getElementById('confirmReturnModal');
-            if (event.target === confirmModal) closeConfirmReturnModal();
-            const confirmDlg = document.getElementById('confirmationModal');
-            if (event.target === confirmDlg) closeConfirmModal();
+            if (event.target === document.getElementById('markFoundModal')) closeMarkFoundModal();
+            if (event.target === document.getElementById('claimModal')) closeClaimModal();
+            if (event.target === document.getElementById('confirmReturnModal')) closeConfirmReturnModal();
+            if (event.target === document.getElementById('confirmationModal')) closeConfirmModal();
+            if (event.target === document.getElementById('markAsClaimedModal')) closeMarkAsClaimedModal();
         }
 
         loadDashboard();

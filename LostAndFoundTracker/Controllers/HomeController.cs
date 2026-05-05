@@ -59,7 +59,8 @@ namespace LostAndFoundTracker.Controllers
                     myFoundCount = 0,
                     resolvedCount = 0,
                     myLostItems = new object[0],
-                    myFoundItems = new object[0]
+                    myFoundItems = new object[0],
+                    myClaimedItems = new object[0]
                 });
             }
 
@@ -110,11 +111,42 @@ namespace LostAndFoundTracker.Controllers
                 })
                 .ToListAsync();
 
+            // MY CLAIMED ITEMS — found items posted by others that this user has claimed
+            // IMPORTANT: Exclude "returned" ones — those move to History instead
+            var claimedItemIds = await _context.Notifications
+                .Where(n => n.SenderId == userId.Value && n.NotificationType == "Claim")
+                .Select(n => n.ItemId)
+                .Distinct()
+                .ToListAsync();
+
+            var myClaimedItems = await _context.Items
+                .Include(i => i.User)
+                .Where(i => claimedItemIds.Contains(i.Id)
+                         && i.Type == "found"
+                         && i.UserId != userId.Value
+                         && i.Status != "returned")
+                .OrderByDescending(i => i.Date)
+                .Take(6)
+                .Select(i => new
+                {
+                    id = i.Id,
+                    name = i.Name,
+                    location = i.Location,
+                    date = i.Date.ToString("MMM dd, yyyy"),
+                    photoUrl = i.PhotoUrl ?? "",
+                    status = i.Status ?? "active",
+                    starRatingGiven = i.StarRatingGiven ?? 0,
+                    finderName = i.User != null ? i.User.FullName : "Unknown",
+                    isSelectedClaimant = i.SelectedClaimantId == userId.Value  // ✅ ADD THIS - identifies real owner
+                })
+                .ToListAsync();
+
             System.Diagnostics.Debug.WriteLine($"My lost count: {myLostCount}");
             System.Diagnostics.Debug.WriteLine($"My found count: {myFoundCount}");
             System.Diagnostics.Debug.WriteLine($"Resolved count: {resolvedCount}");
             System.Diagnostics.Debug.WriteLine($"My lost items found: {myLostItems.Count}");
             System.Diagnostics.Debug.WriteLine($"My found items found: {myFoundItems.Count}");
+            System.Diagnostics.Debug.WriteLine($"My claimed items: {myClaimedItems.Count}");
 
             return Json(new
             {
@@ -122,7 +154,8 @@ namespace LostAndFoundTracker.Controllers
                 myFoundCount,
                 resolvedCount,
                 myLostItems,
-                myFoundItems
+                myFoundItems,
+                myClaimedItems
             });
         }
 

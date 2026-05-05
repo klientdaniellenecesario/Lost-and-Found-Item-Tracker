@@ -1,10 +1,10 @@
 ﻿@{
-ViewData["Title"] = "System History";
-Layout = "~/Views/Shared/_Layout.cshtml";
-var resolvedItems = ViewBag.ResolvedItems as List<LostAndFoundTracker.Controllers.ResolvedItemDetails>
-                    ?? new List<LostAndFoundTracker.Controllers.ResolvedItemDetails>();
-var starTransactions = ViewBag.StarTransactions as List<LostAndFoundTracker.Models.StarTransaction>
-                       ?? new List<LostAndFoundTracker.Models.StarTransaction>();
+    ViewData["Title"] = "System History";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var resolvedItems = ViewBag.ResolvedItems as List<LostAndFoundTracker.Controllers.ResolvedItemDetails>
+                        ?? new List<LostAndFoundTracker.Controllers.ResolvedItemDetails>();
+    var starTransactions = ViewBag.StarTransactions as List<LostAndFoundTracker.Models.StarTransaction>
+                           ?? new List<LostAndFoundTracker.Models.StarTransaction>();
 }
 
 <div class="page-header">
@@ -25,6 +25,7 @@ var starTransactions = ViewBag.StarTransactions as List<LostAndFoundTracker.Mode
             {
                 var item = detail.Item;
                 var isLost = item?.Type == "lost";
+                var isClaimed = detail.IsClaimedByCurrentUser;
 
                 <div class="history-card">
                     <!-- Item Image -->
@@ -35,7 +36,7 @@ var starTransactions = ViewBag.StarTransactions as List<LostAndFoundTracker.Mode
                         }
                         else
                         {
-                            <span style="font-size: 2rem;">@(isLost ? "🔴" : "🟢")</span>
+                            <span style="font-size: 2rem;">@(isClaimed ? "🤝" : isLost ? "🔴" : "🟢")</span>
                         }
                     </div>
 
@@ -43,9 +44,26 @@ var starTransactions = ViewBag.StarTransactions as List<LostAndFoundTracker.Mode
                     <div class="history-card-content">
                         <div class="history-card-header">
                             <h4>@item?.Name</h4>
-                            <span class="badge @(isLost ? "badge-lost" : "badge-found")">
-                                @(isLost ? "LOST → FOUND" : "FOUND → CLAIMED")
-                            </span>
+
+                            @if (isClaimed)
+                            {
+                                <!-- Found item you claimed from someone else -->
+                                <span class="badge badge-claimed">
+                                    FOUND → RETURNED TO ME
+                                </span>
+                            }
+                            else if (isLost)
+                            {
+                                <span class="badge badge-lost">
+                                    LOST → FOUND
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-found">
+                                    FOUND → CLAIMED
+                                </span>
+                            }
                         </div>
 
                         <div class="history-card-details">
@@ -54,9 +72,21 @@ var starTransactions = ViewBag.StarTransactions as List<LostAndFoundTracker.Mode
                             <p><i class="fas fa-check-circle"></i> Resolved: @(item?.ConfirmedReturnDate?.ToString("MMMM dd, yyyy") ?? "Unknown")</p>
                         </div>
 
-                        <!-- Who was involved (names only, no contact) -->
+                        <!-- Who was involved -->
                         <div class="history-card-involved">
-                            @if (isLost)
+                            @if (isClaimed)
+                            {
+                                <!-- You claimed this from someone else -->
+                                <div class="involved-item">
+                                    <i class="fas fa-hand-holding-heart"></i>
+                                    <span><strong>Found by:</strong> @detail.Poster?.FullName</span>
+                                </div>
+                                <div class="involved-item">
+                                    <i class="fas fa-user-check"></i>
+                                    <span><strong>Returned to:</strong> You</span>
+                                </div>
+                            }
+                            else if (isLost)
                             {
                                 <div class="involved-item">
                                     <i class="fas fa-user-circle"></i>
@@ -72,6 +102,7 @@ var starTransactions = ViewBag.StarTransactions as List<LostAndFoundTracker.Mode
                             }
                             else
                             {
+                                <!-- Found item you posted, claimed by someone -->
                                 <div class="involved-item">
                                     <i class="fas fa-user-circle"></i>
                                     <span><strong>Found by:</strong> @detail.Poster?.FullName</span>
@@ -325,6 +356,15 @@ var starTransactions = ViewBag.StarTransactions as List<LostAndFoundTracker.Mode
     .badge-found {
         background: #d1fae5;
         color: #10b981;
+        font-size: 0.7rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 9999px;
+    }
+
+    /* Blue badge for items returned to you (you were the claimant) */
+    .badge-claimed {
+        background: #dbeafe;
+        color: #1d4ed8;
         font-size: 0.7rem;
         padding: 0.2rem 0.6rem;
         border-radius: 9999px;
