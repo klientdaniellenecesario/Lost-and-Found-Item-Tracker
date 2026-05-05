@@ -11,6 +11,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace LostAndFoundTracker.Controllers
 {
@@ -26,13 +27,15 @@ namespace LostAndFoundTracker.Controllers
         }
 
         // GET: /Items/LostItems
+        // Shows lost items reported by OTHER users (not the currently logged-in user)
         public async Task<IActionResult> LostItems(string sort = "recent")
         {
             int? userId = HttpContext.Session.GetInt32("UserId");
             if (userId == null)
                 return RedirectToAction("Login", "Account");
 
-            var query = _context.Items.Where(i => i.Type == "lost" && i.Status != "returned");
+            // Exclude current user's own lost items
+            var query = _context.Items.Where(i => i.Type == "lost" && i.Status != "returned" && i.UserId != userId.Value);
 
             // Apply sorting
             query = sort switch
@@ -49,15 +52,17 @@ namespace LostAndFoundTracker.Controllers
         }
 
         // GET: /Items/FoundItems
+        // Shows found items reported by OTHER users (not the currently logged-in user)
         public async Task<IActionResult> FoundItems(string sort = "recent")
         {
             int? userId = HttpContext.Session.GetInt32("UserId");
             if (userId == null)
                 return RedirectToAction("Login", "Account");
 
+            // Exclude current user's own found items
             var query = _context.Items
                 .Include(i => i.User)
-                .Where(i => i.Type == "found" && i.Status != "returned");
+                .Where(i => i.Type == "found" && i.Status != "returned" && i.UserId != userId.Value);
 
             // Apply sorting
             query = sort switch
@@ -68,8 +73,17 @@ namespace LostAndFoundTracker.Controllers
 
             var foundItems = await query.ToListAsync();
 
+            // Get IDs of items that the current user has claimed (via "Claim" notification)
+            var claimedItemIds = await _context.Notifications
+                .Where(n => n.NotificationType == "Claim" && n.SenderId == userId.Value)
+                .Select(n => n.ItemId)
+                .Distinct()
+                .ToListAsync();
+
             ViewBag.CurrentUserId = userId;
             ViewBag.CurrentSort = sort;
+            ViewBag.ClaimedItemIds = claimedItemIds;
+
             return View(foundItems);
         }
 
@@ -148,7 +162,9 @@ namespace LostAndFoundTracker.Controllers
                     await _context.SaveChangesAsync();
 
                     TempData["Success"] = $"Your {model.ItemType} item has been reported successfully!";
-                    return RedirectToAction(model.ItemType == "lost" ? "LostItems" : "FoundItems");
+
+                    // ✅ Redirect to Dashboard instead of LostItems/FoundItems
+                    return RedirectToAction("Dashboard", "Home");
                 }
                 catch (Exception ex)
                 {
