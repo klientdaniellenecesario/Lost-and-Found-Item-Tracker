@@ -1,10 +1,10 @@
 ﻿@{
-    ViewData["Title"] = "System History";
-    Layout = "~/Views/Shared/_Layout.cshtml";
-    var resolvedItems = ViewBag.ResolvedItems as List<LostAndFoundTracker.Controllers.ResolvedItemDetails>
-                        ?? new List<LostAndFoundTracker.Controllers.ResolvedItemDetails>();
-    var starTransactions = ViewBag.StarTransactions as List<LostAndFoundTracker.Models.StarTransaction>
-                           ?? new List<LostAndFoundTracker.Models.StarTransaction>();
+ViewData["Title"] = "System History";
+Layout = "~/Views/Shared/_Layout.cshtml";
+var resolvedItems = ViewBag.ResolvedItems as List<LostAndFoundTracker.Controllers.ResolvedItemDetails>
+                    ?? new List<LostAndFoundTracker.Controllers.ResolvedItemDetails>();
+var starTransactions = ViewBag.StarTransactions as List<LostAndFoundTracker.Models.StarTransaction>
+                       ?? new List<LostAndFoundTracker.Models.StarTransaction>();
 }
 
 <div class="page-header">
@@ -54,7 +54,7 @@
                             <p><i class="fas fa-check-circle"></i> Resolved: @(item?.ConfirmedReturnDate?.ToString("MMMM dd, yyyy") ?? "Unknown")</p>
                         </div>
 
-                        <!-- Who was involved -->
+                        <!-- Who was involved (names only, no contact) -->
                         <div class="history-card-involved">
                             @if (isLost)
                             {
@@ -67,10 +67,6 @@
                                     <div class="involved-item">
                                         <i class="fas fa-hand-holding-heart"></i>
                                         <span><strong>Found by:</strong> @detail.HelperName</span>
-                                    </div>
-                                    <div class="involved-contact">
-                                        <span><i class="fas fa-envelope"></i> @detail.HelperEmail</span>
-                                        <span><i class="fas fa-phone"></i> @detail.HelperContact</span>
                                     </div>
                                 }
                             }
@@ -85,10 +81,6 @@
                                     <div class="involved-item">
                                         <i class="fas fa-user-check"></i>
                                         <span><strong>Claimed by:</strong> @detail.ClaimantName</span>
-                                    </div>
-                                    <div class="involved-contact">
-                                        <span><i class="fas fa-envelope"></i> @detail.ClaimantEmail</span>
-                                        <span><i class="fas fa-phone"></i> @detail.ClaimantContact</span>
                                     </div>
                                 }
                             }
@@ -273,26 +265,6 @@
             color: #f59e0b;
         }
 
-    .involved-contact {
-        display: flex;
-        gap: 1rem;
-        margin-top: 0.25rem;
-        font-size: 0.7rem;
-        color: #6b7280;
-        flex-wrap: wrap;
-    }
-
-        .involved-contact i {
-            width: 16px;
-            color: #008080;
-        }
-
-        .involved-contact span {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
-        }
-
     .thank-you-message {
         margin-top: 0.5rem;
         padding: 0.5rem;
@@ -382,11 +354,6 @@
 
         .history-card-content {
             padding: 1rem;
-        }
-
-        .involved-contact {
-            flex-direction: column;
-            gap: 0.25rem;
         }
 
         .transactions-table {

@@ -25,7 +25,7 @@ namespace LostAndFoundTracker.Controllers
             var userId = HttpContext.Session.GetInt32("UserId");
             if (userId == null) return RedirectToAction("Login", "Account");
 
-            // ONLY get current user's resolved items (removed IsResolved to fix warning)
+            // Get current user's resolved items
             var resolvedItems = await _context.Items
                 .Include(i => i.User)
                 .Where(i => i.Status == "returned" && i.UserId == userId.Value)
@@ -41,11 +41,9 @@ namespace LostAndFoundTracker.Controllers
                     Item = item,
                     Poster = item.User,
                     HelperName = null,
-                    HelperEmail = null,
-                    HelperContact = null,
                     ClaimantName = null,
-                    ClaimantEmail = null,
-                    ClaimantContact = null
+                    StarsGiven = null,
+                    ThankYouMessage = null
                 };
 
                 if (item.Type == "lost")
@@ -57,8 +55,6 @@ namespace LostAndFoundTracker.Controllers
                     if (starTransaction != null && starTransaction.Receiver != null)
                     {
                         details.HelperName = starTransaction.Receiver.FullName;
-                        details.HelperEmail = starTransaction.Receiver.Email;
-                        details.HelperContact = starTransaction.Receiver.ContactNumber ?? "Not provided";
                         details.StarsGiven = starTransaction.StarsGiven;
                         details.ThankYouMessage = starTransaction.ThankYouMessage;
                     }
@@ -74,8 +70,6 @@ namespace LostAndFoundTracker.Controllers
                         if (claimant != null)
                         {
                             details.ClaimantName = claimant.FullName;
-                            details.ClaimantEmail = claimant.Email;
-                            details.ClaimantContact = claimant.ContactNumber ?? "Not provided";
                         }
                     }
 
@@ -92,7 +86,7 @@ namespace LostAndFoundTracker.Controllers
                 resolvedItemsWithDetails.Add(details);
             }
 
-            // ONLY get star transactions involving current user
+            // Star transactions involving current user
             var starTransactions = await _context.StarTransactions
                 .Include(s => s.Giver)
                 .Include(s => s.Receiver)
@@ -114,11 +108,7 @@ namespace LostAndFoundTracker.Controllers
         public Item? Item { get; set; }
         public User? Poster { get; set; }
         public string? HelperName { get; set; }
-        public string? HelperEmail { get; set; }
-        public string? HelperContact { get; set; }
         public string? ClaimantName { get; set; }
-        public string? ClaimantEmail { get; set; }
-        public string? ClaimantContact { get; set; }
         public int? StarsGiven { get; set; }
         public string? ThankYouMessage { get; set; }
     }
