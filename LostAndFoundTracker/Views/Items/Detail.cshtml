@@ -5,6 +5,9 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
     var currentUserId = Context.Session.GetInt32("UserId")?.ToString();
     var isOwner = currentUserId == Model.UserId.ToString();
+
+    // Determine the back URL: Dashboard for owners, otherwise use ViewBag.ReturnUrl (or default)
+    string backUrl = isOwner ? "/Home/Dashboard" : (ViewBag.ReturnUrl ?? (Model.Type == "lost" ? "/Items/LostItems" : "/Items/FoundItems"));
 }
 
 <div style="max-width: 800px; margin: 0 auto;">
@@ -68,8 +71,8 @@
                 </form>
             }
 
-            <!-- Back button -->
-            <a href="@ViewBag.ReturnUrl" class="btn btn-outline btn-block" style="margin-top: 1rem;">
+            <!-- Back button: Dashboard for owners, otherwise the original return URL -->
+            <a href="@backUrl" class="btn btn-outline btn-block" style="margin-top: 1rem;">
                 <i class="fas fa-arrow-left"></i> Back to Results
             </a>
         </div>
@@ -77,13 +80,74 @@
 </div>
 
 <style>
-    .badge-lost { background: #fee2e2; color: #dc2626; }
-    .badge-found { background: #d1fae5; color: #10b981; }
-    .btn-warning { color: white; background: #f59e0b; border-color: #f59e0b; padding: 0.75rem; border-radius: 0.5rem; font-weight: 500; cursor: pointer; border: none; display: block; width: 100%; text-align: center; text-decoration: none; }
-    .btn-warning:hover { background: #d97706; }
-    .btn-danger { color: white; background: #dc2626; border-color: #dc2626; padding: 0.75rem; border-radius: 0.5rem; font-weight: 500; cursor: pointer; border: none; display: block; width: 100%; text-align: center; }
-    .btn-danger:hover { background: #b91c1c; }
-    .btn-outline { background: transparent; border: 1px solid #008080; color: #008080; border-radius: 0.5rem; padding: 0.75rem; text-decoration: none; display: block; width: 100%; text-align: center; cursor: pointer; font-weight: 500; }
-    .btn-outline:hover { background: #e6f3f3; }
-    .btn-block { width: 100%; display: block; text-align: center; }
+    .badge-lost {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    .badge-found {
+        background: #d1fae5;
+        color: #10b981;
+    }
+
+    .btn-warning {
+        color: white;
+        background: #f59e0b;
+        border-color: #f59e0b;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        cursor: pointer;
+        border: none;
+        display: block;
+        width: 100%;
+        text-align: center;
+        text-decoration: none;
+    }
+
+        .btn-warning:hover {
+            background: #d97706;
+        }
+
+    .btn-danger {
+        color: white;
+        background: #dc2626;
+        border-color: #dc2626;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        cursor: pointer;
+        border: none;
+        display: block;
+        width: 100%;
+        text-align: center;
+    }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+
+    .btn-outline {
+        background: transparent;
+        border: 1px solid #008080;
+        color: #008080;
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        text-decoration: none;
+        display: block;
+        width: 100%;
+        text-align: center;
+        cursor: pointer;
+        font-weight: 500;
+    }
+
+        .btn-outline:hover {
+            background: #e6f3f3;
+        }
+
+    .btn-block {
+        width: 100%;
+        display: block;
+        text-align: center;
+    }
 </style>

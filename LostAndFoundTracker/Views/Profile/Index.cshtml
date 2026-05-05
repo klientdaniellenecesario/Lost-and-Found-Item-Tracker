@@ -47,7 +47,6 @@
         <div class="loading">Loading rewards...</div>
     </div>
     <div id="certificatesList" style="margin-top: 1rem;"></div>
-    <div id="recentTransactions" style="margin-top: 1.5rem;"></div>
 </div>
 
 <!-- Account Settings Section -->
@@ -261,30 +260,6 @@
             color: #f59e0b;
         }
 
-    .transaction-item {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        padding: 0.75rem;
-        border-bottom: 1px solid #e5e7eb;
-    }
-
-    .transaction-stars {
-        font-size: 1.25rem;
-        color: #f59e0b;
-        min-width: 60px;
-    }
-
-    .transaction-message {
-        flex: 1;
-        font-size: 0.85rem;
-    }
-
-    .transaction-date {
-        font-size: 0.7rem;
-        color: #9ca3af;
-    }
-
     .modal {
         position: fixed;
         top: 0;
@@ -385,11 +360,6 @@
         .star-card {
             min-width: auto;
         }
-
-        .transaction-item {
-            flex-direction: column;
-            text-align: center;
-        }
     }
 </style>
 
@@ -403,7 +373,7 @@
 
                 const data = await response.json();
 
-                // Build star summary HTML
+                // Build star summary HTML (without recent transactions)
                 const summaryHtml = `
                     <div class="star-card">
                         <h4><i class="fas fa-star"></i> Total Stars</h4>
@@ -455,27 +425,6 @@
                     document.getElementById('certificatesList').innerHTML = certHtml;
                 } else {
                     document.getElementById('certificatesList').innerHTML = '<small>No certificates earned yet. Keep helping others!</small>';
-                }
-
-                // Build recent transactions
-                if (data.recentTransactions && data.recentTransactions.length > 0) {
-                    let transHtml = '<strong><i class="fas fa-history"></i> Recent Stars Received:</strong><div style="margin-top: 0.5rem;">';
-                    data.recentTransactions.forEach(t => {
-                        transHtml += `
-                            <div class="transaction-item">
-                                <div class="transaction-stars">⭐ ${t.stars}</div>
-                                <div class="transaction-message">
-                                    <strong>${t.fromName}</strong> gave you stars for returning "${t.itemName}"
-                                    ${t.message ? `<br/><small>"${t.message}"</small>` : ''}
-                                </div>
-                                <div class="transaction-date">${t.date}</div>
-                            </div>
-                        `;
-                    });
-                    transHtml += '</div>';
-                    document.getElementById('recentTransactions').innerHTML = transHtml;
-                } else {
-                    document.getElementById('recentTransactions').innerHTML = '<small>No star transactions yet. Help return items to earn stars!</small>';
                 }
 
                 // Store certificates data globally
