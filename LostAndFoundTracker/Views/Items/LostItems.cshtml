@@ -32,9 +32,7 @@
 {
     <div class="empty-state">
         <div class="empty-state-icon">🔴</div>
-        <h3>No Lost Items Reported</h3>
-        <p>There are currently no lost items reported. Check back later or report a lost item.</p>
-        <a href="/Items/ReportItem" class="btn btn-primary" style="margin-top: 1rem;"><i class="fas fa-plus-circle"></i> Report Lost Item</a>
+        <h3>No lost items from other students yet. Check back later!</h3>
     </div>
 }
 else
@@ -70,8 +68,9 @@ else
                     }
                     else if (!string.IsNullOrEmpty(currentUserId))
                     {
-                        <button class="btn btn-secondary btn-sm btn-block" style="margin-top: 0.75rem;" onclick="showFoundModal(@item.Id, '@item.Name.Replace("'", "\\'")')">
-                            <i class="fas fa-hand-holding-heart"></i> I Found This Item
+                        <!-- Changed onclick to call confirmation function -->
+                        <button class="btn btn-secondary btn-sm btn-block" style="margin-top: 0.75rem;" onclick="confirmIHaveThisItem(@item.Id, '@item.Name.Replace("'", "\\'")')">
+                            <i class="fas fa-hand-holding-heart"></i> I Have This Item
                         </button>
                     }
                 </div>
@@ -82,7 +81,24 @@ else
 
 @Html.AntiForgeryToken()
 
-<!-- Modal for I Found This Item (when OTHER user found your item) -->
+<!-- ========== CONFIRMATION MODAL (Reusable) ========== -->
+<div id="confirmationModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 450px;">
+        <div class="modal-header">
+            <h3 id="confirmTitle"><i class="fas fa-question-circle"></i> Confirm Action</h3>
+            <span class="modal-close" onclick="closeConfirmModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p id="confirmMessage">Are you sure?</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeConfirmModal()">Cancel</button>
+            <button id="confirmOkBtn" class="btn btn-primary">Yes, Proceed</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for I Have This Item (original) -->
 <div id="foundModal" class="modal" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
@@ -90,7 +106,7 @@ else
             <span class="modal-close" onclick="closeFoundModal()">&times;</span>
         </div>
         <div class="modal-body">
-            <p>You found: <strong id="modalItemName"></strong></p>
+            <p>You have: <strong id="modalItemName"></strong></p>
             <p>Your information will be shared with the owner:</p>
             <div class="user-info-preview">
                 <p><i class="fas fa-user"></i> Name: <span id="userName"></span></p>
@@ -99,7 +115,7 @@ else
             </div>
             <div class="form-group">
                 <label><i class="fas fa-comment"></i> Message to Owner:</label>
-                <textarea id="foundMessage" class="form-control" rows="3" placeholder="I found your item! Please contact me to arrange pickup..."></textarea>
+                <textarea id="foundMessage" class="form-control" rows="3" placeholder="I have your item! Please contact me to arrange pickup..."></textarea>
             </div>
         </div>
         <div class="modal-footer">
@@ -109,7 +125,7 @@ else
     </div>
 </div>
 
-<!-- Modal for Mark as Found with Reward (when YOU mark YOUR item as found) -->
+<!-- Modal for Mark as Found with Reward (when owner marks their own item as found) -->
 <div id="markFoundModal" class="modal" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
@@ -129,7 +145,6 @@ else
                 <small style="color: #6B7280; display: block; margin-top: 0.5rem;">Search for the person who helped you, or click "Nobody helped" below.</small>
             </div>
 
-            <!-- Step 2: Selected helper display (replaces search after selection) -->
             <div id="selectedHelperDisplay" style="display: none;" class="selected-helper-info">
                 <div class="selected-helper-name">
                     <i class="fas fa-user-check"></i> <span id="selectedHelperDisplayName"></span>
@@ -143,7 +158,6 @@ else
             <input type="hidden" id="selectedHelperId" value="" />
             <input type="hidden" id="selectedHelperName" value="" />
 
-            <!-- Step 3: Star rating (appears after helper selected) -->
             <div class="form-group" id="starRatingGroup" style="display: none;">
                 <label><i class="fas fa-star"></i> Rate the Helper (1-5 stars)</label>
                 <div class="star-rating">
@@ -157,7 +171,6 @@ else
                 <small style="color: #6B7280;">Your rating helps recognize helpful students!</small>
             </div>
 
-            <!-- Step 4: Thank you message (appears after helper selected) -->
             <div class="form-group" id="thankYouGroup" style="display: none;">
                 <label><i class="fas fa-comment"></i> Thank You Message (Optional):</label>
                 <textarea id="thankYouMessage" class="form-control" rows="3" placeholder="Thank you for helping me find my item! I really appreciate it..."></textarea>
@@ -171,6 +184,7 @@ else
 </div>
 
 <style>
+    /* Your existing styles - unchanged */
     .modal {
         position: fixed;
         top: 0;
@@ -286,7 +300,6 @@ else
             box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.1);
         }
 
-    /* Star Rating Styles */
     .star-rating {
         display: flex;
         gap: 0.5rem;
@@ -305,7 +318,6 @@ else
             transform: scale(1.2);
         }
 
-    /* Sort Dropdown Styles */
     .sort-container {
         display: flex;
         align-items: center;
@@ -324,7 +336,6 @@ else
         outline: none;
     }
 
-    /* Improved Search Results Dropdown */
     .search-container {
         position: relative;
     }
@@ -374,7 +385,6 @@ else
         word-break: break-all;
     }
 
-    /* Selected Helper Display */
     .selected-helper-info {
         background: #f0f9f9;
         padding: 0.6rem 0.75rem;
@@ -437,7 +447,38 @@ else
         let currentMarkFoundItemId = 0;
         let searchTimeout;
 
-        // ========== I FOUND THIS ITEM (OTHER USER) ==========
+        // ========== CONFIRMATION MODAL FUNCTIONS ==========
+        function showConfirmDialog(title, message, onConfirm) {
+            document.getElementById('confirmTitle').innerHTML = `<i class="fas fa-question-circle"></i> ${title}`;
+            document.getElementById('confirmMessage').innerText = message;
+            const modal = document.getElementById('confirmationModal');
+            const okBtn = document.getElementById('confirmOkBtn');
+            // Replace button to remove previous event listeners
+            const newOkBtn = okBtn.cloneNode(true);
+            okBtn.parentNode.replaceChild(newOkBtn, okBtn);
+            newOkBtn.onclick = () => {
+                closeConfirmModal();
+                if (onConfirm) onConfirm();
+            };
+            modal.style.display = 'flex';
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmationModal').style.display = 'none';
+        }
+
+        // ========== CONFIRMATION FOR "I HAVE THIS ITEM" ==========
+        function confirmIHaveThisItem(itemId, itemName) {
+            showConfirmDialog(
+                "Respond to This Report?",
+                "Are you sure you have this item and can return it to the owner? The owner will be notified and your contact details will be shared.",
+                () => {
+                    showFoundModal(itemId, itemName);
+                }
+            );
+        }
+
+        // ========== ORIGINAL FUNCTIONS (unchanged) ==========
         function showFoundModal(itemId, itemName) {
             currentItemId = itemId;
             document.getElementById('modalItemName').textContent = itemName;
@@ -497,12 +538,10 @@ else
             }
         }
 
-        // ========== MARK AS FOUND WITH REWARD (OWNER) ==========
         function showMarkFoundModal(itemId, itemName) {
             currentMarkFoundItemId = itemId;
             document.getElementById('markFoundItemName').textContent = itemName;
 
-            // Reset all fields
             document.getElementById('helperSearch').value = '';
             document.getElementById('selectedHelperId').value = '';
             document.getElementById('selectedHelperName').value = '';
@@ -513,11 +552,9 @@ else
             document.getElementById('confirmRewardBtn').style.display = 'none';
             document.getElementById('starRatingValue').value = 0;
             document.getElementById('thankYouMessage').value = '';
-            
-            // Make sure search step is visible
+
             document.getElementById('searchStep').style.display = 'block';
-            
-            // Reset stars
+
             document.querySelectorAll('#markFoundModal .star').forEach(star => {
                 star.textContent = '☆';
                 star.style.color = '#d1d5db';
@@ -531,18 +568,11 @@ else
         }
 
         function changeHelper() {
-            // Hide selected display
             document.getElementById('selectedHelperDisplay').style.display = 'none';
-            
-            // Show search step again
             document.getElementById('searchStep').style.display = 'block';
-            
-            // Clear selections
             document.getElementById('selectedHelperId').value = '';
             document.getElementById('selectedHelperName').value = '';
             document.getElementById('helperSearch').value = '';
-            
-            // Hide star rating and thank you
             document.getElementById('starRatingGroup').style.display = 'none';
             document.getElementById('thankYouGroup').style.display = 'none';
             document.getElementById('confirmRewardBtn').style.display = 'none';
@@ -552,6 +582,10 @@ else
             clearTimeout(searchTimeout);
             const term = this.value.trim();
             const resultsDiv = document.getElementById('searchResults');
+
+            document.getElementById('selectedHelperDisplay').style.display = 'none';
+            document.getElementById('selectedHelperId').value = '';
+            document.getElementById('selectedHelperName').value = '';
 
             if (term.length < 2) {
                 resultsDiv.style.display = 'none';
@@ -594,22 +628,18 @@ else
         }
 
         function selectHelper(id, name, email) {
-            // Set hidden fields
             document.getElementById('selectedHelperId').value = id;
             document.getElementById('selectedHelperName').value = name;
-            
-            // Hide search step
+
             document.getElementById('searchStep').style.display = 'none';
             document.getElementById('searchResults').style.display = 'none';
             document.getElementById('searchResults').innerHTML = '';
-            
-            // Show selected helper display
+
             const displayDiv = document.getElementById('selectedHelperDisplay');
             document.getElementById('selectedHelperDisplayName').innerHTML = `<i class="fas fa-user"></i> ${escapeHtml(name)}`;
             document.getElementById('selectedHelperDisplayEmail').innerHTML = `<i class="fas fa-envelope"></i> ${escapeHtml(email)}`;
             displayDiv.style.display = 'block';
-            
-            // Show star rating and thank you message
+
             document.getElementById('starRatingGroup').style.display = 'block';
             document.getElementById('thankYouGroup').style.display = 'block';
             document.getElementById('confirmRewardBtn').style.display = 'block';
@@ -690,7 +720,6 @@ else
             }
         }
 
-        // Star rating click handler
         document.addEventListener('click', function(e) {
             if (e.target.classList && e.target.classList.contains('star') && e.target.closest('#markFoundModal')) {
                 const value = parseInt(e.target.getAttribute('data-value'));
@@ -698,7 +727,6 @@ else
             }
         });
 
-        // Close dropdown when clicking outside
         document.addEventListener('click', function(e) {
             const searchInput = document.getElementById('helperSearch');
             const resultsDiv = document.getElementById('searchResults');
@@ -707,13 +735,15 @@ else
             }
         });
 
-        // Close modals when clicking outside
         window.onclick = function(event) {
             const foundModal = document.getElementById('foundModal');
             if (event.target === foundModal) closeFoundModal();
 
             const markFoundModal = document.getElementById('markFoundModal');
             if (event.target === markFoundModal) closeMarkFoundModal();
+
+            const confirmModal = document.getElementById('confirmationModal');
+            if (event.target === confirmModal) closeConfirmModal();
         }
     </script>
 }
