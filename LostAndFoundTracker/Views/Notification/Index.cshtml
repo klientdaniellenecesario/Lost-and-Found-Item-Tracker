@@ -1,79 +1,162 @@
-﻿@using LostAndFoundTracker.Models
+﻿﻿@using LostAndFoundTracker.Models
 @model List<Notification>
 @{
     ViewData["Title"] = "Notifications";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="page-header">
-    <h1><i class="fas fa-bell"></i> Notifications</h1>
-    <p>Stay updated when someone interacts with your items</p>
+<!-- Add anti-forgery token for AJAX requests -->
+@Html.AntiForgeryToken()
+
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+    <div>
+        <h1><i class="fas fa-bell"></i> Notifications</h1>
+        <p>Stay updated when someone interacts with your items</p>
+    </div>
+    <button id="markAllReadBtn" class="btn btn-outline btn-sm" style="background: #008080; color: white; border: none;">
+        <i class="fas fa-check-double"></i> Mark all as read
+    </button>
 </div>
 
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <i class="fas fa-check-circle"></i> @TempData["Success"]
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-        </button>
-    </div>
-}
+<!-- Temporary success message container -->
+<div id="successMessage" style="display: none; position: fixed; top: 20px; right: 20px; z-index: 3000; background: #10b981; color: white; padding: 0.75rem 1.25rem; border-radius: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+    <i class="fas fa-check-circle"></i> All notifications marked as read!
+</div>
 
-@if (!Model.Any())
-{
-    <div class="empty-state">
-        <div class="empty-state-icon">🔔</div>
-        <h3>No Notifications Yet</h3>
-        <p>When someone finds your lost item or claims a found item, you'll be notified here.</p>
-    </div>
-}
-else
-{
-    <div class="notifications-container">
-        @foreach (var notification in Model)
-        {
-            <div class="notification-card @(notification.Status == "Unread" ? "unread" : "")">
-                <div class="notification-card-icon">
-                    @if (notification.NotificationType == "FoundMatch")
-                    {
-                        <i class="fas fa-hand-holding-heart"></i>
-                    }
-                    else
-                    {
-                        <i class="fas fa-check-circle"></i>
-                    }
-                </div>
-                <div class="notification-card-content">
-                    <div class="notification-card-header">
-                        <strong>@notification.Sender?.FullName</strong>
-                        <span class="notification-time">@notification.CreatedAt.ToString("MMMM dd, yyyy 'at' h:mm tt")</span>
-                    </div>
-                    <div class="notification-card-message">
+<!-- Tabs -->
+<div class="notification-tabs">
+    <button class="tab-btn active" data-tab="activity">📋 Activity</button>
+    <button class="tab-btn" data-tab="rewards">⭐ Rewards</button>
+</div>
+
+<!-- Activity Tab Content -->
+<div id="activity-tab" class="tab-content active">
+    @{
+        var activityNotifications = Model.Where(n => n.NotificationType != "StarsReceived" && n.NotificationType != "CertificateEarned").ToList();
+    }
+    @if (!activityNotifications.Any())
+    {
+        <div class="empty-state">
+            <div class="empty-state-icon">📭</div>
+            <h3>No Activity Notifications</h3>
+            <p>When someone claims your item or reports a found match, you'll see it here.</p>
+        </div>
+    }
+    else
+    {
+        <div class="notifications-container">
+            @foreach (var notification in activityNotifications)
+            {
+                <div class="notification-card @(notification.Status == "Unread" ? "unread" : "")" data-notification-id="@notification.Id">
+                    <div class="notification-card-icon">
                         @if (notification.NotificationType == "FoundMatch")
                         {
-                            <text>found your item "<strong>@notification.Item?.Name</strong>"</text>
+                            <i class="fas fa-hand-holding-heart"></i>
+                        }
+                        else if (notification.NotificationType == "Claim")
+                        {
+                            <i class="fas fa-user-check"></i>
                         }
                         else
                         {
-                            <text>is claiming the item "<strong>@notification.Item?.Name</strong>" belongs to them</text>
+                            <i class="fas fa-check-circle"></i>
                         }
                     </div>
-                    <div class="notification-card-message-text">
-                        <i class="fas fa-quote-left"></i> "@notification.Message"
-                    </div>
-                    <div class="notification-card-actions">
-                        <a href="/Notification/Details/@notification.Id" class="btn btn-primary btn-sm">
-                            <i class="fas fa-eye"></i> View Details & Contact
-                        </a>
+                    <div class="notification-card-content">
+                        <div class="notification-card-header">
+                            <strong>@notification.Sender?.FullName</strong>
+                            <span class="notification-time">@notification.CreatedAt.ToString("MMMM dd, yyyy 'at' h:mm tt")</span>
+                        </div>
+                        <div class="notification-card-message">
+                            @if (notification.NotificationType == "FoundMatch")
+                            {
+                                <text>found your item "<strong>@notification.Item?.Name</strong>"</text>
+                            }
+                            else if (notification.NotificationType == "Claim")
+                            {
+                                <text>is claiming the item "<strong>@notification.Item?.Name</strong>" belongs to them</text>
+                            }
+                            else if (notification.NotificationType == "ClaimConfirmed")
+                            {
+                                <text>confirmed that you got your item "<strong>@notification.Item?.Name</strong>" back! Please rate them.</text>
+                            }
+                            else
+                            {
+                                <text>@notification.Message</text>
+                            }
+                        </div>
+                        <div class="notification-card-message-text">
+                            <i class="fas fa-quote-left"></i> "@notification.Message"
+                        </div>
+                        <div class="notification-card-actions">
+                            <a href="/Notification/Details/@notification.Id" class="btn btn-primary btn-sm">
+                                <i class="fas fa-eye"></i> View Details & Contact
+                            </a>
+                        </div>
                     </div>
                 </div>
-            </div>
-        }
-    </div>
-}
+            }
+        </div>
+    }
+</div>
+
+<!-- Rewards Tab Content -->
+<div id="rewards-tab" class="tab-content">
+    @{
+        var rewardNotifications = Model.Where(n => n.NotificationType == "StarsReceived" || n.NotificationType == "CertificateEarned").ToList();
+    }
+    @if (!rewardNotifications.Any())
+    {
+        <div class="empty-state">
+            <div class="empty-state-icon">⭐</div>
+            <h3>No Reward Notifications Yet</h3>
+            <p>When someone gives you stars for returning an item, you'll see them here.</p>
+        </div>
+    }
+    else
+    {
+        <div class="notifications-container">
+            @foreach (var notification in rewardNotifications)
+            {
+                <div class="notification-card @(notification.Status == "Unread" ? "unread" : "")" data-notification-id="@notification.Id">
+                    <div class="notification-card-icon" style="background: #f59e0b;">
+                        @if (notification.NotificationType == "StarsReceived")
+                        {
+                            <i class="fas fa-star"></i>
+                        }
+                        else
+                        {
+                            <i class="fas fa-certificate"></i>
+                        }
+                    </div>
+                    <div class="notification-card-content">
+                        <div class="notification-card-header">
+                            <strong>@(notification.NotificationType == "StarsReceived" ? notification.Sender?.FullName ?? "Someone" : "System")</strong>
+                            <span class="notification-time">@notification.CreatedAt.ToString("MMMM dd, yyyy 'at' h:mm tt")</span>
+                        </div>
+                        <div class="notification-card-message">
+                            @notification.Message
+                        </div>
+                        @if (notification.NotificationType == "StarsReceived" && !string.IsNullOrEmpty(notification.Message))
+                        {
+                            <div class="notification-card-message-text">
+                                <i class="fas fa-quote-left"></i> "@notification.Message"
+                            </div>
+                        }
+                        <div class="notification-card-actions">
+                            <a href="/Notification/Details/@notification.Id" class="btn btn-primary btn-sm">
+                                <i class="fas fa-eye"></i> View Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
 
 <style>
+    /* (same CSS as before – unchanged) */
     .alert {
         padding: 0.75rem 1rem;
         border-radius: 0.5rem;
@@ -107,6 +190,44 @@ else
 
         .close:hover {
             opacity: 1;
+        }
+
+    .notification-tabs {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 0.5rem;
+    }
+
+    .tab-btn {
+        background: none;
+        border: none;
+        padding: 0.5rem 1.25rem;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #6b7280;
+        cursor: pointer;
+        border-radius: 9999px;
+        transition: all 0.2s;
+    }
+
+        .tab-btn.active {
+            background: #008080;
+            color: white;
+        }
+
+        .tab-btn:hover:not(.active) {
+            background: #e6f3f3;
+            color: #008080;
+        }
+
+    .tab-content {
+        display: none;
+    }
+
+        .tab-content.active {
+            display: block;
         }
 
     .notifications-container {
@@ -199,19 +320,47 @@ else
         font-size: 0.75rem;
     }
 
-    .btn-primary {
-        background: #008080;
-        color: white;
-        border: none;
+    .btn-primary, .btn-outline {
         border-radius: 0.375rem;
         text-decoration: none;
         display: inline-block;
         cursor: pointer;
+        padding: 0.5rem 1rem;
+    }
+
+    .btn-primary {
+        background: #008080;
+        color: white;
+        border: none;
     }
 
         .btn-primary:hover {
             background: #006666;
         }
+
+    .btn-outline {
+        background: transparent;
+        border: 1px solid #008080;
+        color: #008080;
+    }
+
+        .btn-outline:hover {
+            background: #e6f3f3;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        background: white;
+        border-radius: 1rem;
+        border: 1px solid #e5e7eb;
+    }
+
+    .empty-state-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
 
     @@media (max-width: 640px) {
         .notification-card {
@@ -228,5 +377,85 @@ else
             flex-direction: column;
             align-items: flex-start;
         }
+
+        .notification-tabs {
+            justify-content: center;
+        }
+
+        .tab-btn {
+            padding: 0.4rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
     }
 </style>
+
+@section Scripts {
+    <script>
+        // Tab switching logic
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const tabId = this.getAttribute('data-tab');
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                document.getElementById(`${tabId}-tab`).classList.add('active');
+            });
+        });
+
+        // MARK ALL AS READ FUNCTIONALITY
+        const markAllBtn = document.getElementById('markAllReadBtn');
+        if (markAllBtn) {
+            markAllBtn.addEventListener('click', async function() {
+                // Get the anti-forgery token from the hidden input added by @Html.AntiForgeryToken()
+                const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+                const token = tokenInput ? tokenInput.value : null;
+
+                if (!token) {
+                    alert('Security token not found. Please refresh the page and try again.');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/Notification/MarkAllAsRead', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': token
+                        }
+                    });
+
+                    if (response.ok) {
+                        // Remove "unread" class from all notification cards
+                        const allUnreadCards = document.querySelectorAll('.notification-card.unread');
+                        allUnreadCards.forEach(card => card.classList.remove('unread'));
+
+                        // Update the unread count badge in the navbar
+                        const badge = document.querySelector('#notificationBadge');
+                        if (badge) {
+                            badge.style.display = 'none';
+                            badge.textContent = '0';
+                        }
+
+                        // Show success message
+                        const successDiv = document.getElementById('successMessage');
+                        if (successDiv) {
+                            successDiv.style.display = 'block';
+                            setTimeout(() => successDiv.style.display = 'none', 2000);
+                        }
+                    } else {
+                        alert('Failed to mark notifications as read. Please try again.');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please try again.');
+                }
+            });
+        }
+    </script>
+}

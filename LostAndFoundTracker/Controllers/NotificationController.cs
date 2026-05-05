@@ -33,6 +33,30 @@ namespace LostAndFoundTracker.Controllers
             return Json(count);
         }
 
+        // POST: Mark all notifications as read for current user
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkAllAsRead()
+        {
+            int? userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
+                return Unauthorized();
+
+            var unreadNotifications = await _context.Notifications
+                .Where(n => n.ReceiverId == userId.Value && n.Status == "Unread")
+                .ToListAsync();
+
+            foreach (var notification in unreadNotifications)
+            {
+                notification.Status = "Read";
+                notification.ReadAt = DateTime.Now;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { success = true, count = unreadNotifications.Count });
+        }
+
         // GET: Notifications page (separate full page)
         public async Task<IActionResult> Index()
         {
