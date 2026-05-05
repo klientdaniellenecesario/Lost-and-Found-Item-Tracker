@@ -47,7 +47,6 @@
 
                             @if (isClaimed)
                             {
-                                <!-- Found item you claimed from someone else -->
                                 <span class="badge badge-claimed">
                                     FOUND → RETURNED TO ME
                                 </span>
@@ -90,7 +89,7 @@
                             {
                                 <div class="involved-item">
                                     <i class="fas fa-user-circle"></i>
-                                    <span><strong>Reported by:</strong> @detail.Poster?.FullName</span>
+                                    <span><strong>Reported by:</strong> You</span>
                                 </div>
                                 if (!string.IsNullOrEmpty(detail.HelperName))
                                 {
@@ -105,7 +104,7 @@
                                 <!-- Found item you posted, claimed by someone -->
                                 <div class="involved-item">
                                     <i class="fas fa-user-circle"></i>
-                                    <span><strong>Found by:</strong> @detail.Poster?.FullName</span>
+                                    <span><strong>Found by:</strong> You</span>
                                 </div>
                                 if (!string.IsNullOrEmpty(detail.ClaimantName))
                                 {
@@ -131,7 +130,7 @@
                             }
                         </div>
 
-                        <a href="/Items/Detail/@item?.Id" class="btn btn-outline btn-sm">
+                        <a href="/Items/Detail/@item?.Id?returnUrl=/History/Index" class="btn btn-outline btn-sm">
                             <i class="fas fa-eye"></i> View Details
                         </a>
                     </div>
@@ -174,8 +173,26 @@
                     {
                         <tr>
                             <td class="transaction-date-cell">@transaction.CreatedAt.ToString("MMM dd, yyyy")</td>
-                            <td>@(transaction.Giver?.FullName ?? "Unknown")</td>
-                            <td>@(transaction.Receiver?.FullName ?? "Unknown")</td>
+                            <td>
+                                @if (transaction.GiverId == Context.Session.GetInt32("UserId"))
+                                {
+                                    <strong>You</strong>
+                                }
+                                else
+                                {
+                                    @(transaction.Giver?.FullName ?? "Unknown")
+                                }
+                            </td>
+                            <td>
+                                @if (transaction.ReceiverId == Context.Session.GetInt32("UserId"))
+                                {
+                                    <strong>You</strong>
+                                }
+                                else
+                                {
+                                    @(transaction.Receiver?.FullName ?? "Unknown")
+                                }
+                            </td>
                             <td class="transaction-stars-cell">⭐ @transaction.StarsGiven</td>
                             <td>@(transaction.Item?.Name ?? "Unknown")</td>
                             <td class="transaction-message-cell">@(transaction.ThankYouMessage?.Length > 50 ? transaction.ThankYouMessage.Substring(0, 50) + "..." : transaction.ThankYouMessage)</td>
@@ -361,7 +378,6 @@
         border-radius: 9999px;
     }
 
-    /* Blue badge for items returned to you (you were the claimant) */
     .badge-claimed {
         background: #dbeafe;
         color: #1d4ed8;

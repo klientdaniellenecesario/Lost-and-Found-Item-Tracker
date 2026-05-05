@@ -72,7 +72,7 @@ namespace LostAndFoundTracker.Controllers
 
             await _context.SaveChangesAsync();
 
-            // Update session
+            // ✅ Update session with new name
             HttpContext.Session.SetString("UserFullName", user.FullName);
 
             return Ok();
@@ -106,12 +106,13 @@ namespace LostAndFoundTracker.Controllers
             user.ProfilePictureUrl = "/uploads/" + uniqueFileName;
             await _context.SaveChangesAsync();
 
+            // ✅ Update session with new profile picture
+            HttpContext.Session.SetString("UserProfilePic", user.ProfilePictureUrl);
+
             return Ok(new { photoUrl = user.ProfilePictureUrl });
         }
 
         // GET: /Profile/GetCurrentUser
-        // This endpoint returns the current logged-in user's information
-        // Used by the notification modals to display user's contact info
         [HttpGet]
         public async Task<IActionResult> GetCurrentUser()
         {
@@ -133,7 +134,6 @@ namespace LostAndFoundTracker.Controllers
         }
 
         // GET: /Profile/GetStarSummary
-        // Returns the user's star points, certificates, and recent transactions
         [HttpGet]
         public async Task<IActionResult> GetStarSummary()
         {
@@ -227,14 +227,10 @@ namespace LostAndFoundTracker.Controllers
             if (certificate == null)
                 return NotFound();
 
-            // Generate HTML certificate
             string certificateHtml = GenerateCertificateHtml(certificate);
-
-            // Return as HTML that can be printed
             return Content(certificateHtml, "text/html");
         }
 
-        // Helper method to generate certificate HTML
         private string GenerateCertificateHtml(Certificate certificate)
         {
             string borderColor = certificate.CertificateType == "Gold" ? "#FFD700" :
@@ -375,10 +371,6 @@ namespace LostAndFoundTracker.Controllers
                         <div style='margin-top: 15px; font-size: 0.7rem;'>Campus Lost & Found - Reuniting What Matters</div>
                     </div>
                 </div>
-                <script>
-                    // Auto-trigger print dialog (optional - uncomment if desired)
-                    // window.onload = function() {{ setTimeout(function() {{ window.print(); }}, 500); }};
-                </script>
             </body>
             </html>";
         }

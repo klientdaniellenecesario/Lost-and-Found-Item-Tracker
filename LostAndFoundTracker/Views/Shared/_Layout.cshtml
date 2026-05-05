@@ -8,11 +8,33 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <style>
+            /* Profile picture in navbar */
+            .profile-pic-nav {
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                object-fit: cover;
+                margin-right: 0.5rem;
+                border: 1px solid rgba(255,255,255,0.3);
+            }
+
+            .profile-btn {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+                .profile-btn i {
+                    font-size: 1.2rem;
+                }
+    </style>
 </head>
 <body>
     @{
         var isLoggedIn = Context.Session.GetString("UserId") != null;
         var userName = Context.Session.GetString("UserFullName") ?? "Student";
+        var profilePicUrl = Context.Session.GetString("UserProfilePic");
         var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
         var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
     }
@@ -54,8 +76,17 @@
                         <span id="notificationBadge" class="notification-badge" style="display: none;">0</span>
                     </a>
 
+                    <!-- Profile with picture -->
                     <a href="/Profile/Index" class="profile-btn @(currentController == "Profile" ? "active" : "")">
-                        <i class="fas fa-user-circle"></i> @userName
+                        @if (!string.IsNullOrEmpty(profilePicUrl))
+                        {
+                            <img src="@profilePicUrl" alt="Profile" class="profile-pic-nav">
+                        }
+                        else
+                        {
+                            <i class="fas fa-user-circle"></i>
+                        }
+                        @userName
                     </a>
                     <a href="/Account/Logout" class="logout-btn">
                         <i class="fas fa-sign-out-alt"></i> Logout

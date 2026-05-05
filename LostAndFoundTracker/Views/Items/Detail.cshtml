@@ -7,8 +7,9 @@
     var isOwner = currentUserId == Model.UserId.ToString();
     var isResolved = Model.Status == "returned";
 
-    // Determine the back URL: Dashboard for owners, otherwise use ViewBag.ReturnUrl (or default)
-    string backUrl = isOwner ? "/Home/Dashboard" : (ViewBag.ReturnUrl ?? (Model.Type == "lost" ? "/Items/LostItems" : "/Items/FoundItems"));
+    // ✅ FIX: Prioritize ReturnUrl from query string first
+    string returnUrl = Context.Request.Query["returnUrl"].ToString();
+    string backUrl = !string.IsNullOrEmpty(returnUrl) ? returnUrl : (isOwner ? "/Home/Dashboard" : (Model.Type == "lost" ? "/Items/LostItems" : "/Items/FoundItems"));
 }
 
 <div style="max-width: 800px; margin: 0 auto;">
@@ -53,7 +54,14 @@
                 <div><strong><i class="fas fa-calendar"></i> Date</strong><br />@Model.Date.ToString("MMMM dd, yyyy")</div>
                 <div>
                     <strong><i class="fas fa-user"></i> Reported By</strong><br />
-                    @(Model.User?.FullName ?? "Unknown")
+                    @if (isOwner)
+                    {
+                        <strong>You</strong>
+                    }
+                    else
+                    {
+                        @(Model.User?.FullName ?? "Unknown")
+                    }
                 </div>
             </div>
 

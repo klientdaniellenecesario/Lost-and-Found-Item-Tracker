@@ -72,6 +72,7 @@ namespace LostAndFoundTracker.Controllers
                     HttpContext.Session.SetInt32("UserId", user.Id);
                     HttpContext.Session.SetString("UserEmail", user.Email);
                     HttpContext.Session.SetString("UserFullName", user.FullName);
+                    HttpContext.Session.SetString("UserProfilePic", user.ProfilePictureUrl ?? ""); // ✅ ADDED - loads profile picture into session
 
                     var testUserId = HttpContext.Session.GetInt32("UserId");
                     var testUserEmail = HttpContext.Session.GetString("UserEmail");
@@ -226,7 +227,7 @@ namespace LostAndFoundTracker.Controllers
                 .Where(st => st.GiverId == userId.Value || st.ReceiverId == userId.Value);
             _context.StarTransactions.RemoveRange(starTransactions);
 
-            // 4. ✅ DELETE CERTIFICATES (THIS WAS MISSING!)
+            // 4. Delete certificates
             var certificates = _context.Certificates
                 .Where(c => c.UserId == userId.Value);
             _context.Certificates.RemoveRange(certificates);
