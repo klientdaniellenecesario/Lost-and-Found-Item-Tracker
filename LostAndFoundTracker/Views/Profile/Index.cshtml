@@ -7,6 +7,8 @@
     var userContact = Model?.ContactNumber ?? "";
 }
 
+@Html.AntiForgeryToken()
+
 <div class="page-header">
     <h1><i class="fas fa-user-circle"></i> My Profile</h1>
     <p>Manage your account information and settings.</p>
@@ -155,6 +157,23 @@
         <div style="padding: 1rem; border-top: 1px solid #E5E7EB; display: flex; justify-content: flex-end; gap: 0.5rem;">
             <button class="btn btn-outline" onclick="closeChangePasswordModal()">Cancel</button>
             <button class="btn btn-primary" onclick="savePassword()">Update Password</button>
+        </div>
+    </div>
+</div>
+
+<!-- Global Confirmation Modal (local fallback) -->
+<div id="globalConfirmModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 450px;">
+        <div class="modal-header">
+            <h3 id="globalConfirmTitle"><i class="fas fa-question-circle"></i> Confirm Action</h3>
+            <span class="modal-close" onclick="closeGlobalConfirmModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p id="globalConfirmMessage">Are you sure?</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeGlobalConfirmModal()">Cancel</button>
+            <button id="globalConfirmOkBtn" class="btn btn-primary">Yes, Proceed</button>
         </div>
     </div>
 </div>
@@ -371,7 +390,6 @@
                 if (photoUrl) {
                     profileBtn.innerHTML = `<img src="${photoUrl}" alt="Profile" class="profile-pic-nav"> ${fullName}`;
                 } else {
-                    // Check if there's already an image
                     const existingImg = profileBtn.querySelector('img');
                     if (existingImg) {
                         profileBtn.innerHTML = `<img src="${existingImg.src}" alt="Profile" class="profile-pic-nav"> ${fullName}`;
@@ -511,13 +529,9 @@
                     body: JSON.stringify({ fullName, contactNumber })
                 });
                 if (response.ok) {
-                    // Update profile page
                     document.getElementById('userName').innerText = fullName;
                     document.getElementById('userPhone').innerText = contactNumber || 'Not provided';
-                    
-                    // ✅ UPDATE NAVBAR WITH NEW NAME
                     updateNavbar(fullName, null);
-                    
                     alert('Profile updated successfully!');
                 } else {
                     alert('Failed to update profile.');
@@ -573,15 +587,72 @@
             }
         }
 
-        // ========== DELETE ACCOUNT ==========
+        // ========== DELETE ACCOUNT (UPDATED WITH THEMED MODAL) ==========
         function confirmDeleteAccount() {
-            if (confirm('Are you sure you want to delete your account? This cannot be undone.')) {
-                fetch('/Account/DeleteAccount', { method: 'POST' })
-                    .then(res => {
-                        if (res.ok) window.location.href = '/Home/Landing';
-                        else alert('Failed to delete account.');
-                    })
-                    .catch(() => alert('An error occurred.'));
+            showGlobalConfirm(
+                'Delete Account',
+                'Are you sure you want to delete your account? All your data will be permanently removed. This cannot be undone.',
+                async () => {
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+                    if (!token) {
+                        alert('Security token missing. Please refresh the page.');
+                        return;
+                    }
+                    try {
+                        const response = await fetch('/Account/DeleteAccount', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'RequestVerificationToken': token
+                            }
+                        });
+                        if (response.ok) {
+                            window.location.href = '/Home/Landing';
+                        } else {
+                            const error = await response.text();
+                            alert('Failed to delete account: ' + error);
+                        }
+                    } catch (err) {
+                        alert('An error occurred: ' + err.message);
+                    }
+                }
+            );
+        }
+
+        // ========== LOCAL FALLBACK FOR GLOBAL CONFIRM MODAL (in case layout doesn't have it) ==========
+        if (typeof window.showGlobalConfirm === 'undefined') {
+            window.showGlobalConfirm = function(title, message, onConfirm) {
+                const modal = document.getElementById('globalConfirmModal');
+                if (!modal) {
+                    // Fallback to native confirm if modal not present
+                    if (confirm(message)) onConfirm();
+                    return;
+                }
+                document.getElementById('globalConfirmTitle').innerHTML = `<i class="fas fa-question-circle"></i> ${escapeHtmlLocal(title)}`;
+                document.getElementById('globalConfirmMessage').innerHTML = escapeHtmlLocal(message);
+                const okBtn = document.getElementById('globalConfirmOkBtn');
+                const newOkBtn = okBtn.cloneNode(true);
+                okBtn.parentNode.replaceChild(newOkBtn, okBtn);
+                newOkBtn.onclick = () => {
+                    closeGlobalConfirmModal();
+                    if (onConfirm) onConfirm();
+                };
+                modal.style.display = 'flex';
+            };
+
+            window.closeGlobalConfirmModal = function() {
+                const modal = document.getElementById('globalConfirmModal');
+                if (modal) modal.style.display = 'none';
+            };
+
+            function escapeHtmlLocal(str) {
+                if (!str) return '';
+                return str.replace(/[&<>]/g, function(m) {
+                    if (m === '&') return '&amp;';
+                    if (m === '<') return '&lt;';
+                    if (m === '>') return '&gt;';
+                    return m;
+                });
             }
         }
 
@@ -599,11 +670,8 @@
                     const data = await response.json();
                     const container = document.getElementById('profilePicContainer');
                     container.innerHTML = `<img src="${data.photoUrl}" alt="Profile Photo" style="width: 100%; height: 100%; object-fit: cover;" />`;
-                    
-                    // ✅ UPDATE NAVBAR WITH NEW PROFILE PICTURE
                     const fullName = document.getElementById('userName').innerText;
                     updateNavbar(fullName, data.photoUrl);
-                    
                     alert('Profile photo updated successfully!');
                 } else {
                     alert('Failed to upload photo.');
@@ -618,6 +686,7 @@
             if (event.target == document.getElementById('editModal')) closeEditModal();
             if (event.target == document.getElementById('changePasswordModal')) closeChangePasswordModal();
             if (event.target == document.getElementById('certificatesModal')) closeCertificatesModal();
+            if (event.target == document.getElementById('globalConfirmModal')) closeGlobalConfirmModal();
         }
 
         // ========== LOAD STAR REWARDS ON PAGE LOAD ==========

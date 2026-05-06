@@ -35,7 +35,7 @@
         </div>
         <span asp-validation-for="ItemType" class="text-danger"></span>
 
-        <form asp-action="ReportItem" method="post" enctype="multipart/form-data" id="reportForm">
+        <form asp-action="ReportItem" method="post" enctype="multipart/form-data" id="reportForm" onsubmit="return false;">
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="ItemType" id="itemType" />
 
@@ -145,8 +145,8 @@
         }
 
         .toggle-helper {
-            font-size: 0.75rem; /* 12px */
-            color: #6c757d; /* muted gray */
+            font-size: 0.75rem;
+            color: #6c757d;
             text-align: center;
             margin-top: 0.4rem;
             line-height: 1.2;
@@ -192,22 +192,21 @@
         function cancelReport() {
             const form = document.getElementById('reportForm');
             form.reset();
-
             document.getElementById('itemType').value = '';
             const lostBtn = document.getElementById('btnLost');
             const foundBtn = document.getElementById('btnFound');
             lostBtn.classList.remove('active-lost', 'active-found');
             foundBtn.classList.remove('active-lost', 'active-found');
-
             const errorDiv = document.getElementById('toggleError');
             errorDiv.style.display = 'none';
             document.getElementById('toggleGroup').classList.remove('error');
         }
 
+        // Confirmation on submit
         document.getElementById('reportForm').addEventListener('submit', function(e) {
+            e.preventDefault();
             const itemType = document.getElementById('itemType').value;
             if (!itemType) {
-                e.preventDefault();
                 const errorDiv = document.getElementById('toggleError');
                 errorDiv.textContent = 'Please select whether you lost or found an item.';
                 errorDiv.style.display = 'block';
@@ -215,10 +214,17 @@
                 document.querySelector('.form-container').scrollIntoView({ behavior: 'smooth' });
                 return false;
             }
-            return true;
+            const typeText = itemType === 'lost' ? 'lost' : 'found';
+            showGlobalConfirm(
+                'Submit Report?',
+                `Are you sure you want to report this item as ${typeText}? Please double‑check all details.`,
+                () => {
+                    document.getElementById('reportForm').submit();
+                }
+            );
         });
 
-        // Auto-select based on where user came from
+        // Auto-select based on referrer
         document.addEventListener('DOMContentLoaded', function() {
             const referrer = document.referrer;
             if (referrer.includes('/Items/LostItems')) {

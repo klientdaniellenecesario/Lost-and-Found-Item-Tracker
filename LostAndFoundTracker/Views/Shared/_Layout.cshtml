@@ -94,6 +94,102 @@
                 transform: translateX(100%);
             }
         }
+
+        /* ----- Global Modal Styles (reused from earlier views) ----- */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 1rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideIn 0.3s ease;
+        }
+
+        .modal-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+            .modal-header h3 {
+                margin: 0;
+                color: #008080;
+            }
+
+        .modal-close {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        @@keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #008080;
+            color: #008080;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+            .btn-outline:hover {
+                background: #e6f3f3;
+            }
+
+        .btn-primary {
+            background: #008080;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+            .btn-primary:hover {
+                background: #006666;
+            }
     </style>
 </head>
 <body>
@@ -110,39 +206,22 @@
         <nav class="navbar">
             <div class="nav-container">
                 <a href="/Home/Dashboard" class="logo">
-                    <div class="logo-icon">
-                        <i class="fas fa-hand-holding-heart"></i>
-                    </div>
+                    <div class="logo-icon"><i class="fas fa-hand-holding-heart"></i></div>
                     <div class="logo-text">
                         <h1>Campus Lost & Found</h1>
                         <p>Reuniting What Matters</p>
                     </div>
                 </a>
                 <div class="nav-links">
-                    <a href="/Home/Dashboard" class="@(currentController == "Home" && currentAction == "Dashboard" ? "active" : "")">
-                        <i class="fas fa-chart-line"></i> Dashboard
-                    </a>
-                    <a href="/Items/LostItems" class="@(currentController == "Items" && currentAction == "LostItems" ? "active" : "")">
-                        <i class="fas fa-frown"></i> Lost Items
-                    </a>
-                    <a href="/Items/FoundItems" class="@(currentController == "Items" && currentAction == "FoundItems" ? "active" : "")">
-                        <i class="fas fa-smile"></i> Found Items
-                    </a>
-                    <a href="/Items/ReportItem" class="@(currentController == "Items" && currentAction == "ReportItem" ? "active" : "")">
-                        <i class="fas fa-plus-circle"></i> Report
-                    </a>
-                    <a href="/Search/Index" class="@(currentController == "Search" ? "active" : "")">
-                        <i class="fas fa-search"></i> Search
-                    </a>
-
-                    <!-- Notifications -->
+                    <a href="/Home/Dashboard" class="@(currentController == "Home" && currentAction == "Dashboard" ? "active" : "")"><i class="fas fa-chart-line"></i> Dashboard</a>
+                    <a href="/Items/LostItems" class="@(currentController == "Items" && currentAction == "LostItems" ? "active" : "")"><i class="fas fa-frown"></i> Lost Items</a>
+                    <a href="/Items/FoundItems" class="@(currentController == "Items" && currentAction == "FoundItems" ? "active" : "")"><i class="fas fa-smile"></i> Found Items</a>
+                    <a href="/Items/ReportItem" class="@(currentController == "Items" && currentAction == "ReportItem" ? "active" : "")"><i class="fas fa-plus-circle"></i> Report</a>
+                    <a href="/Search/Index" class="@(currentController == "Search" ? "active" : "")"><i class="fas fa-search"></i> Search</a>
                     <a href="/Notification/Index" class="notification-link @(currentController == "Notification" ? "active" : "")">
-                        <i class="fas fa-bell"></i>
-                        Notifications
+                        <i class="fas fa-bell"></i> Notifications
                         <span id="notificationBadge" class="notification-badge" style="display: none;">0</span>
                     </a>
-
-                    <!-- Profile with picture -->
                     <a href="/Profile/Index" class="profile-btn @(currentController == "Profile" ? "active" : "")">
                         @if (!string.IsNullOrEmpty(profilePicUrl))
                         {
@@ -154,9 +233,7 @@
                         }
                         @userName
                     </a>
-                    <a href="/Account/Logout" class="logout-btn">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </a>
+                    <a href="/Account/Logout" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
                 </div>
             </div>
         </nav>
@@ -166,9 +243,7 @@
         <nav class="navbar">
             <div class="nav-container">
                 <a href="/Home/Landing" class="logo">
-                    <div class="logo-icon">
-                        <i class="fas fa-hand-holding-heart"></i>
-                    </div>
+                    <div class="logo-icon"><i class="fas fa-hand-holding-heart"></i></div>
                     <div class="logo-text">
                         <h1>Campus Lost & Found</h1>
                         <p>Reuniting What Matters</p>
@@ -195,26 +270,39 @@
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
 
+    <!-- Global Confirmation Modal -->
+    <div id="globalConfirmModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="modal-header">
+                <h3 id="globalConfirmTitle"><i class="fas fa-question-circle"></i> Confirm Action</h3>
+                <span class="modal-close" onclick="closeGlobalConfirmModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="globalConfirmMessage">Are you sure?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeGlobalConfirmModal()">Cancel</button>
+                <button id="globalConfirmOkBtn" class="btn btn-primary">Yes, Proceed</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
     <script src="~/js/site.js"></script>
 
     <script>
-        // Show toast popup
+        // ---------- Toast Functions ----------
         function showToast(message, type) {
             const container = document.getElementById('toastContainer');
             if (!container) return;
-
             const toast = document.createElement('div');
             toast.className = `toast toast-${type}`;
             let icon = '';
             if (type === 'success') icon = '<i class="fas fa-check-circle"></i>';
             else if (type === 'error') icon = '<i class="fas fa-exclamation-circle"></i>';
             else icon = '<i class="fas fa-info-circle"></i>';
-
             toast.innerHTML = `${icon} <span>${escapeHtml(message)}</span>`;
             container.appendChild(toast);
-
-            // Remove after 5 seconds
             setTimeout(() => {
                 toast.style.animation = 'fadeOut 0.3s ease forwards';
                 setTimeout(() => toast.remove(), 300);
@@ -231,7 +319,26 @@
             });
         }
 
-        // Read TempData messages and show as toasts
+        // ---------- Global Confirmation Modal ----------
+        function showGlobalConfirm(title, message, onConfirm) {
+            document.getElementById('globalConfirmTitle').innerHTML = `<i class="fas fa-question-circle"></i> ${escapeHtml(title)}`;
+            document.getElementById('globalConfirmMessage').innerHTML = escapeHtml(message);
+            const modal = document.getElementById('globalConfirmModal');
+            const okBtn = document.getElementById('globalConfirmOkBtn');
+            const newOkBtn = okBtn.cloneNode(true);
+            okBtn.parentNode.replaceChild(newOkBtn, okBtn);
+            newOkBtn.onclick = () => {
+                closeGlobalConfirmModal();
+                if (onConfirm) onConfirm();
+            };
+            modal.style.display = 'flex';
+        }
+
+        function closeGlobalConfirmModal() {
+            document.getElementById('globalConfirmModal').style.display = 'none';
+        }
+
+        // ---------- TempData / ViewBag Toast ----------
         @{
                 var successMsg = TempData["Success"]?.ToString();
                 var errorMsg = TempData["Error"]?.ToString();
@@ -250,6 +357,7 @@
                 <text>showToast(@Html.Raw(Json.Serialize(infoMsg)), 'info');</text>
         }
 
+        // ---------- Notification badge ----------
         function loadNotificationCount() {
             fetch('/Notification/GetUnreadCount')
                 .then(response => response.json())
