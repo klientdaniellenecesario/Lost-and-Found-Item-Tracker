@@ -375,13 +375,14 @@
     <div class="stat-card">
         <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
         <div class="stat-value" id="resolvedCount">0</div>
-        <div class="stat-label">Resolved</div>
+        <div class="stat-label">Successfully Resolved</div>
     </div>
 </div>
 
+<!-- ========== SECTION 1: MY LOST ITEMS ========== -->
 <div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-top: 2rem;">
     <div class="section-title">
-        <h3><i class="fas fa-frown"></i> My Lost Items</h3>
+        <h3><i class="fas fa-frown"></i> My Lost Items <small style="font-size: 0.7rem; color: #6b7280; font-weight: 400; margin-left: 0.5rem;">Items YOU lost - waiting to be found</small></h3>
         <a href="/Items/LostItems" class="btn btn-sm btn-outline" style="font-size: 0.75rem;">Browse all lost items →</a>
     </div>
     <div id="myLostItems" style="margin-top: 1rem;">
@@ -389,9 +390,10 @@
     </div>
 </div>
 
+<!-- ========== SECTION 2: MY FOUND ITEMS ========== -->
 <div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-top: 2rem;">
     <div class="section-title">
-        <h3><i class="fas fa-smile"></i> My Found Items</h3>
+        <h3><i class="fas fa-smile"></i> My Found Items <small style="font-size: 0.7rem; color: #6b7280; font-weight: 400; margin-left: 0.5rem;">Items YOU found - waiting to be claimed</small></h3>
         <a href="/Items/FoundItems" class="btn btn-sm btn-outline" style="font-size: 0.75rem;">Browse all found items →</a>
     </div>
     <div id="myFoundItems" style="margin-top: 1rem;">
@@ -399,16 +401,29 @@
     </div>
 </div>
 
-<div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-top: 2rem; margin-bottom: 2rem; border-left: 4px solid #f59e0b;">
+<!-- ========== SECTION 3: MY CLAIMS ========== -->
+<div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-top: 2rem; border-left: 4px solid #f59e0b;">
     <div class="section-title">
-        <h3><i class="fas fa-hand-holding"></i> My Claims <small style="font-size: 0.7rem; color: #6b7280; font-weight: 400; margin-left: 0.5rem;">Items you claimed from finders</small></h3>
+        <h3><i class="fas fa-hand-holding"></i> My Claims <small style="font-size: 0.7rem; color: #6b7280; font-weight: 400; margin-left: 0.5rem;">Found items YOU claimed as yours - waiting to be returned</small></h3>
         <a href="/Items/FoundItems" class="btn btn-sm btn-outline" style="font-size: 0.75rem;">Browse found items →</a>
     </div>
     <div id="myClaimedItems" style="margin-top: 1rem;">
-        <div class="loading"><div class="spinner"></div> Loading your claims...</div>
+        <div class="loading"><div class="spinner"></div> Loading your claimed items...</div>
     </div>
 </div>
 
+<!-- ========== SECTION 4: ITEMS I'M HELPING WITH ========== -->
+<div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-top: 2rem; margin-bottom: 2rem; border-left: 4px solid #10B981;">
+    <div class="section-title">
+        <h3><i class="fas fa-hand-holding-heart"></i> Items I'm Helping With <small style="font-size: 0.7rem; color: #6b7280; font-weight: 400; margin-left: 0.5rem;">Lost items YOU reported having - waiting for owner to contact you</small></h3>
+        <a href="/Items/LostItems" class="btn btn-sm btn-outline" style="font-size: 0.75rem;">Browse lost items →</a>
+    </div>
+    <div id="myHelpingItems" style="margin-top: 1rem;">
+        <div class="loading"><div class="spinner"></div> Loading items you're helping with...</div>
+    </div>
+</div>
+
+<!-- ========== MODALS ========== -->
 <div id="confirmationModal" class="modal" style="display: none;">
     <div class="modal-content" style="max-width: 450px;">
         <div class="modal-header">
@@ -587,7 +602,6 @@
         let searchTimeout;
         let claimantSearchTimeout;
 
-        // ========== BUTTON LOADING STATE ==========
         function disableButton(btn, loadingText = "Processing...") {
             if (!btn) return null;
             if (btn.disabled) return null;
@@ -605,7 +619,6 @@
             if (originalText) btn.innerHTML = originalText;
         }
 
-        // ========== CONFIRMATION MODAL FUNCTIONS ==========
         function showConfirmDialog(title, message, onConfirm) {
             document.getElementById('confirmTitle').innerHTML = `<i class="fas fa-question-circle"></i> ${title}`;
             document.getElementById('confirmMessage').innerText = message;
@@ -632,7 +645,6 @@
             );
         }
 
-        // ========== LOAD DASHBOARD ==========
         async function loadDashboard() {
             try {
                 const response = await fetch('/Home/GetDashboardData');
@@ -646,14 +658,14 @@
                 if (data.myLostItems && data.myLostItems.length > 0) {
                     myLostContainer.innerHTML = renderItemCards(data.myLostItems, 'lost');
                 } else {
-                    myLostContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔴</div><h3>You have no lost items reported yet.</h3></div>';
+                    myLostContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔴</div><h3>No lost items reported</h3><p>Go to Report page to report a lost item.</p></div>';
                 }
 
                 const myFoundContainer = document.getElementById('myFoundItems');
                 if (data.myFoundItems && data.myFoundItems.length > 0) {
                     myFoundContainer.innerHTML = renderItemCards(data.myFoundItems, 'found');
                 } else {
-                    myFoundContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🟢</div><h3>You have no found items reported yet.</h3></div>';
+                    myFoundContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🟢</div><h3>No found items reported</h3><p>Go to Report page to report a found item.</p></div>';
                 }
 
                 const myClaimedContainer = document.getElementById('myClaimedItems');
@@ -662,8 +674,19 @@
                 } else {
                     myClaimedContainer.innerHTML = `<div class="empty-state">
                                 <div class="empty-state-icon">👌</div>
-                                <h3>You have not claimed any found items yet.</h3>
-                                <p style="color: #6b7280; font-size: 0.875rem;">Browse found items and click <strong>Claim This Item</strong> if you recognize something that belongs to you.</p>
+                                <h3>No claimed items</h3>
+                                <p>When you claim a found item as yours, it will appear here.</p>
+                            </div>`;
+                }
+
+                const myHelpingContainer = document.getElementById('myHelpingItems');
+                if (data.myHelpingItems && data.myHelpingItems.length > 0) {
+                    myHelpingContainer.innerHTML = renderHelpingCards(data.myHelpingItems);
+                } else {
+                    myHelpingContainer.innerHTML = `<div class="empty-state">
+                                <div class="empty-state-icon">🤝</div>
+                                <h3>No items you're helping with</h3>
+                                        <p>When you report that you found someone's lost item, it will appear here.</p>
                             </div>`;
                 }
 
@@ -672,6 +695,7 @@
                 document.getElementById('myLostItems').innerHTML = '<div class="alert-error">Failed to load data.</div>';
                 document.getElementById('myFoundItems').innerHTML = '<div class="alert-error">Failed to load data.</div>';
                 document.getElementById('myClaimedItems').innerHTML = '<div class="alert-error">Failed to load data.</div>';
+                document.getElementById('myHelpingItems').innerHTML = '<div class="alert-error">Failed to load data.</div>';
             }
         }
 
@@ -681,17 +705,17 @@
                 let buttonHtml = '';
                 if (type === 'lost') {
                     buttonHtml = `<button class="btn btn-success btn-sm btn-block" style="margin-top: 0.75rem; background: #10B981;" onclick="event.stopPropagation(); confirmMarkAsFound(${item.id}, '${escapeHtml(item.name).replace(/'/g, "\\'")}')">
-                                                <i class="fas fa-check"></i> Mark as Found
-                                            </button>`;
+                                    <i class="fas fa-check"></i> Mark as Found
+                                </button>`;
                 } else if (type === 'found') {
                     if (item.status === 'active' || !item.status) {
                         buttonHtml = `<div style="margin-top: 0.75rem; padding: 0.5rem; background: #f0f9f9; border-radius: 0.5rem; text-align: center; font-size: 0.8rem; color: #008080;">
-                                                    <i class="fas fa-eye"></i> Visible to others — waiting for a claim
-                                                </div>`;
+                                        <i class="fas fa-eye"></i> Visible to others — waiting for a claim
+                                    </div>`;
                     } else if (item.status === 'claimed') {
                         buttonHtml = `<button class="btn btn-primary btn-sm btn-block" style="margin-top: 0.75rem; background: #008080;" onclick="event.stopPropagation(); showMarkAsClaimedModalWithClaimants(${item.id}, '${escapeHtml(item.name).replace(/'/g, "\\'")}')">
-                                                    <i class="fas fa-gift"></i> Mark as Claimed
-                                                </button>`;
+                                        <i class="fas fa-gift"></i> Mark as Claimed
+                                    </button>`;
                     }
                 }
                 return `
@@ -723,32 +747,32 @@
                 let actionBtn = '';
                 if (item.status === 'active') {
                     statusBadge = `<span class="badge" style="background: #fef3c7; color: #b45309;">
-                                                <i class="fas fa-clock"></i> Awaiting Finder Response
-                                            </span>`;
+                                    <i class="fas fa-clock"></i> Awaiting Finder Response
+                                </span>`;
                     actionBtn = `<div style="margin-top: 0.75rem; padding: 0.5rem; background: #fef9c3; border-radius: 0.5rem; font-size: 0.78rem; color: #92400e; text-align: center;">
-                                                <i class="fas fa-hourglass-half"></i> Your claim was sent — waiting for the finder to accept it.
-                                            </div>`;
+                                    <i class="fas fa-hourglass-half"></i> Your claim was sent — waiting for the finder to accept it.
+                                </div>`;
                 } else if (item.status === 'claimed') {
                     statusBadge = `<span class="badge" style="background: #dbeafe; color: #1d4ed8;">
-                                                <i class="fas fa-check"></i> Claim Sent
-                                            </span>`;
+                                    <i class="fas fa-check"></i> Claim Sent
+                                </span>`;
                     actionBtn = `<div style="margin-top: 0.75rem; padding: 0.5rem; background: #fef9c3; border-radius: 0.5rem; font-size: 0.78rem; color: #92400e; text-align: center;">
-                                                <i class="fas fa-hourglass-half"></i> Your claim was sent — waiting for the finder to confirm and return the item.
-                                            </div>`;
+                                    <i class="fas fa-hourglass-half"></i> Your claim was sent — waiting for the finder to confirm and return the item.
+                                </div>`;
                 } else if (item.status === 'ready_for_rating' && item.isSelectedClaimant === true) {
                     statusBadge = `<span class="badge" style="background: #d1fae5; color: #10b981;">
-                                                <i class="fas fa-check-circle"></i> Item Returned
-                                            </span>`;
+                                    <i class="fas fa-check-circle"></i> Item Returned
+                                </span>`;
                     actionBtn = `<button class="btn btn-primary btn-sm btn-block" style="margin-top: 0.75rem; background: #10B981;" onclick="event.stopPropagation(); showConfirmReturnModal(${item.id}, '${escapeHtml(item.name).replace(/'/g, "\\'")}')">
-                                                <i class="fas fa-star"></i> Confirm Pickup & Rate Finder
-                                            </button>`;
+                                    <i class="fas fa-star"></i> Confirm Pickup & Rate Finder
+                                </button>`;
                 } else if (item.status === 'ready_for_rating' && item.isSelectedClaimant === false) {
                     statusBadge = `<span class="badge" style="background: #fef3c7; color: #b45309;">
-                                                <i class="fas fa-clock"></i> Returned to Another Owner
-                                            </span>`;
+                                    <i class="fas fa-clock"></i> Returned to Another Owner
+                                </span>`;
                     actionBtn = `<div style="margin-top: 0.75rem; padding: 0.5rem; background: #fef9c3; border-radius: 0.5rem; font-size: 0.78rem; color: #92400e; text-align: center;">
-                                                <i class="fas fa-check-circle"></i> This item has been returned to another owner.
-                                            </div>`;
+                                    <i class="fas fa-check-circle"></i> This item has been returned to another owner.
+                                </div>`;
                 }
                 return `
                                 <div class="item-card">
@@ -761,6 +785,42 @@
                                             <i class="fas fa-map-marker-alt"></i> ${escapeHtml(item.location)}<br/>
                                             <i class="fas fa-calendar"></i> ${escapeHtml(item.date)}<br/>
                                             <i class="fas fa-user"></i> Found by: <strong>${escapeHtml(item.finderName)}</strong>
+                                        </div>
+                                        ${statusBadge}
+                                        ${actionBtn}
+                                    </div>
+                                </div>
+                            `;
+            }).join('')}
+                    </div>`;
+        }
+
+        function renderHelpingCards(items) {
+            return `<div class="cards-grid">
+                        ${items.map(item => {
+                let statusBadge = '';
+                let actionBtn = '';
+                    
+                if (item.status === 'active' || item.status === 'found_match_sent') {
+                    statusBadge = `<span class="badge" style="background: #dbeafe; color: #1d4ed8;">
+                                    <i class="fas fa-clock"></i> Waiting for Owner
+                                </span>`;
+                    actionBtn = `<div style="margin-top: 0.75rem; padding: 0.5rem; background: #dbeafe; border-radius: 0.5rem; font-size: 0.78rem; color: #1d4ed8; text-align: center;">
+                                    <i class="fas fa-hourglass-half"></i> You reported finding this item. The owner has been notified and will contact you.
+                                </div>`;
+                }
+                    
+                return `
+                                <div class="item-card">
+                                    <div class="card-image" onclick="location.href='/Items/Detail/${item.id}?returnUrl=/Home/Dashboard'">
+                                        ${item.photoUrl ? `<img src="${item.photoUrl}" alt="${item.name}">` : '🔴'}
+                                    </div>
+                                    <div class="card-content">
+                                        <div class="card-title">${escapeHtml(item.name)}</div>
+                                        <div class="card-details">
+                                            <i class="fas fa-map-marker-alt"></i> ${escapeHtml(item.location)}<br/>
+                                            <i class="fas fa-calendar"></i> ${escapeHtml(item.date)}<br/>
+                                            <i class="fas fa-user"></i> Owner: <strong>${escapeHtml(item.ownerName)}</strong>
                                         </div>
                                         ${statusBadge}
                                         ${actionBtn}
@@ -1134,7 +1194,6 @@
             }
         }
 
-        // ========== EVENT LISTENERS ==========
         document.addEventListener('click', function(e) {
             if (e.target.classList && e.target.classList.contains('star')) {
                 if (e.target.closest('#markFoundModal')) {

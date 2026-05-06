@@ -60,7 +60,8 @@ namespace LostAndFoundTracker.Controllers
                     resolvedCount = 0,
                     myLostItems = new object[0],
                     myFoundItems = new object[0],
-                    myClaimedItems = new object[0]
+                    myClaimedItems = new object[0],
+                    myHelpingItems = new object[0]
                 });
             }
 
@@ -112,7 +113,6 @@ namespace LostAndFoundTracker.Controllers
                 .ToListAsync();
 
             // MY CLAIMED ITEMS — found items posted by others that this user has claimed
-            // IMPORTANT: Exclude "returned" ones — those move to History instead
             var claimedItemIds = await _context.Notifications
                 .Where(n => n.SenderId == userId.Value && n.NotificationType == "Claim")
                 .Select(n => n.ItemId)
@@ -137,7 +137,35 @@ namespace LostAndFoundTracker.Controllers
                     status = i.Status ?? "active",
                     starRatingGiven = i.StarRatingGiven ?? 0,
                     finderName = i.User != null ? i.User.FullName : "Unknown",
-                    isSelectedClaimant = i.SelectedClaimantId == userId.Value  // ✅ ADD THIS - identifies real owner
+                    isSelectedClaimant = i.SelectedClaimantId == userId.Value
+                })
+                .ToListAsync();
+
+            // ✅ NEW: MY HELPING ITEMS — lost items that the current user reported as found (Finder perspective)
+            var helpingItemIds = await _context.Notifications
+                .Where(n => n.SenderId == userId.Value && n.NotificationType == "FoundMatch")
+                .Select(n => n.ItemId)
+                .Distinct()
+                .ToListAsync();
+
+            var myHelpingItems = await _context.Items
+                .Include(i => i.User)
+                .Where(i => helpingItemIds.Contains(i.Id)
+                         && i.Type == "lost"
+                         && i.UserId != userId.Value  // Not your own lost item
+                         && i.Status != "returned")   // Still active, not yet returned
+                .OrderByDescending(i => i.Date)
+                .Take(6)
+                .Select(i => new
+                {
+                    id = i.Id,
+                    name = i.Name,
+                    location = i.Location,
+                    date = i.Date.ToString("MMM dd, yyyy"),
+                    photoUrl = i.PhotoUrl ?? "",
+                    status = i.Status ?? "active",
+                    ownerName = i.User != null ? i.User.FullName : "Unknown",
+                    ownerEmail = i.User != null ? i.User.Email : ""
                 })
                 .ToListAsync();
 
@@ -147,6 +175,7 @@ namespace LostAndFoundTracker.Controllers
             System.Diagnostics.Debug.WriteLine($"My lost items found: {myLostItems.Count}");
             System.Diagnostics.Debug.WriteLine($"My found items found: {myFoundItems.Count}");
             System.Diagnostics.Debug.WriteLine($"My claimed items: {myClaimedItems.Count}");
+            System.Diagnostics.Debug.WriteLine($"My helping items: {myHelpingItems.Count}");
 
             return Json(new
             {
@@ -155,7 +184,8 @@ namespace LostAndFoundTracker.Controllers
                 resolvedCount,
                 myLostItems,
                 myFoundItems,
-                myClaimedItems
+                myClaimedItems,
+                myHelpingItems  // ✅ NEW
             });
         }
 
