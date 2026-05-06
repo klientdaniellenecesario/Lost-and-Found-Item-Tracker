@@ -9,25 +9,91 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <style>
-            /* Profile picture in navbar */
-            .profile-pic-nav {
-                width: 28px;
-                height: 28px;
-                border-radius: 50%;
-                object-fit: cover;
-                margin-right: 0.5rem;
-                border: 1px solid rgba(255,255,255,0.3);
+        /* Profile picture in navbar */
+        .profile-pic-nav {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 0.5rem;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .profile-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+            .profile-btn i {
+                font-size: 1.2rem;
             }
 
-            .profile-btn {
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
+        /* ----- Toast Popup Styles ----- */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 350px;
+        }
+
+        .toast {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 1rem 1.25rem;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: slideInRight 0.3s ease forwards;
+            border-left: 4px solid;
+            font-size: 0.875rem;
+        }
+
+            .toast i {
+                font-size: 1.25rem;
             }
 
-                .profile-btn i {
-                    font-size: 1.2rem;
-                }
+        .toast-success {
+            border-left-color: #10b981;
+            background: #f0fdf4;
+            color: #065f46;
+        }
+
+        .toast-error {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+            color: #991b1b;
+        }
+
+        .toast-info {
+            border-left-color: #3b82f6;
+            background: #eff6ff;
+            color: #1e40af;
+        }
+
+        @@keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @@keyframes fadeOut {
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
     </style>
 </head>
 <body>
@@ -119,25 +185,6 @@
     }
 
     <main class="main-container">
-        @if (TempData["Success"] != null)
-        {
-            <div class="alert alert-success">
-                <i class="fas fa-check-circle"></i> @TempData["Success"]
-            </div>
-        }
-        @if (TempData["Error"] != null)
-        {
-            <div class="alert alert-error">
-                <i class="fas fa-exclamation-circle"></i> @TempData["Error"]
-            </div>
-        }
-        @if (TempData["Info"] != null)
-        {
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i> @TempData["Info"]
-            </div>
-        }
-
         @RenderBody()
     </main>
 
@@ -145,33 +192,87 @@
         <p>&copy; 2026 Campus Lost & Found System. All rights reserved. | <a href="#" style="color: white;">Privacy Policy</a> | <a href="#" style="color: white;">Terms of Service</a></p>
     </footer>
 
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
     <script src="~/js/site.js"></script>
 
     <script>
+        // Show toast popup
+        function showToast(message, type) {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            let icon = '';
+            if (type === 'success') icon = '<i class="fas fa-check-circle"></i>';
+            else if (type === 'error') icon = '<i class="fas fa-exclamation-circle"></i>';
+            else icon = '<i class="fas fa-info-circle"></i>';
+
+            toast.innerHTML = `${icon} <span>${escapeHtml(message)}</span>`;
+            container.appendChild(toast);
+
+            // Remove after 5 seconds
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.3s ease forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        // Read TempData messages and show as toasts
+        @{
+                var successMsg = TempData["Success"]?.ToString();
+                var errorMsg = TempData["Error"]?.ToString();
+                var infoMsg = TempData["Info"]?.ToString();
+        }
+        @if (!string.IsNullOrEmpty(successMsg))
+        {
+                <text>showToast(@Html.Raw(Json.Serialize(successMsg)), 'success');</text>
+        }
+        @if (!string.IsNullOrEmpty(errorMsg))
+        {
+                <text>showToast(@Html.Raw(Json.Serialize(errorMsg)), 'error');</text>
+        }
+        @if (!string.IsNullOrEmpty(infoMsg))
+        {
+                <text>showToast(@Html.Raw(Json.Serialize(infoMsg)), 'info');</text>
+        }
+
         function loadNotificationCount() {
-        fetch('/Notification/GetUnreadCount')
-        .then(response => response.json())
-        .then(count => {
-        const badge = document.getElementById('notificationBadge');
-        if (badge) {
-        if (count > 0) {
-        badge.textContent = count > 9 ? '9+' : count;
-        badge.style.display = 'inline-block';
-        } else {
-        badge.style.display = 'none';
-        }
-        }
-        })
-        .catch(error => console.error('Error loading notification count:', error));
+            fetch('/Notification/GetUnreadCount')
+                .then(response => response.json())
+                .then(count => {
+                    const badge = document.getElementById('notificationBadge');
+                    if (badge) {
+                        if (count > 0) {
+                            badge.textContent = count > 9 ? '9+' : count;
+                            badge.style.display = 'inline-block';
+                        } else {
+                            badge.style.display = 'none';
+                        }
+                    }
+                })
+                .catch(error => console.error('Error loading notification count:', error));
         }
 
         @if (isLoggedIn)
         {
-            <text>
-                loadNotificationCount();
-                setInterval(loadNotificationCount, 30000);
-            </text>
+                <text>
+                    loadNotificationCount();
+                    setInterval(loadNotificationCount, 30000);
+                </text>
         }
     </script>
 
