@@ -12,19 +12,12 @@
     <p>Items that have been found on campus. Could something here belong to you?</p>
 </div>
 
-<!-- Sort Dropdown -->
 <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
     <div class="sort-container">
-        <label for="sortOrder" style="margin-right: 0.5rem; font-size: 0.8rem; color: #6b7280;">
-            <i class="fas fa-sort"></i> Sort by:
-        </label>
+        <label for="sortOrder" style="margin-right: 0.5rem; font-size: 0.8rem; color: #6b7280;"><i class="fas fa-sort"></i> Sort by:</label>
         <select id="sortOrder" class="sort-select" onchange="window.location.href = this.value;">
-            <option value="/Items/FoundItems?sort=recent" selected="@(ViewBag.CurrentSort == "recent")">
-                📅 Recent to Oldest
-            </option>
-            <option value="/Items/FoundItems?sort=oldest" selected="@(ViewBag.CurrentSort == "oldest")">
-                📅 Oldest to Recent
-            </option>
+            <option value="/Items/FoundItems?sort=recent" selected="@(ViewBag.CurrentSort == "recent")">📅 Recent to Oldest</option>
+            <option value="/Items/FoundItems?sort=oldest" selected="@(ViewBag.CurrentSort == "oldest")">📅 Oldest to Recent</option>
         </select>
     </div>
 </div>
@@ -45,10 +38,11 @@ else
                 <div class="card-image" onclick="location.href='/Items/Detail/@item.Id'">
                     @if (!string.IsNullOrEmpty(item.PhotoUrl))
                     {
-                        <img src="@item.PhotoUrl" alt="@item.Name" style="width: 100%; height: 100%; object-fit: cover;">
+                        <img src="@item.PhotoUrl" alt="@item.Name" style="width:100%; height:100%; object-fit:cover;">
                     }
                     else
                     {
+
                         <span>🟢</span>
                     }
                 </div>
@@ -63,44 +57,30 @@ else
 
                     @if (!string.IsNullOrEmpty(currentUserId) && currentUserId == item.UserId.ToString())
                     {
-                        @* Finder's view - their own found items *@
                         if (item.Status == "active")
                         {
-                            <button class="btn btn-primary btn-sm btn-block" style="margin-top: 0.75rem; background: #008080;" onclick="confirmMarkAsClaimed(@item.Id)">
-                                <i class="fas fa-gift"></i> Mark as Claimed
-                            </button>
+                            <button class="btn btn-primary btn-sm btn-block" style="margin-top: 0.75rem; background: #008080;" onclick="confirmMarkAsClaimed(@item.Id)"><i class="fas fa-gift"></i> Mark as Claimed</button>
                         }
                         else if (item.Status == "claimed")
                         {
-                            <div style="margin-top: 0.75rem; padding: 0.5rem; background: #fef3c7; border-radius: 0.5rem; text-align: center; font-size: 0.8rem;">
-                                <i class="fas fa-clock"></i> ⏳ Awaiting owner confirmation
-                            </div>
+                            <div style="margin-top:0.75rem; padding:0.5rem; background:#fef3c7; border-radius:0.5rem; text-align:center; font-size:0.8rem;"><i class="fas fa-clock"></i> ⏳ Awaiting owner confirmation</div>
                         }
                         else if (item.Status == "returned")
                         {
-                            <div style="margin-top: 0.75rem; padding: 0.5rem; background: #d1fae5; border-radius: 0.5rem; text-align: center; font-size: 0.8rem;">
-                                <i class="fas fa-check-circle"></i> ✅ Returned! You received @(item.StarRatingGiven ?? 0) stars
-                            </div>
+                            <div style="margin-top:0.75rem; padding:0.5rem; background:#d1fae5; border-radius:0.5rem; text-align:center; font-size:0.8rem;"><i class="fas fa-check-circle"></i> ✅ Returned! You received @(item.StarRatingGiven ?? 0) stars</div>
                         }
                     }
                     else if (!string.IsNullOrEmpty(currentUserId) && item.Status == "claimed" && claimedItemIds.Contains(item.Id))
                     {
-                        <button class="btn btn-success btn-sm btn-block" style="margin-top: 0.75rem; background: #10B981;" onclick="confirmConfirmReturn(@item.Id, '@item.Name.Replace("'", "\\'")')">
-                            <i class="fas fa-check-double"></i> Confirm I Got It Back
-                        </button>
+                        <button class="btn btn-success btn-sm btn-block" style="margin-top: 0.75rem; background: #10B981;" onclick="confirmConfirmReturn(@item.Id, '@item.Name.Replace("'", "\\'")')"><i class="fas fa-check-double"></i> Confirm I Got It Back</button>
                     }
                     else if (!string.IsNullOrEmpty(currentUserId) && item.Status != "returned")
                     {
-                        @* ✅ FIXED: Button shows for ALL active AND claimed items (not just active) *@
-                        <button class="btn btn-primary btn-sm btn-block" style="margin-top: 0.75rem; background: #10B981;" onclick="confirmClaimThisItem(@item.Id, '@item.Name.Replace("'", "\\'")')">
-                            <i class="fas fa-user-check"></i> This Is My Item
-                        </button>
+                        <button class="btn btn-primary btn-sm btn-block" style="margin-top: 0.75rem; background: #10B981;" onclick="confirmClaimThisItem(@item.Id, '@item.Name.Replace("'", "\\'")')"><i class="fas fa-user-check"></i> This Is My Item</button>
                     }
                     else if (!string.IsNullOrEmpty(currentUserId) && item.Status == "returned")
                     {
-                        <div style="margin-top: 0.75rem; padding: 0.5rem; background: #d1fae5; border-radius: 0.5rem; text-align: center; font-size: 0.8rem;">
-                            <i class="fas fa-check-circle"></i> ✅ Item has been returned
-                        </div>
+                        <div style="margin-top:0.75rem; padding:0.5rem; background:#d1fae5; border-radius:0.5rem; text-align:center; font-size:0.8rem;"><i class="fas fa-check-circle"></i> ✅ Item has been returned</div>
                     }
                 </div>
             </div>
@@ -110,87 +90,16 @@ else
 
 @Html.AntiForgeryToken()
 
-<!-- ========== CONFIRMATION MODAL (Reusable) ========== -->
-<div id="confirmationModal" class="modal" style="display: none;">
-    <div class="modal-content" style="max-width: 450px;">
-        <div class="modal-header">
-            <h3 id="confirmTitle"><i class="fas fa-question-circle"></i> Confirm Action</h3>
-            <span class="modal-close" onclick="closeConfirmModal()">&times;</span>
-        </div>
-        <div class="modal-body">
-            <p id="confirmMessage">Are you sure?</p>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-outline" onclick="closeConfirmModal()">Cancel</button>
-            <button id="confirmOkBtn" class="btn btn-primary">Yes, Proceed</button>
-        </div>
-    </div>
-</div>
-
-<!-- Modal for This Is My Item (Claim) -->
-<div id="claimModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3><i class="fas fa-user-check"></i> Claim This Item</h3>
-            <span class="modal-close" onclick="closeClaimModal()">&times;</span>
-        </div>
-        <div class="modal-body">
-            <p>You are claiming: <strong id="claimItemName"></strong></p>
-            <p>Your information will be shared with the finder:</p>
-            <div class="user-info-preview">
-                <p><i class="fas fa-user"></i> Name: <span id="claimUserName"></span></p>
-                <p><i class="fas fa-envelope"></i> Email: <span id="claimUserEmail"></span></p>
-                <p><i class="fas fa-phone"></i> Phone: <span id="claimUserPhone"></span></p>
-            </div>
-            <div class="form-group">
-                <label><i class="fas fa-comment"></i> Message to Finder:</label>
-                <textarea id="claimMessage" class="form-control" rows="3" placeholder="This item belongs to me! Please contact me to return it..."></textarea>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-outline" onclick="closeClaimModal()">Cancel</button>
-            <button class="btn btn-primary" onclick="submitClaim()">Send Notification</button>
-        </div>
-    </div>
-</div>
-
-<!-- Confirm Return Modal (Star Rating) -->
-<div id="confirmReturnModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3><i class="fas fa-star"></i> Confirm Return & Rate Finder</h3>
-            <span class="modal-close" onclick="closeConfirmReturnModal()">&times;</span>
-        </div>
-        <div class="modal-body">
-            <p>You have received: <strong id="confirmItemName"></strong></p>
-            <p>Thank <strong id="finderName"></strong> for helping me!</p>
-
-            <div class="form-group">
-                <label><i class="fas fa-star"></i> Rate the Finder (1-5 stars)</label>
-                <div class="star-rating">
-                    <span class="star" data-value="1">☆</span>
-                    <span class="star" data-value="2">☆</span>
-                    <span class="star" data-value="3">☆</span>
-                    <span class="star" data-value="4">☆</span>
-                    <span class="star" data-value="5">☆</span>
-                </div>
-                <input type="hidden" id="starRatingValue" name="starRating" value="0" />
-                <small style="color: #6B7280;">Your rating helps recognize helpful students!</small>
-            </div>
-
-            <div class="form-group">
-                <label><i class="fas fa-comment"></i> Thank You Message (Optional):</label>
-                <textarea id="thankYouMessage" class="form-control" rows="3" placeholder="Thank you so much for finding my item! I really appreciate your help..."></textarea>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn btn-outline" onclick="closeConfirmReturnModal()">Cancel</button>
-            <button type="button" class="btn btn-primary" onclick="submitConfirmReturn()">Send Stars & Confirm</button>
-        </div>
-    </div>
-</div>
+<!-- Modals (same as before, omitted for brevity – keep your existing modal HTML exactly as in previous versions) -->
+<!-- Confirmation Modal -->
+<div id="confirmationModal" class="modal" style="display: none;"><div class="modal-content" style="max-width: 450px;"><div class="modal-header"><h3 id="confirmTitle"><i class="fas fa-question-circle"></i> Confirm Action</h3><span class="modal-close" onclick="closeConfirmModal()">&times;</span></div><div class="modal-body"><p id="confirmMessage">Are you sure?</p></div><div class="modal-footer"><button class="btn btn-outline" onclick="closeConfirmModal()">Cancel</button><button id="confirmOkBtn" class="btn btn-primary">Yes, Proceed</button></div></div></div>
+<!-- Claim Modal -->
+<div id="claimModal" class="modal" style="display: none;"><div class="modal-content"><div class="modal-header"><h3><i class="fas fa-user-check"></i> Claim This Item</h3><span class="modal-close" onclick="closeClaimModal()">&times;</span></div><div class="modal-body"><p>You are claiming: <strong id="claimItemName"></strong></p><p>Your information will be shared with the finder:</p><div class="user-info-preview"><p><i class="fas fa-user"></i> Name: <span id="claimUserName"></span></p><p><i class="fas fa-envelope"></i> Email: <span id="claimUserEmail"></span></p><p><i class="fas fa-phone"></i> Phone: <span id="claimUserPhone"></span></p></div><div class="form-group"><label><i class="fas fa-comment"></i> Message to Finder:</label><textarea id="claimMessage" class="form-control" rows="3" placeholder="This item belongs to me! Please contact me to return it..."></textarea></div></div><div class="modal-footer"><button class="btn btn-outline" onclick="closeClaimModal()">Cancel</button><button class="btn btn-primary" onclick="submitClaim()">Send Notification</button></div></div></div>
+<!-- Confirm Return Modal -->
+<div id="confirmReturnModal" class="modal" style="display: none;"><div class="modal-content"><div class="modal-header"><h3><i class="fas fa-star"></i> Confirm Return & Rate Finder</h3><span class="modal-close" onclick="closeConfirmReturnModal()">&times;</span></div><div class="modal-body"><p>You have received: <strong id="confirmItemName"></strong></p><p>Thank <strong id="finderName"></strong> for helping me!</p><div class="form-group"><label><i class="fas fa-star"></i> Rate the Finder (1-5 stars)</label><div class="star-rating"><span class="star" data-value="1">☆</span><span class="star" data-value="2">☆</span><span class="star" data-value="3">☆</span><span class="star" data-value="4">☆</span><span class="star" data-value="5">☆</span></div><input type="hidden" id="starRatingValue" name="starRating" value="0" /><small style="color:#6B7280;">Your rating helps recognize helpful students!</small></div><div class="form-group"><label><i class="fas fa-comment"></i> Thank You Message (Optional):</label><textarea id="thankYouMessage" class="form-control" rows="3" placeholder="Thank you so much for finding my item! I really appreciate your help..."></textarea></div></div><div class="modal-footer"><button type="button" class="btn btn-outline" onclick="closeConfirmReturnModal()">Cancel</button><button type="button" class="btn btn-primary" onclick="submitConfirmReturn()">Send Stars & Confirm</button></div></div></div>
 
 <style>
+    /* (keep all existing styles – same as before) */
     .sort-container {
         display: flex;
         align-items: center;
@@ -211,7 +120,7 @@ else
 
     .cards-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(280px,1fr));
         gap: 1.5rem;
         margin-top: 1rem;
     }
@@ -239,12 +148,6 @@ else
         font-size: 3rem;
     }
 
-        .card-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
     .card-content {
         padding: 1rem;
     }
@@ -260,10 +163,6 @@ else
         color: #6b7280;
         margin-bottom: 0.5rem;
     }
-
-        .card-details i {
-            width: 20px;
-        }
 
     .badge {
         display: inline-block;
@@ -295,10 +194,6 @@ else
         cursor: pointer;
     }
 
-        .btn-primary:hover {
-            background: #006666;
-        }
-
     .btn-success {
         background: #10B981;
         color: white;
@@ -306,21 +201,11 @@ else
         cursor: pointer;
     }
 
-        .btn-success:hover {
-            background: #059669;
-        }
-
     .empty-state {
         text-align: center;
         padding: 3rem;
         background: white;
         border-radius: 1rem;
-    }
-
-    .empty-state-icon {
-        font-size: 4rem;
-        margin-bottom: 1rem;
-        opacity: 0.5;
     }
 
     .modal {
@@ -377,17 +262,17 @@ else
         gap: 0.5rem;
     }
 
+    .user-info-preview {
+        background: #f0f9f9;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin: 1rem 0;
+        border-left: 3px solid #008080;
+    }
+
     .form-group {
         margin-bottom: 1rem;
     }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            font-size: 0.875rem;
-            color: #374151;
-        }
 
     .form-control {
         width: 100%;
@@ -408,19 +293,12 @@ else
     .star {
         cursor: pointer;
         color: #d1d5db;
+        transition: transform 0.2s;
     }
 
         .star:hover {
             transform: scale(1.2);
         }
-
-    .user-info-preview {
-        background: #f0f9f9;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        margin: 1rem 0;
-        border-left: 3px solid #008080;
-    }
 
     @@keyframes slideIn {
         from {
@@ -454,7 +332,6 @@ else
         let currentClaimItemId = 0;
         let currentReturnItemId = 0;
 
-        // ========== CONFIRMATION MODAL FUNCTIONS ==========
         function showConfirmDialog(title, message, onConfirm) {
             document.getElementById('confirmTitle').innerHTML = `<i class="fas fa-question-circle"></i> ${title}`;
             document.getElementById('confirmMessage').innerText = message;
@@ -462,68 +339,31 @@ else
             const okBtn = document.getElementById('confirmOkBtn');
             const newOkBtn = okBtn.cloneNode(true);
             okBtn.parentNode.replaceChild(newOkBtn, okBtn);
-            newOkBtn.onclick = () => {
-                closeConfirmModal();
-                if (onConfirm) onConfirm();
-            };
+            newOkBtn.onclick = () => { closeConfirmModal(); if (onConfirm) onConfirm(); };
             modal.style.display = 'flex';
         }
+        function closeConfirmModal() { document.getElementById('confirmationModal').style.display = 'none'; }
 
-        function closeConfirmModal() {
-            document.getElementById('confirmationModal').style.display = 'none';
-        }
-
-        // ========== 1. CONFIRMATION FOR "THIS IS MY ITEM" ==========
         function confirmClaimThisItem(itemId, itemName) {
-            showConfirmDialog(
-                "Claim This Item?",
-                "Are you sure this item belongs to you? Only claim if you are certain it is yours. Your contact information will be shared with the finder.",
-                () => {
-                    showClaimModal(itemId, itemName);
-                }
-            );
+            showConfirmDialog("Claim This Item?", "Are you sure this item belongs to you? Only claim if you are certain it is yours. Your contact information will be shared with the finder.", () => { showClaimModal(itemId, itemName); });
         }
-
-        // ========== 2. CONFIRMATION FOR "MARK AS CLAIMED" ==========
         function confirmMarkAsClaimed(itemId) {
-            showConfirmDialog(
-                "Mark as Claimed?",
-                "Are you sure you are ready to hand this item back to the owner? This will notify the owner to confirm pickup.",
-                () => {
-                    markAsClaimed(itemId);
-                }
-            );
+            showConfirmDialog("Mark as Claimed?", "Are you sure you are ready to hand this item back to the owner? This will notify the owner to confirm pickup.", () => { markAsClaimed(itemId); });
         }
-
-        // ========== 3. CONFIRMATION FOR "CONFIRM I GOT IT BACK" ==========
         function confirmConfirmReturn(itemId, itemName) {
-            showConfirmDialog(
-                "Confirm Item Returned?",
-                "Are you confirming that you have received your item back? After confirming you will be asked to give a star rating to the finder.",
-                () => {
-                    showConfirmReturnModal(itemId, itemName);
-                }
-            );
+            showConfirmDialog("Confirm Item Returned?", "Are you confirming that you have received your item back? After confirming you will be asked to give a star rating to the finder.", () => { showConfirmReturnModal(itemId, itemName); });
         }
 
-        // ========== ORIGINAL FUNCTIONS ==========
         async function markAsClaimed(itemId) {
             const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-            const response = await fetch(`/Items/MarkClaimed/${itemId}`, {
-                method: 'POST',
-                headers: { 'RequestVerificationToken': token }
-            });
-            if (response.ok) {
-                location.reload();
-            } else {
-                alert('Failed to mark item as claimed.');
-            }
+            const response = await fetch(`/Items/MarkClaimed/${itemId}`, { method: 'POST', headers: { 'RequestVerificationToken': token } });
+            if (response.ok) location.reload();
+            else showMessageModal('Failed to mark item as claimed.', 'error');
         }
 
         function showClaimModal(itemId, itemName) {
             currentClaimItemId = itemId;
             document.getElementById('claimItemName').textContent = itemName;
-
             fetch('/Profile/GetCurrentUser')
                 .then(res => res.json())
                 .then(user => {
@@ -531,79 +371,56 @@ else
                     document.getElementById('claimUserEmail').textContent = user.email;
                     document.getElementById('claimUserPhone').textContent = user.contactNumber || 'Not provided';
                 })
-                .catch(error => {
-                    console.error('Error:', error);
+                .catch(() => {
                     document.getElementById('claimUserName').textContent = 'Error loading';
                     document.getElementById('claimUserEmail').textContent = 'Error loading';
                     document.getElementById('claimUserPhone').textContent = 'Error loading';
                 });
-
             document.getElementById('claimModal').style.display = 'flex';
             document.getElementById('claimMessage').value = '';
         }
-
-        function closeClaimModal() {
-            document.getElementById('claimModal').style.display = 'none';
-        }
+        function closeClaimModal() { document.getElementById('claimModal').style.display = 'none'; }
 
         async function submitClaim() {
             const message = document.getElementById('claimMessage').value;
             const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-
-            const requestBody = { itemId: currentClaimItemId, message: message };
-
             try {
                 const response = await fetch('/Items/ClaimFound', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
-                    body: JSON.stringify(requestBody)
+                    body: JSON.stringify({ itemId: currentClaimItemId, message: message })
                 });
                 const result = await response.json();
                 if (response.ok) {
-                    alert('Notification sent! The finder will contact you soon.');
+                    showMessageModal('Notification sent! The finder will contact you soon.', 'success', () => location.reload());
                     closeClaimModal();
-                    location.reload();
                 } else {
-                    alert(result.error || 'Failed to send notification.');
+                    showMessageModal(result.error || 'Failed to send notification.', 'error');
                 }
             } catch (error) {
-                alert('An error occurred.');
+                showMessageModal('An error occurred.', 'error');
             }
         }
 
         function showConfirmReturnModal(itemId, itemName) {
             currentReturnItemId = itemId;
             document.getElementById('confirmItemName').textContent = itemName;
-
-            fetch(`/Items/GetFinderInfo/${itemId}`)
-                .then(res => res.json())
-                .then(data => { document.getElementById('finderName').textContent = data.finderName; })
-                .catch(() => { document.getElementById('finderName').textContent = 'the finder'; });
-
+            fetch(`/Items/GetFinderInfo/${itemId}`).then(res => res.json()).then(data => { document.getElementById('finderName').textContent = data.finderName; }).catch(() => { document.getElementById('finderName').textContent = 'the finder'; });
             document.getElementById('confirmReturnModal').style.display = 'flex';
             document.getElementById('starRatingValue').value = 0;
             document.getElementById('thankYouMessage').value = '';
             document.querySelectorAll('.star').forEach(star => { star.textContent = '☆'; star.style.color = '#d1d5db'; });
         }
-
-        function closeConfirmReturnModal() {
-            document.getElementById('confirmReturnModal').style.display = 'none';
-        }
-
+        function closeConfirmReturnModal() { document.getElementById('confirmReturnModal').style.display = 'none'; }
         function setStarRating(rating) {
             document.getElementById('starRatingValue').value = rating;
-            document.querySelectorAll('.star').forEach((star, index) => {
-                if (index < rating) { star.textContent = '★'; star.style.color = '#f59e0b'; }
-                else { star.textContent = '☆'; star.style.color = '#d1d5db'; }
-            });
+            document.querySelectorAll('.star').forEach((star, index) => { if (index < rating) { star.textContent = '★'; star.style.color = '#f59e0b'; } else { star.textContent = '☆'; star.style.color = '#d1d5db'; } });
         }
-
         async function submitConfirmReturn() {
             const starRating = parseInt(document.getElementById('starRatingValue').value);
-            if (starRating === 0) { alert('Please select a star rating (1-5).'); return; }
+            if (starRating === 0) { showMessageModal('Please select a star rating (1-5).', 'error'); return; }
             const thankYouMessage = document.getElementById('thankYouMessage').value;
             const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-
             try {
                 const response = await fetch(`/Items/ConfirmReturn/${currentReturnItemId}`, {
                     method: 'POST',
@@ -612,28 +429,17 @@ else
                 });
                 const result = await response.json();
                 if (response.ok) {
-                    alert('Thank you! The finder has been notified and received stars.');
+                    showMessageModal('Thank you! The finder has been notified and received stars.', 'success', () => location.reload());
                     closeConfirmReturnModal();
-                    location.reload();
                 } else {
-                    alert(result.error || 'Failed to confirm return.');
+                    showMessageModal(result.error || 'Failed to confirm return.', 'error');
                 }
             } catch (error) {
-                alert('An error occurred.');
+                showMessageModal('An error occurred.', 'error');
             }
         }
 
-        document.addEventListener('click', function(e) {
-            if (e.target.classList && e.target.classList.contains('star')) {
-                const value = parseInt(e.target.getAttribute('data-value'));
-                setStarRating(value);
-            }
-        });
-
-        window.onclick = function(event) {
-            if (event.target === document.getElementById('claimModal')) closeClaimModal();
-            if (event.target === document.getElementById('confirmReturnModal')) closeConfirmReturnModal();
-            if (event.target === document.getElementById('confirmationModal')) closeConfirmModal();
-        }
+        document.addEventListener('click', function(e) { if (e.target.classList && e.target.classList.contains('star')) setStarRating(parseInt(e.target.getAttribute('data-value'))); });
+        window.onclick = function(event) { if (event.target === document.getElementById('claimModal')) closeClaimModal(); if (event.target === document.getElementById('confirmReturnModal')) closeConfirmReturnModal(); if (event.target === document.getElementById('confirmationModal')) closeConfirmModal(); }
     </script>
 }

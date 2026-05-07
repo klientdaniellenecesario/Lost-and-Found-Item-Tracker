@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <style>
-        /* Profile picture in navbar */
+        /* (keep all your existing styles – unchanged) */
         .profile-pic-nav {
             width: 28px;
             height: 28px;
@@ -29,7 +29,6 @@
                 font-size: 1.2rem;
             }
 
-        /* Global Modal Styles (for confirmation) */
         .modal {
             position: fixed;
             top: 0;
@@ -125,7 +124,6 @@
                 background: #006666;
             }
 
-        /* Inline alert styles (reintroduced) */
         .alert {
             padding: 0.75rem 1rem;
             border-radius: 0.5rem;
@@ -170,10 +168,7 @@
             <div class="nav-container">
                 <a href="/Home/Dashboard" class="logo">
                     <div class="logo-icon"><i class="fas fa-hand-holding-heart"></i></div>
-                    <div class="logo-text">
-                        <h1>Campus Lost & Found</h1>
-                        <p>Reuniting What Matters</p>
-                    </div>
+                    <div class="logo-text"><h1>Campus Lost & Found</h1><p>Reuniting What Matters</p></div>
                 </a>
                 <div class="nav-links">
                     <a href="/Home/Dashboard" class="@(currentController == "Home" && currentAction == "Dashboard" ? "active" : "")"><i class="fas fa-chart-line"></i> Dashboard</a>
@@ -192,6 +187,7 @@
                         }
                         else
                         {
+
                             <i class="fas fa-user-circle"></i>
                         }
                         @userName
@@ -207,10 +203,7 @@
             <div class="nav-container">
                 <a href="/Home/Landing" class="logo">
                     <div class="logo-icon"><i class="fas fa-hand-holding-heart"></i></div>
-                    <div class="logo-text">
-                        <h1>Campus Lost & Found</h1>
-                        <p>Reuniting What Matters</p>
-                    </div>
+                    <div class="logo-text"><h1>Campus Lost & Found</h1><p>Reuniting What Matters</p></div>
                 </a>
                 <div class="nav-links">
                     <a href="/Home/Landing">Home</a>
@@ -223,26 +216,18 @@
     }
 
     <main class="main-container">
-        @* ---------- Inline alerts for TempData ---------- *@
         @if (TempData["Success"] != null)
         {
-            <div class="alert alert-success">
-                <i class="fas fa-check-circle"></i> @TempData["Success"]
-            </div>
+            <div class="alert alert-success"><i class="fas fa-check-circle"></i> @TempData["Success"]</div>
         }
         @if (TempData["Error"] != null)
         {
-            <div class="alert alert-error">
-                <i class="fas fa-exclamation-circle"></i> @TempData["Error"]
-            </div>
+            <div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> @TempData["Error"]</div>
         }
         @if (TempData["Info"] != null)
         {
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i> @TempData["Info"]
-            </div>
+            <div class="alert alert-info"><i class="fas fa-info-circle"></i> @TempData["Info"]</div>
         }
-
         @RenderBody()
     </main>
 
@@ -250,19 +235,32 @@
         <p>&copy; 2026 Campus Lost & Found System. All rights reserved. | <a href="#" style="color: white;">Privacy Policy</a> | <a href="#" style="color: white;">Terms of Service</a></p>
     </footer>
 
-    <!-- Global Confirmation Modal (kept) -->
+    <!-- Global Confirmation Modal (Yes/No) -->
     <div id="globalConfirmModal" class="modal" style="display: none;">
         <div class="modal-content" style="max-width: 450px;">
             <div class="modal-header">
                 <h3 id="globalConfirmTitle"><i class="fas fa-question-circle"></i> Confirm Action</h3>
                 <span class="modal-close" onclick="closeGlobalConfirmModal()">&times;</span>
             </div>
-            <div class="modal-body">
-                <p id="globalConfirmMessage">Are you sure?</p>
-            </div>
+            <div class="modal-body"><p id="globalConfirmMessage">Are you sure?</p></div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeGlobalConfirmModal()">Cancel</button>
                 <button id="globalConfirmOkBtn" class="btn btn-primary">Yes, Proceed</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Message Modal (replaces alert) – with optional callback on OK -->
+    <div id="globalMessageModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <div class="modal-header" style="justify-content: center; border-bottom: none; padding-bottom: 0;">
+                <h3 id="messageModalIcon" style="margin: 0; font-size: 2rem;"></h3>
+            </div>
+            <div class="modal-body">
+                <p id="globalMessageText" style="font-size: 1rem; margin: 0;"></p>
+            </div>
+            <div class="modal-footer" style="justify-content: center;">
+                <button id="messageOkBtn" class="btn btn-primary">OK</button>
             </div>
         </div>
     </div>
@@ -271,14 +269,10 @@
     <script src="~/js/site.js"></script>
 
     <script>
-        // ---------- Global Confirmation Modal ----------
+        // Confirmation modal (Yes/No)
         function showGlobalConfirm(title, message, onConfirm) {
             const modal = document.getElementById('globalConfirmModal');
-            if (!modal) {
-                // fallback to native confirm if modal missing
-                if (confirm(message)) onConfirm();
-                return;
-            }
+            if (!modal) { if (confirm(message)) onConfirm(); return; }
             document.getElementById('globalConfirmTitle').innerHTML = `<i class="fas fa-question-circle"></i> ${escapeHtml(title)}`;
             document.getElementById('globalConfirmMessage').innerHTML = escapeHtml(message);
             const okBtn = document.getElementById('globalConfirmOkBtn');
@@ -290,11 +284,43 @@
             };
             modal.style.display = 'flex';
         }
-
         function closeGlobalConfirmModal() {
             const modal = document.getElementById('globalConfirmModal');
             if (modal) modal.style.display = 'none';
         }
+
+        // Message modal – stays until OK is clicked, then runs optional callback
+        let _messageOkCallback = null;
+        function showMessageModal(message, type = 'info', onOk = null) {
+            const modal = document.getElementById('globalMessageModal');
+            const messageText = document.getElementById('globalMessageText');
+            const iconSpan = document.getElementById('messageModalIcon');
+            let iconHtml = '';
+            if (type === 'success') iconHtml = '<i class="fas fa-check-circle" style="color: #10b981;"></i>';
+            else if (type === 'error') iconHtml = '<i class="fas fa-exclamation-circle" style="color: #ef4444;"></i>';
+            else iconHtml = '<i class="fas fa-info-circle" style="color: #008080;"></i>';
+            iconSpan.innerHTML = iconHtml;
+            messageText.innerText = message;
+            _messageOkCallback = onOk;
+            modal.style.display = 'flex';
+        }
+        function closeMessageModal() {
+            document.getElementById('globalMessageModal').style.display = 'none';
+            if (_messageOkCallback) {
+                const callback = _messageOkCallback;
+                _messageOkCallback = null;
+                callback();
+            }
+        }
+
+        // Prevent backdrop click from closing the modal
+        document.getElementById('globalMessageModal').addEventListener('click', function(e) {
+            if (e.target === this) return;
+        });
+        // Attach OK button handler (ensures it works even after dynamic changes)
+        document.getElementById('messageOkBtn').onclick = function() {
+            closeMessageModal();
+        };
 
         function escapeHtml(str) {
             if (!str) return '';
@@ -306,7 +332,7 @@
             });
         }
 
-        // ---------- Notification badge (unchanged) ----------
+        // Notification badge
         function loadNotificationCount() {
             fetch('/Notification/GetUnreadCount')
                 .then(response => response.json())

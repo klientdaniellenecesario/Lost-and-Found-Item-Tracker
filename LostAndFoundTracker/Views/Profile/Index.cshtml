@@ -24,13 +24,12 @@
             }
             else
             {
+
                 <i class="fas fa-user" id="profilePicIcon"></i>
             }
         </div>
         <input type="file" id="photoInput" accept="image/*" style="display: none;" onchange="uploadPhoto(this)" />
-        <button class="btn btn-outline btn-sm" style="margin-top: 1rem;" onclick="document.getElementById('photoInput').click()">
-            <i class="fas fa-camera"></i> Change Photo
-        </button>
+        <button class="btn btn-outline btn-sm" style="margin-top: 1rem;" onclick="document.getElementById('photoInput').click()"><i class="fas fa-camera"></i> Change Photo</button>
     </div>
     <div class="profile-info">
         <h2 id="userName">@userName</h2>
@@ -42,12 +41,8 @@
 
 <!-- Star Rewards Section -->
 <div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-bottom: 2rem;">
-    <h3 style="margin-bottom: 1rem; color: #f59e0b;">
-        <i class="fas fa-star"></i> Star Rewards
-    </h3>
-    <div id="starSummary" class="star-summary">
-        <div class="loading">Loading rewards...</div>
-    </div>
+    <h3 style="margin-bottom: 1rem; color: #f59e0b;"><i class="fas fa-star"></i> Star Rewards</h3>
+    <div id="starSummary" class="star-summary"><div class="loading">Loading rewards...</div></div>
     <div id="certificatesList" style="margin-top: 1rem;"></div>
 </div>
 
@@ -55,128 +50,24 @@
 <div style="background: white; border-radius: 1rem; padding: 1.5rem; margin-bottom: 2rem;">
     <h3 style="margin-bottom: 1.25rem; color: #374151;"><i class="fas fa-cog"></i> Account Settings</h3>
     <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border: 1px solid #E5E7EB; border-radius: 0.75rem;">
-            <div>
-                <strong><i class="fas fa-user" style="color: #008080;"></i> Edit Profile</strong>
-                <p style="font-size: 0.85rem; color: #6B7280; margin: 0;">Update your name and contact number</p>
-            </div>
-            <button class="btn btn-outline btn-sm" onclick="openEditModal()">Edit</button>
-        </div>
-
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border: 1px solid #E5E7EB; border-radius: 0.75rem;">
-            <div>
-                <strong><i class="fas fa-lock" style="color: #008080;"></i> Change Password</strong>
-                <p style="font-size: 0.85rem; color: #6B7280; margin: 0;">Update your account password</p>
-            </div>
-            <button class="btn btn-outline btn-sm" onclick="openChangePasswordModal()">Change</button>
-        </div>
-
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border: 1px solid #E5E7EB; border-radius: 0.75rem;">
-            <div>
-                <strong><i class="fas fa-history" style="color: #008080;"></i> My History</strong>
-                <p style="font-size: 0.85rem; color: #6B7280; margin: 0;">View your lost, found, and resolved posts</p>
-            </div>
-            <a href="/History/Index" class="btn btn-outline btn-sm">View</a>
-        </div>
-
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border: 1px solid #fee2e2; border-radius: 0.75rem; background: #fff5f5;">
-            <div>
-                <strong><i class="fas fa-trash" style="color: #dc2626;"></i> Delete Account</strong>
-                <p style="font-size: 0.85rem; color: #6B7280; margin: 0;">Permanently delete your account and all data</p>
-            </div>
-            <button class="btn btn-sm" style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;" onclick="confirmDeleteAccount()">Delete</button>
-        </div>
-
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border: 1px solid #E5E7EB; border-radius: 0.75rem;"><div><strong><i class="fas fa-user" style="color: #008080;"></i> Edit Profile</strong><p style="font-size: 0.85rem; color: #6B7280; margin: 0;">Update your name and contact number</p></div><button class="btn btn-outline btn-sm" onclick="openEditModal()">Edit</button></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border: 1px solid #E5E7EB; border-radius: 0.75rem;"><div><strong><i class="fas fa-lock" style="color: #008080;"></i> Change Password</strong><p style="font-size: 0.85rem; color: #6B7280; margin: 0;">Update your account password</p></div><button class="btn btn-outline btn-sm" onclick="openChangePasswordModal()">Change</button></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border: 1px solid #E5E7EB; border-radius: 0.75rem;"><div><strong><i class="fas fa-history" style="color: #008080;"></i> My History</strong><p style="font-size: 0.85rem; color: #6B7280; margin: 0;">View your lost, found, and resolved posts</p></div><a href="/History/Index" class="btn btn-outline btn-sm">View</a></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border: 1px solid #fee2e2; border-radius: 0.75rem; background: #fff5f5;"><div><strong><i class="fas fa-trash" style="color: #dc2626;"></i> Delete Account</strong><p style="font-size: 0.85rem; color: #6B7280; margin: 0;">Permanently delete your account and all data</p></div><button class="btn btn-sm" style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;" onclick="confirmDeleteAccount()">Delete</button></div>
     </div>
 </div>
 
 <!-- Certificates Modal -->
-<div id="certificatesModal" class="modal" style="display: none;">
-    <div class="modal-content" style="max-width: 600px;">
-        <div class="modal-header">
-            <h3><i class="fas fa-certificate"></i> My Certificates</h3>
-            <span class="modal-close" onclick="closeCertificatesModal()">&times;</span>
-        </div>
-        <div class="modal-body" id="certificatesModalBody">
-            <div class="loading">Loading certificates...</div>
-        </div>
-    </div>
-</div>
+<div id="certificatesModal" class="modal" style="display: none;"><div class="modal-content" style="max-width: 600px;"><div class="modal-header"><h3><i class="fas fa-certificate"></i> My Certificates</h3><span class="modal-close" onclick="closeCertificatesModal()">&times;</span></div><div class="modal-body" id="certificatesModalBody"><div class="loading">Loading certificates...</div></div></div></div>
 
 <!-- Edit Profile Modal -->
-<div id="editModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center;">
-    <div style="background: white; border-radius: 1rem; max-width: 450px; width: 90%; margin: 50px auto;">
-        <div style="padding: 1rem; border-bottom: 1px solid #E5E7EB; display: flex; justify-content: space-between; align-items: center;">
-            <h3><i class="fas fa-edit"></i> Edit Profile</h3>
-            <button onclick="closeEditModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
-        </div>
-        <div style="padding: 1rem;">
-            <div class="form-group" style="margin-bottom: 1rem;">
-                <label>Full Name</label>
-                <input type="text" id="editFullName" class="form-control" value="@userName" />
-            </div>
-            <div class="form-group" style="margin-bottom: 1rem;">
-                <label>Contact Number</label>
-                <input type="text" id="editContactNumber" class="form-control" value="@userContact" />
-            </div>
-            <div class="form-group" style="margin-bottom: 1rem;">
-                <label>Email</label>
-                <input type="email" id="editEmail" class="form-control" style="background: #F3F4F6;" value="@userEmail" readonly disabled />
-                <small style="color: #6B7280;">Email cannot be changed.</small>
-            </div>
-        </div>
-        <div style="padding: 1rem; border-top: 1px solid #E5E7EB; display: flex; justify-content: flex-end; gap: 0.5rem;">
-            <button class="btn btn-outline" onclick="closeEditModal()">Cancel</button>
-            <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
-        </div>
-    </div>
-</div>
+<div id="editModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center;"><div style="background: white; border-radius: 1rem; max-width: 450px; width: 90%; margin: 50px auto;"><div style="padding: 1rem; border-bottom: 1px solid #E5E7EB; display: flex; justify-content: space-between; align-items: center;"><h3><i class="fas fa-edit"></i> Edit Profile</h3><button onclick="closeEditModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button></div><div style="padding: 1rem;"><div class="form-group" style="margin-bottom: 1rem;"><label>Full Name</label><input type="text" id="editFullName" class="form-control" value="@userName" /></div><div class="form-group" style="margin-bottom: 1rem;"><label>Contact Number</label><input type="text" id="editContactNumber" class="form-control" value="@userContact" /></div><div class="form-group" style="margin-bottom: 1rem;"><label>Email</label><input type="email" id="editEmail" class="form-control" style="background: #F3F4F6;" value="@userEmail" readonly disabled /><small style="color: #6B7280;">Email cannot be changed.</small></div></div><div style="padding: 1rem; border-top: 1px solid #E5E7EB; display: flex; justify-content: flex-end; gap: 0.5rem;"><button class="btn btn-outline" onclick="closeEditModal()">Cancel</button><button class="btn btn-primary" onclick="saveProfile()">Save Changes</button></div></div></div>
 
 <!-- Change Password Modal -->
-<div id="changePasswordModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center;">
-    <div style="background: white; border-radius: 1rem; max-width: 450px; width: 90%; margin: 50px auto;">
-        <div style="padding: 1rem; border-bottom: 1px solid #E5E7EB; display: flex; justify-content: space-between; align-items: center;">
-            <h3><i class="fas fa-lock"></i> Change Password</h3>
-            <button onclick="closeChangePasswordModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
-        </div>
-        <div style="padding: 1rem;">
-            <div class="form-group" style="margin-bottom: 1rem;">
-                <label>Current Password</label>
-                <input type="password" id="currentPassword" class="form-control" placeholder="Enter current password" />
-            </div>
-            <div class="form-group" style="margin-bottom: 1rem;">
-                <label>New Password</label>
-                <input type="password" id="newPassword" class="form-control" placeholder="Enter new password" />
-            </div>
-            <div class="form-group" style="margin-bottom: 1rem;">
-                <label>Confirm New Password</label>
-                <input type="password" id="confirmPassword" class="form-control" placeholder="Confirm new password" />
-            </div>
-        </div>
-        <div style="padding: 1rem; border-top: 1px solid #E5E7EB; display: flex; justify-content: flex-end; gap: 0.5rem;">
-            <button class="btn btn-outline" onclick="closeChangePasswordModal()">Cancel</button>
-            <button class="btn btn-primary" onclick="savePassword()">Update Password</button>
-        </div>
-    </div>
-</div>
+<div id="changePasswordModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center;"><div style="background: white; border-radius: 1rem; max-width: 450px; width: 90%; margin: 50px auto;"><div style="padding: 1rem; border-bottom: 1px solid #E5E7EB; display: flex; justify-content: space-between; align-items: center;"><h3><i class="fas fa-lock"></i> Change Password</h3><button onclick="closeChangePasswordModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button></div><div style="padding: 1rem;"><div class="form-group" style="margin-bottom: 1rem;"><label>Current Password</label><input type="password" id="currentPassword" class="form-control" placeholder="Enter current password" /></div><div class="form-group" style="margin-bottom: 1rem;"><label>New Password</label><input type="password" id="newPassword" class="form-control" placeholder="Enter new password" /></div><div class="form-group" style="margin-bottom: 1rem;"><label>Confirm New Password</label><input type="password" id="confirmPassword" class="form-control" placeholder="Confirm new password" /></div></div><div style="padding: 1rem; border-top: 1px solid #E5E7EB; display: flex; justify-content: flex-end; gap: 0.5rem;"><button class="btn btn-outline" onclick="closeChangePasswordModal()">Cancel</button><button class="btn btn-primary" onclick="savePassword()">Update Password</button></div></div></div>
 
-<!-- Global Confirmation Modal (local fallback) -->
-<div id="globalConfirmModal" class="modal" style="display: none;">
-    <div class="modal-content" style="max-width: 450px;">
-        <div class="modal-header">
-            <h3 id="globalConfirmTitle"><i class="fas fa-question-circle"></i> Confirm Action</h3>
-            <span class="modal-close" onclick="closeGlobalConfirmModal()">&times;</span>
-        </div>
-        <div class="modal-body">
-            <p id="globalConfirmMessage">Are you sure?</p>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-outline" onclick="closeGlobalConfirmModal()">Cancel</button>
-            <button id="globalConfirmOkBtn" class="btn btn-primary">Yes, Proceed</button>
-        </div>
-    </div>
-</div>
+<!-- Global Confirmation Modal (local fallback, but layout already has it) -->
+<div id="globalConfirmModal" class="modal" style="display: none;"><div class="modal-content" style="max-width: 450px;"><div class="modal-header"><h3 id="globalConfirmTitle"><i class="fas fa-question-circle"></i> Confirm Action</h3><span class="modal-close" onclick="closeGlobalConfirmModal()">&times;</span></div><div class="modal-body"><p id="globalConfirmMessage">Are you sure?</p></div><div class="modal-footer"><button class="btn btn-outline" onclick="closeGlobalConfirmModal()">Cancel</button><button id="globalConfirmOkBtn" class="btn btn-primary">Yes, Proceed</button></div></div></div>
 
 <style>
     .form-control {
@@ -258,10 +149,6 @@
         font-size: 0.875rem;
     }
 
-        .certificate-badge:hover {
-            transform: translateY(-2px);
-        }
-
         .certificate-badge.bronze {
             background: #fef3c7;
             color: #d97706;
@@ -284,7 +171,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.5);
+        background: rgba(0,0,0,0.5);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -341,15 +228,9 @@
         margin-bottom: 0.25rem;
     }
 
-    .certificate-date {
+    .certificate-date, .certificate-code {
         font-size: 0.7rem;
         color: #6b7280;
-    }
-
-    .certificate-code {
-        font-size: 0.7rem;
-        font-family: monospace;
-        color: #9ca3af;
     }
 
     .loading {
@@ -383,313 +264,103 @@
 
 @section Scripts {
     <script>
-        // Helper function to update navbar after profile changes
         function updateNavbar(fullName, photoUrl) {
             const profileBtn = document.querySelector('.profile-btn');
             if (profileBtn) {
-                if (photoUrl) {
-                    profileBtn.innerHTML = `<img src="${photoUrl}" alt="Profile" class="profile-pic-nav"> ${fullName}`;
-                } else {
-                    const existingImg = profileBtn.querySelector('img');
-                    if (existingImg) {
-                        profileBtn.innerHTML = `<img src="${existingImg.src}" alt="Profile" class="profile-pic-nav"> ${fullName}`;
-                    } else {
-                        profileBtn.innerHTML = `<i class="fas fa-user-circle"></i> ${fullName}`;
-                    }
-                }
+                if (photoUrl) profileBtn.innerHTML = `<img src="${photoUrl}" alt="Profile" class="profile-pic-nav"> ${fullName}`;
+                else { const existingImg = profileBtn.querySelector('img'); if (existingImg) profileBtn.innerHTML = `<img src="${existingImg.src}" alt="Profile" class="profile-pic-nav"> ${fullName}`; else profileBtn.innerHTML = `<i class="fas fa-user-circle"></i> ${fullName}`; }
             }
         }
 
-        // ========== STAR REWARDS FUNCTIONS ==========
         async function loadStarRewards() {
             try {
                 const response = await fetch('/Profile/GetStarSummary');
                 if (!response.ok) throw new Error('Failed to load star data');
-
                 const data = await response.json();
-
-                const summaryHtml = `
-                            <div class="star-card">
-                                <h4><i class="fas fa-star"></i> Total Stars</h4>
-                                <div class="value">${data.totalStars}</div>
-                            </div>
-                            <div class="star-card">
-                                <h4><i class="fas fa-certificate"></i> Bronze</h4>
-                                <div class="value">${data.bronzeCertificates}</div>
-                            </div>
-                            <div class="star-card">
-                                <h4><i class="fas fa-certificate"></i> Silver</h4>
-                                <div class="value">${data.silverCertificates}</div>
-                            </div>
-                            <div class="star-card">
-                                <h4><i class="fas fa-certificate"></i> Gold</h4>
-                                <div class="value">${data.goldCertificates}</div>
-                            </div>
-                            <div class="progress-container">
-                                <div class="progress-label">
-                                    <span>Next Milestone: ${data.nextMilestone} ⭐</span>
-                                    <span>${data.totalStars} / ${data.nextMilestone}</span>
-                                </div>
-                                <div class="progress-bar-bg">
-                                    <div class="progress-bar-fill" style="width: ${data.progressPercentage}%"></div>
-                                </div>
-                                <small style="color: #6b7280;">${data.totalCertificates} total certificates earned</small>
-                            </div>
-                        `;
-
+                const summaryHtml = `<div class="star-card"><h4><i class="fas fa-star"></i> Total Stars</h4><div class="value">${data.totalStars}</div></div><div class="star-card"><h4><i class="fas fa-certificate"></i> Bronze</h4><div class="value">${data.bronzeCertificates}</div></div><div class="star-card"><h4><i class="fas fa-certificate"></i> Silver</h4><div class="value">${data.silverCertificates}</div></div><div class="star-card"><h4><i class="fas fa-certificate"></i> Gold</h4><div class="value">${data.goldCertificates}</div></div><div class="progress-container"><div class="progress-label"><span>Next Milestone: ${data.nextMilestone} ⭐</span><span>${data.totalStars} / ${data.nextMilestone}</span></div><div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${data.progressPercentage}%"></div></div><small style="color: #6b7280;">${data.totalCertificates} total certificates earned</small></div>`;
                 document.getElementById('starSummary').innerHTML = summaryHtml;
-
                 if (data.certificates && data.certificates.length > 0) {
                     let certHtml = '<div style="margin-top: 0.5rem;"><strong>Your Certificates:</strong> ';
                     const bronzeCerts = data.certificates.filter(c => c.certificateType === 'Bronze');
                     const silverCerts = data.certificates.filter(c => c.certificateType === 'Silver');
                     const goldCerts = data.certificates.filter(c => c.certificateType === 'Gold');
-
-                    if (bronzeCerts.length > 0) {
-                        certHtml += `<button class="certificate-badge bronze" onclick="viewCertificates('Bronze')">🥉 Bronze (${bronzeCerts.length})</button> `;
-                    }
-                    if (silverCerts.length > 0) {
-                        certHtml += `<button class="certificate-badge silver" onclick="viewCertificates('Silver')">🥈 Silver (${silverCerts.length})</button> `;
-                    }
-                    if (goldCerts.length > 0) {
-                        certHtml += `<button class="certificate-badge gold" onclick="viewCertificates('Gold')">🥇 Gold (${goldCerts.length})</button> `;
-                    }
+                    if (bronzeCerts.length > 0) certHtml += `<button class="certificate-badge bronze" onclick="viewCertificates('Bronze')">🥉 Bronze (${bronzeCerts.length})</button> `;
+                    if (silverCerts.length > 0) certHtml += `<button class="certificate-badge silver" onclick="viewCertificates('Silver')">🥈 Silver (${silverCerts.length})</button> `;
+                    if (goldCerts.length > 0) certHtml += `<button class="certificate-badge gold" onclick="viewCertificates('Gold')">🥇 Gold (${goldCerts.length})</button> `;
                     certHtml += '</div>';
                     document.getElementById('certificatesList').innerHTML = certHtml;
-                } else {
-                    document.getElementById('certificatesList').innerHTML = '<small>No certificates earned yet. Keep helping others!</small>';
-                }
-
+                } else { document.getElementById('certificatesList').innerHTML = '<small>No certificates earned yet. Keep helping others!</small>'; }
                 window.allCertificates = data.certificates;
-            } catch (error) {
-                console.error('Error loading star rewards:', error);
-                document.getElementById('starSummary').innerHTML = '<div class="alert alert-error">Failed to load rewards data.</div>';
-            }
+            } catch (error) { console.error('Error loading star rewards:', error); document.getElementById('starSummary').innerHTML = '<div class="alert alert-error">Failed to load rewards data.</div>'; }
         }
 
         async function viewCertificates(type) {
             const certificates = window.allCertificates || [];
             const filtered = type === 'All' ? certificates : certificates.filter(c => c.certificateType === type);
-
-            if (filtered.length === 0) {
-                alert(`No ${type} certificates yet. Keep helping others to earn one!`);
-                return;
-            }
-
+            if (filtered.length === 0) { showMessageModal(`No ${type} certificates yet. Keep helping others to earn one!`, 'info'); return; }
             const modalBody = document.getElementById('certificatesModalBody');
             let html = '';
-
-            for (const cert of filtered) {
-                const certType = cert.certificateType;
-                const icon = certType === 'Bronze' ? '🥉' : (certType === 'Silver' ? '🥈' : '🥇');
-                html += `
-                            <div class="certificate-item">
-                                <div class="certificate-info">
-                                    <div class="certificate-type">${icon} ${certType} Certificate</div>
-                                    <div class="certificate-date">Earned: ${new Date(cert.earnedAt).toLocaleDateString()}</div>
-                                    <div class="certificate-code">Code: ${cert.certificateCode}</div>
-                                </div>
-                                <button class="btn btn-outline btn-sm" onclick="downloadCertificate(${cert.id})">
-                                    <i class="fas fa-download"></i> Download
-                                </button>
-                            </div>
-                        `;
-            }
-
+            for (const cert of filtered) { const icon = cert.certificateType === 'Bronze' ? '🥉' : (cert.certificateType === 'Silver' ? '🥈' : '🥇'); html += `<div class="certificate-item"><div class="certificate-info"><div class="certificate-type">${icon} ${cert.certificateType} Certificate</div><div class="certificate-date">Earned: ${new Date(cert.earnedAt).toLocaleDateString()}</div><div class="certificate-code">Code: ${cert.certificateCode}</div></div><button class="btn btn-outline btn-sm" onclick="downloadCertificate(${cert.id})"><i class="fas fa-download"></i> Download</button></div>`; }
             modalBody.innerHTML = html;
             document.getElementById('certificatesModal').style.display = 'flex';
         }
+        function closeCertificatesModal() { document.getElementById('certificatesModal').style.display = 'none'; }
+        async function downloadCertificate(certId) { window.open(`/Profile/DownloadCertificate/${certId}`, '_blank'); }
 
-        function closeCertificatesModal() {
-            document.getElementById('certificatesModal').style.display = 'none';
-        }
-
-        async function downloadCertificate(certId) {
-            window.open(`/Profile/DownloadCertificate/${certId}`, '_blank');
-        }
-
-        // ========== EDIT PROFILE FUNCTIONS ==========
-        function openEditModal() {
-            document.getElementById('editModal').style.display = 'flex';
-            document.getElementById('editFullName').value = document.getElementById('userName').innerText;
-            document.getElementById('editContactNumber').value = document.getElementById('userPhone').innerText;
-        }
-
-        function closeEditModal() {
-            document.getElementById('editModal').style.display = 'none';
-        }
-
+        function openEditModal() { document.getElementById('editModal').style.display = 'flex'; document.getElementById('editFullName').value = document.getElementById('userName').innerText; document.getElementById('editContactNumber').value = document.getElementById('userPhone').innerText; }
+        function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
         async function saveProfile() {
             const fullName = document.getElementById('editFullName').value;
             const contactNumber = document.getElementById('editContactNumber').value;
             try {
-                const response = await fetch('/Profile/UpdateProfile', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ fullName, contactNumber })
-                });
-                if (response.ok) {
-                    document.getElementById('userName').innerText = fullName;
-                    document.getElementById('userPhone').innerText = contactNumber || 'Not provided';
-                    updateNavbar(fullName, null);
-                    alert('Profile updated successfully!');
-                } else {
-                    alert('Failed to update profile.');
-                }
-            } catch (error) {
-                alert('An error occurred.');
-            }
+                const response = await fetch('/Profile/UpdateProfile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fullName, contactNumber }) });
+                if (response.ok) { document.getElementById('userName').innerText = fullName; document.getElementById('userPhone').innerText = contactNumber || 'Not provided'; updateNavbar(fullName, null); showMessageModal('Profile updated successfully!', 'success'); }
+                else { showMessageModal('Failed to update profile.', 'error'); }
+            } catch (error) { showMessageModal('An error occurred.', 'error'); }
             closeEditModal();
         }
 
-        // ========== CHANGE PASSWORD FUNCTIONS ==========
-        function openChangePasswordModal() {
-            document.getElementById('changePasswordModal').style.display = 'flex';
-        }
-
-        function closeChangePasswordModal() {
-            document.getElementById('changePasswordModal').style.display = 'none';
-            document.getElementById('currentPassword').value = '';
-            document.getElementById('newPassword').value = '';
-            document.getElementById('confirmPassword').value = '';
-        }
-
+        function openChangePasswordModal() { document.getElementById('changePasswordModal').style.display = 'flex'; }
+        function closeChangePasswordModal() { document.getElementById('changePasswordModal').style.display = 'none'; document.getElementById('currentPassword').value = ''; document.getElementById('newPassword').value = ''; document.getElementById('confirmPassword').value = ''; }
         async function savePassword() {
             const currentPassword = document.getElementById('currentPassword').value;
             const newPassword = document.getElementById('newPassword').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
-            if (!currentPassword || !newPassword || !confirmPassword) {
-                alert('Please fill in all password fields.');
-                return;
-            }
-            if (newPassword !== confirmPassword) {
-                alert('New passwords do not match.');
-                return;
-            }
-            if (newPassword.length < 6) {
-                alert('Password must be at least 6 characters.');
-                return;
-            }
+            if (!currentPassword || !newPassword || !confirmPassword) { showMessageModal('Please fill in all password fields.', 'error'); return; }
+            if (newPassword !== confirmPassword) { showMessageModal('New passwords do not match.', 'error'); return; }
+            if (newPassword.length < 6) { showMessageModal('Password must be at least 6 characters.', 'error'); return; }
             try {
-                const response = await fetch('/Account/ChangePassword', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ currentPassword, newPassword })
-                });
-                if (response.ok) {
-                    alert('Password updated successfully!');
-                    closeChangePasswordModal();
-                } else {
-                    alert('Failed to update password. Check your current password.');
-                }
-            } catch (error) {
-                alert('An error occurred.');
-            }
+                const response = await fetch('/Account/ChangePassword', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ currentPassword, newPassword }) });
+                if (response.ok) { showMessageModal('Password updated successfully!', 'success'); closeChangePasswordModal(); }
+                else { showMessageModal('Failed to update password. Check your current password.', 'error'); }
+            } catch (error) { showMessageModal('An error occurred.', 'error'); }
         }
 
-        // ========== DELETE ACCOUNT (UPDATED WITH THEMED MODAL) ==========
         function confirmDeleteAccount() {
-            showGlobalConfirm(
-                'Delete Account',
-                'Are you sure you want to delete your account? All your data will be permanently removed. This cannot be undone.',
-                async () => {
-                    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
-                    if (!token) {
-                        alert('Security token missing. Please refresh the page.');
-                        return;
-                    }
-                    try {
-                        const response = await fetch('/Account/DeleteAccount', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'RequestVerificationToken': token
-                            }
-                        });
-                        if (response.ok) {
-                            window.location.href = '/Home/Landing';
-                        } else {
-                            const error = await response.text();
-                            alert('Failed to delete account: ' + error);
-                        }
-                    } catch (err) {
-                        alert('An error occurred: ' + err.message);
-                    }
-                }
-            );
+            showGlobalConfirm('Delete Account', 'Are you sure you want to delete your account? All your data will be permanently removed. This cannot be undone.', async () => {
+                const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+                if (!token) { showMessageModal('Security token missing. Please refresh the page.', 'error'); return; }
+                try {
+                    const response = await fetch('/Account/DeleteAccount', { method: 'POST', headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token } });
+                    if (response.ok) window.location.href = '/Home/Landing';
+                    else { const error = await response.text(); showMessageModal('Failed to delete account: ' + error, 'error'); }
+                } catch (err) { showMessageModal('An error occurred: ' + err.message, 'error'); }
+            });
         }
 
-        // ========== LOCAL FALLBACK FOR GLOBAL CONFIRM MODAL (in case layout doesn't have it) ==========
-        if (typeof window.showGlobalConfirm === 'undefined') {
-            window.showGlobalConfirm = function(title, message, onConfirm) {
-                const modal = document.getElementById('globalConfirmModal');
-                if (!modal) {
-                    // Fallback to native confirm if modal not present
-                    if (confirm(message)) onConfirm();
-                    return;
-                }
-                document.getElementById('globalConfirmTitle').innerHTML = `<i class="fas fa-question-circle"></i> ${escapeHtmlLocal(title)}`;
-                document.getElementById('globalConfirmMessage').innerHTML = escapeHtmlLocal(message);
-                const okBtn = document.getElementById('globalConfirmOkBtn');
-                const newOkBtn = okBtn.cloneNode(true);
-                okBtn.parentNode.replaceChild(newOkBtn, okBtn);
-                newOkBtn.onclick = () => {
-                    closeGlobalConfirmModal();
-                    if (onConfirm) onConfirm();
-                };
-                modal.style.display = 'flex';
-            };
-
-            window.closeGlobalConfirmModal = function() {
-                const modal = document.getElementById('globalConfirmModal');
-                if (modal) modal.style.display = 'none';
-            };
-
-            function escapeHtmlLocal(str) {
-                if (!str) return '';
-                return str.replace(/[&<>]/g, function(m) {
-                    if (m === '&') return '&amp;';
-                    if (m === '<') return '&lt;';
-                    if (m === '>') return '&gt;';
-                    return m;
-                });
-            }
-        }
-
-        // ========== UPLOAD PHOTO ==========
         async function uploadPhoto(input) {
             if (!input.files || input.files.length === 0) return;
             const formData = new FormData();
             formData.append('photo', input.files[0]);
             try {
-                const response = await fetch('/Profile/UploadPhoto', {
-                    method: 'POST',
-                    body: formData
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    const container = document.getElementById('profilePicContainer');
-                    container.innerHTML = `<img src="${data.photoUrl}" alt="Profile Photo" style="width: 100%; height: 100%; object-fit: cover;" />`;
-                    const fullName = document.getElementById('userName').innerText;
-                    updateNavbar(fullName, data.photoUrl);
-                    alert('Profile photo updated successfully!');
-                } else {
-                    alert('Failed to upload photo.');
-                }
-            } catch (error) {
-                alert('An error occurred while uploading.');
-            }
+                const response = await fetch('/Profile/UploadPhoto', { method: 'POST', body: formData });
+                if (response.ok) { const data = await response.json(); const container = document.getElementById('profilePicContainer'); container.innerHTML = `<img src="${data.photoUrl}" alt="Profile Photo" style="width: 100%; height: 100%; object-fit: cover;" />`; const fullName = document.getElementById('userName').innerText; updateNavbar(fullName, data.photoUrl); showMessageModal('Profile photo updated successfully!', 'success'); }
+                else { showMessageModal('Failed to upload photo.', 'error'); }
+            } catch (error) { showMessageModal('An error occurred while uploading.', 'error'); }
         }
 
-        // ========== CLOSE MODALS ON OUTSIDE CLICK ==========
-        window.onclick = function(event) {
-            if (event.target == document.getElementById('editModal')) closeEditModal();
-            if (event.target == document.getElementById('changePasswordModal')) closeChangePasswordModal();
-            if (event.target == document.getElementById('certificatesModal')) closeCertificatesModal();
-            if (event.target == document.getElementById('globalConfirmModal')) closeGlobalConfirmModal();
-        }
+        window.onclick = function(event) { if (event.target == document.getElementById('editModal')) closeEditModal(); if (event.target == document.getElementById('changePasswordModal')) closeChangePasswordModal(); if (event.target == document.getElementById('certificatesModal')) closeCertificatesModal(); if (event.target == document.getElementById('globalConfirmModal')) closeGlobalConfirmModal(); }
 
-        // ========== LOAD STAR REWARDS ON PAGE LOAD ==========
         loadStarRewards();
     </script>
 }
