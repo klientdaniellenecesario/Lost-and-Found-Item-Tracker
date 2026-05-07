@@ -54,9 +54,9 @@ else
                 <div class="card-content">
                     <div class="card-title">@item.Name</div>
                     <div class="card-details">
-                        <i class="fas fa-map-marker-alt"></i> @item.Location<br />
-                        <i class="fas fa-calendar"></i> @item.Date.ToString("MMM dd, yyyy")<br />
-                        <i class="fas fa-tag"></i> @item.Category
+                        <i class="fas fa-map-marker-alt" style="color: #dc2626;"></i> @item.Location<br />
+                        <i class="fas fa-calendar" style="color: #008080;"></i> @item.Date.ToString("MMM dd, yyyy")<br />
+                        <i class="fas fa-tag" style="color: #f59e0b;"></i> @item.Category
                     </div>
                     <span class="badge badge-lost">LOST</span>
 
@@ -68,7 +68,6 @@ else
                     }
                     else if (!string.IsNullOrEmpty(currentUserId))
                     {
-                        <!-- Changed onclick to call confirmation function -->
                         <button class="btn btn-secondary btn-sm btn-block" style="margin-top: 0.75rem;" onclick="confirmIHaveThisItem(@item.Id, '@item.Name.Replace("'", "\\'")')">
                             <i class="fas fa-hand-holding-heart"></i> I Have This Item
                         </button>
@@ -184,7 +183,6 @@ else
 </div>
 
 <style>
-    /* Your existing styles - unchanged */
     .modal {
         position: fixed;
         top: 0;
@@ -447,13 +445,11 @@ else
         let currentMarkFoundItemId = 0;
         let searchTimeout;
 
-        // ========== CONFIRMATION MODAL FUNCTIONS ==========
         function showConfirmDialog(title, message, onConfirm) {
             document.getElementById('confirmTitle').innerHTML = `<i class="fas fa-question-circle"></i> ${title}`;
             document.getElementById('confirmMessage').innerText = message;
             const modal = document.getElementById('confirmationModal');
             const okBtn = document.getElementById('confirmOkBtn');
-            // Replace button to remove previous event listeners
             const newOkBtn = okBtn.cloneNode(true);
             okBtn.parentNode.replaceChild(newOkBtn, okBtn);
             newOkBtn.onclick = () => {
@@ -467,7 +463,6 @@ else
             document.getElementById('confirmationModal').style.display = 'none';
         }
 
-        // ========== CONFIRMATION FOR "I HAVE THIS ITEM" ==========
         function confirmIHaveThisItem(itemId, itemName) {
             showConfirmDialog(
                 "Respond to This Report?",
@@ -478,7 +473,6 @@ else
             );
         }
 
-        // ========== ORIGINAL FUNCTIONS (unchanged) ==========
         function showFoundModal(itemId, itemName) {
             currentItemId = itemId;
             document.getElementById('modalItemName').textContent = itemName;
