@@ -4,18 +4,18 @@
 }
 
 <div class="page-header">
-    <h1><i class="fas fa-search"></i> Search Items</h1>
+    <h1><i class="fas fa-search" style="color: #008080;"></i> Search Items</h1>
     <p>Search through all lost and found items on campus.</p>
 </div>
 
 <div class="search-filters">
     <div class="filter-row">
         <div class="filter-group">
-            <label><i class="fas fa-keyboard"></i> SEARCH KEYWORD</label>
+            <label><i class="fas fa-keyboard" style="color: #3b82f6;"></i> SEARCH KEYWORD</label>
             <input type="text" id="searchKeyword" class="form-control" placeholder="Search by item name..." />
         </div>
         <div class="filter-group">
-            <label><i class="fas fa-list"></i> CATEGORY</label>
+            <label><i class="fas fa-list" style="color: #8b5cf6;"></i> CATEGORY</label>
             <select id="categoryFilter" class="form-control">
                 <option value="">All Categories</option>
                 <optgroup label="Electronics">
@@ -44,11 +44,11 @@
             </select>
         </div>
         <div class="filter-group">
-            <label><i class="fas fa-map-marker-alt"></i> LOCATION</label>
+            <label><i class="fas fa-map-marker-alt" style="color: #dc2626;"></i> LOCATION</label>
             <input type="text" id="locationFilter" class="form-control" placeholder="Filter by location..." />
         </div>
         <div class="filter-group">
-            <label><i class="fas fa-filter"></i> ITEM TYPE</label>
+            <label><i class="fas fa-filter" style="color: #f59e0b;"></i> ITEM TYPE</label>
             <select id="typeFilter" class="form-control">
                 <option value="all">All Items</option>
                 <option value="lost">Lost Only</option>
@@ -115,8 +115,8 @@
                                 <div class="card-content">
                                     <div class="card-title">${escapeHtml(item.name)}</div>
                                     <div class="card-details">
-                                        <i class="fas fa-map-marker-alt"></i> ${escapeHtml(item.location)}<br/>
-                                        <i class="fas fa-calendar"></i> ${item.date}
+                                        <i class="fas fa-map-marker-alt" style="color: #dc2626;"></i> ${escapeHtml(item.location)}<br/>
+                                        <i class="fas fa-calendar" style="color: #008080;"></i> ${item.date}
                                     </div>
                                     <span class="badge ${item.type === 'lost' ? 'badge-lost' : 'badge-found'}">
                                         ${item.type === 'lost' ? 'LOST' : 'FOUND'}

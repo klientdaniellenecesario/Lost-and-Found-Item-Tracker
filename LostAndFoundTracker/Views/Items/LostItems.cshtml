@@ -49,9 +49,9 @@ else
                 <div class="card-content">
                     <div class="card-title">@item.Name</div>
                     <div class="card-details">
-                        <i class="fas fa-map-marker-alt"></i> @item.Location<br />
-                        <i class="fas fa-calendar"></i> @item.Date.ToString("MMM dd, yyyy")<br />
-                        <i class="fas fa-tag"></i> @item.Category
+                        <i class="fas fa-map-marker-alt" style="color: #dc2626;"></i> @item.Location<br />
+                        <i class="fas fa-calendar" style="color: #008080;"></i> @item.Date.ToString("MMM dd, yyyy")<br />
+                        <i class="fas fa-tag" style="color: #f59e0b;"></i> @item.Category
                     </div>
                     <span class="badge badge-lost">LOST</span>
 
@@ -168,7 +168,10 @@ else
 </div>
 
 <style>
+<<<<<<< HEAD
     /* (keep all existing styles from original LostItems.cshtml) – omitted for brevity, but include them exactly as before */
+=======
+>>>>>>> c17c6b36b935ba08d6cc6cbf4a1e177bdba5ae55
     .modal {
         position: fixed;
         top: 0;
@@ -437,6 +440,13 @@ else
         }
         function closeConfirmModal() { document.getElementById('confirmationModal').style.display = 'none'; }
 
+<<<<<<< HEAD
+=======
+        function closeConfirmModal() {
+            document.getElementById('confirmationModal').style.display = 'none';
+        }
+
+>>>>>>> c17c6b36b935ba08d6cc6cbf4a1e177bdba5ae55
         function confirmIHaveThisItem(itemId, itemName) {
             showConfirmDialog("Respond to This Report?", "Are you sure you have this item and can return it to the owner? The owner will be notified and your contact details will be shared.", () => { showFoundModal(itemId, itemName); });
         }
