@@ -29,73 +29,7 @@
                 font-size: 1.2rem;
             }
 
-        /* ----- Toast Popup Styles ----- */
-        .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            max-width: 350px;
-        }
-
-        .toast {
-            background: white;
-            border-radius: 0.5rem;
-            padding: 1rem 1.25rem;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            animation: slideInRight 0.3s ease forwards;
-            border-left: 4px solid;
-            font-size: 0.875rem;
-        }
-
-            .toast i {
-                font-size: 1.25rem;
-            }
-
-        .toast-success {
-            border-left-color: #10b981;
-            background: #f0fdf4;
-            color: #065f46;
-        }
-
-        .toast-error {
-            border-left-color: #ef4444;
-            background: #fef2f2;
-            color: #991b1b;
-        }
-
-        .toast-info {
-            border-left-color: #3b82f6;
-            background: #eff6ff;
-            color: #1e40af;
-        }
-
-        @@keyframes slideInRight {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        @@keyframes fadeOut {
-            to {
-                opacity: 0;
-                transform: translateX(100%);
-            }
-        }
-
-        /* ----- Global Modal Styles (reused from earlier views) ----- */
+        /* Global Modal Styles (for confirmation) */
         .modal {
             position: fixed;
             top: 0;
@@ -190,6 +124,35 @@
             .btn-primary:hover {
                 background: #006666;
             }
+
+        /* Inline alert styles (reintroduced) */
+        .alert {
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .alert-success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .alert-info {
+            background: #e0f2fe;
+            color: #075985;
+            border: 1px solid #bae6fd;
+        }
     </style>
 </head>
 <body>
@@ -260,6 +223,26 @@
     }
 
     <main class="main-container">
+        @* ---------- Inline alerts for TempData ---------- *@
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> @TempData["Success"]
+            </div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-error">
+                <i class="fas fa-exclamation-circle"></i> @TempData["Error"]
+            </div>
+        }
+        @if (TempData["Info"] != null)
+        {
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> @TempData["Info"]
+            </div>
+        }
+
         @RenderBody()
     </main>
 
@@ -267,10 +250,7 @@
         <p>&copy; 2026 Campus Lost & Found System. All rights reserved. | <a href="#" style="color: white;">Privacy Policy</a> | <a href="#" style="color: white;">Terms of Service</a></p>
     </footer>
 
-    <!-- Toast Container -->
-    <div class="toast-container" id="toastContainer"></div>
-
-    <!-- Global Confirmation Modal -->
+    <!-- Global Confirmation Modal (kept) -->
     <div id="globalConfirmModal" class="modal" style="display: none;">
         <div class="modal-content" style="max-width: 450px;">
             <div class="modal-header">
@@ -291,22 +271,29 @@
     <script src="~/js/site.js"></script>
 
     <script>
-        // ---------- Toast Functions ----------
-        function showToast(message, type) {
-            const container = document.getElementById('toastContainer');
-            if (!container) return;
-            const toast = document.createElement('div');
-            toast.className = `toast toast-${type}`;
-            let icon = '';
-            if (type === 'success') icon = '<i class="fas fa-check-circle"></i>';
-            else if (type === 'error') icon = '<i class="fas fa-exclamation-circle"></i>';
-            else icon = '<i class="fas fa-info-circle"></i>';
-            toast.innerHTML = `${icon} <span>${escapeHtml(message)}</span>`;
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.style.animation = 'fadeOut 0.3s ease forwards';
-                setTimeout(() => toast.remove(), 300);
-            }, 5000);
+        // ---------- Global Confirmation Modal ----------
+        function showGlobalConfirm(title, message, onConfirm) {
+            const modal = document.getElementById('globalConfirmModal');
+            if (!modal) {
+                // fallback to native confirm if modal missing
+                if (confirm(message)) onConfirm();
+                return;
+            }
+            document.getElementById('globalConfirmTitle').innerHTML = `<i class="fas fa-question-circle"></i> ${escapeHtml(title)}`;
+            document.getElementById('globalConfirmMessage').innerHTML = escapeHtml(message);
+            const okBtn = document.getElementById('globalConfirmOkBtn');
+            const newOkBtn = okBtn.cloneNode(true);
+            okBtn.parentNode.replaceChild(newOkBtn, okBtn);
+            newOkBtn.onclick = () => {
+                closeGlobalConfirmModal();
+                if (onConfirm) onConfirm();
+            };
+            modal.style.display = 'flex';
+        }
+
+        function closeGlobalConfirmModal() {
+            const modal = document.getElementById('globalConfirmModal');
+            if (modal) modal.style.display = 'none';
         }
 
         function escapeHtml(str) {
@@ -319,45 +306,7 @@
             });
         }
 
-        // ---------- Global Confirmation Modal ----------
-        function showGlobalConfirm(title, message, onConfirm) {
-            document.getElementById('globalConfirmTitle').innerHTML = `<i class="fas fa-question-circle"></i> ${escapeHtml(title)}`;
-            document.getElementById('globalConfirmMessage').innerHTML = escapeHtml(message);
-            const modal = document.getElementById('globalConfirmModal');
-            const okBtn = document.getElementById('globalConfirmOkBtn');
-            const newOkBtn = okBtn.cloneNode(true);
-            okBtn.parentNode.replaceChild(newOkBtn, okBtn);
-            newOkBtn.onclick = () => {
-                closeGlobalConfirmModal();
-                if (onConfirm) onConfirm();
-            };
-            modal.style.display = 'flex';
-        }
-
-        function closeGlobalConfirmModal() {
-            document.getElementById('globalConfirmModal').style.display = 'none';
-        }
-
-        // ---------- TempData / ViewBag Toast ----------
-        @{
-                var successMsg = TempData["Success"]?.ToString();
-                var errorMsg = TempData["Error"]?.ToString();
-                var infoMsg = TempData["Info"]?.ToString();
-        }
-        @if (!string.IsNullOrEmpty(successMsg))
-        {
-                <text>showToast(@Html.Raw(Json.Serialize(successMsg)), 'success');</text>
-        }
-        @if (!string.IsNullOrEmpty(errorMsg))
-        {
-                <text>showToast(@Html.Raw(Json.Serialize(errorMsg)), 'error');</text>
-        }
-        @if (!string.IsNullOrEmpty(infoMsg))
-        {
-                <text>showToast(@Html.Raw(Json.Serialize(infoMsg)), 'info');</text>
-        }
-
-        // ---------- Notification badge ----------
+        // ---------- Notification badge (unchanged) ----------
         function loadNotificationCount() {
             fetch('/Notification/GetUnreadCount')
                 .then(response => response.json())
