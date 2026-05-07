@@ -1,4 +1,4 @@
-﻿﻿@using LostAndFoundTracker.Models.ViewModels
+﻿@using LostAndFoundTracker.Models.ViewModels
 @model ReportItemViewModel
 @{
     ViewData["Title"] = "Report an Item";
@@ -6,7 +6,7 @@
 }
 
 <div class="page-header">
-    <h1><i class="fas fa-plus-circle"></i> Report an Item</h1>
+    <h1><i class="fas fa-plus-circle" style="color: #008080;"></i> Report an Item</h1>
     <p>Help your fellow students by reporting lost or found items.</p>
 </div>
 
@@ -40,13 +40,13 @@
             <input type="hidden" asp-for="ItemType" id="itemType" />
 
             <div class="form-group">
-                <label><i class="fas fa-tag"></i> Item Name *</label>
+                <label><i class="fas fa-tag" style="color: #f59e0b;"></i> Item Name *</label>
                 <input asp-for="ItemName" placeholder="e.g., Black Wallet, iPhone 14, Student ID" required />
                 <span asp-validation-for="ItemName" class="text-danger"></span>
             </div>
 
             <div class="form-group">
-                <label><i class="fas fa-list"></i> Category *</label>
+                <label><i class="fas fa-list" style="color: #8b5cf6;"></i> Category *</label>
                 <select asp-for="Category" required>
                     <option value="">Select a category</option>
                     <optgroup label="Electronics">
@@ -77,38 +77,38 @@
             </div>
 
             <div class="form-group">
-                <label><i class="fas fa-map-marker-alt"></i> Location *</label>
+                <label><i class="fas fa-map-marker-alt" style="color: #dc2626;"></i> Location *</label>
                 <input asp-for="Location" placeholder="Where was it lost/found? (e.g., Library, Student Center, Gym)" required />
                 <span asp-validation-for="Location" class="text-danger"></span>
             </div>
 
             <div class="form-group">
-                <label><i class="fas fa-calendar"></i> Date *</label>
+                <label><i class="fas fa-calendar" style="color: #008080;"></i> Date *</label>
                 <input asp-for="Date" type="date" required />
                 <span asp-validation-for="Date" class="text-danger"></span>
             </div>
 
             <div class="form-group">
-                <label><i class="fas fa-align-left"></i> Description *</label>
+                <label><i class="fas fa-align-left" style="color: #6b7280;"></i> Description *</label>
                 <textarea asp-for="Description" rows="4" placeholder="Describe the item in detail (color, brand, distinguishing features, etc.)" required></textarea>
                 <span asp-validation-for="Description" class="text-danger"></span>
             </div>
 
             <div class="form-group">
-                <label><i class="fas fa-camera"></i> Upload Photo *</label>
+                <label><i class="fas fa-camera" style="color: #3b82f6;"></i> Upload Photo *</label>
                 <input asp-for="Photo" accept="image/*" required />
                 <span asp-validation-for="Photo" class="text-danger"></span>
                 <small style="color: #6B7280;">A photo is required and increases chances of recovery by 70%</small>
             </div>
 
             <div class="form-group">
-                <label><i class="fas fa-phone"></i> Contact Number *</label>
+                <label><i class="fas fa-phone" style="color: #10b981;"></i> Contact Number *</label>
                 <input asp-for="ContactNumber" placeholder="Your phone number" required />
                 <span asp-validation-for="ContactNumber" class="text-danger"></span>
             </div>
 
             <div class="form-group">
-                <label><i class="fas fa-envelope"></i> Email *</label>
+                <label><i class="fas fa-envelope" style="color: #f59e0b;"></i> Email *</label>
                 <input asp-for="Email" readonly required />
                 <span asp-validation-for="Email" class="text-danger"></span>
             </div>
@@ -202,7 +202,6 @@
             document.getElementById('toggleGroup').classList.remove('error');
         }
 
-        // Confirmation on submit
         document.getElementById('reportForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const itemType = document.getElementById('itemType').value;
@@ -224,7 +223,6 @@
             );
         });
 
-        // Auto-select based on referrer
         document.addEventListener('DOMContentLoaded', function() {
             const referrer = document.referrer;
             if (referrer.includes('/Items/LostItems')) {
