@@ -1,7 +1,7 @@
-﻿﻿@{
-ViewData["Title"] = "Dashboard";
-Layout = "~/Views/Shared/_Layout.cshtml";
-var userName = Context.Session.GetString("UserFullName") ?? "Student";
+﻿@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var userName = Context.Session.GetString("UserFullName") ?? "Student";
 }
 
 <style>
@@ -351,6 +351,28 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
         font-size: 0.85rem;
         color: #6b7280;
     }
+
+    /* Scrollable section panes */
+    .section-scroll {
+        max-height: 520px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-right: 0.25rem;
+    }
+
+        .section-scroll::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .section-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .section-scroll::-webkit-scrollbar-thumb {
+            background: #008080;
+            border-radius: 10px;
+        }
 </style>
 
 <div class="page-header">
@@ -382,7 +404,7 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
         <h3><i class="fas fa-frown"></i> My Lost Items <small style="font-size: 0.7rem; color: #6b7280; font-weight: 400; margin-left: 0.5rem;">Items YOU lost - waiting to be found</small></h3>
         <a href="/Items/LostItems" class="btn btn-sm btn-outline" style="font-size: 0.75rem;">Browse all lost items →</a>
     </div>
-    <div id="myLostItems" style="margin-top: 1rem;"><div class="loading"><div class="spinner"></div> Loading your lost items...</div></div>
+    <div id="myLostItems" class="section-scroll" style="margin-top: 1rem;"><div class="loading"><div class="spinner"></div> Loading your lost items...</div></div>
 </div>
 
 <!-- My Found Items -->
@@ -391,7 +413,7 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
         <h3><i class="fas fa-smile"></i> My Found Items <small style="font-size: 0.7rem; color: #6b7280; font-weight: 400; margin-left: 0.5rem;">Items YOU found - waiting to be claimed</small></h3>
         <a href="/Items/FoundItems" class="btn btn-sm btn-outline" style="font-size: 0.75rem;">Browse all found items →</a>
     </div>
-    <div id="myFoundItems" style="margin-top: 1rem;"><div class="loading"><div class="spinner"></div> Loading your found items...</div></div>
+    <div id="myFoundItems" class="section-scroll" style="margin-top: 1rem;"><div class="loading"><div class="spinner"></div> Loading your found items...</div></div>
 </div>
 
 <!-- My Claims -->
@@ -400,7 +422,7 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
         <h3><i class="fas fa-hand-holding"></i> My Claims <small style="font-size: 0.7rem; color: #6b7280; font-weight: 400; margin-left: 0.5rem;">Found items YOU claimed as yours - waiting to be returned</small></h3>
         <a href="/Items/FoundItems" class="btn btn-sm btn-outline" style="font-size: 0.75rem;">Browse found items →</a>
     </div>
-    <div id="myClaimedItems" style="margin-top: 1rem;"><div class="loading"><div class="spinner"></div> Loading your claimed items...</div></div>
+    <div id="myClaimedItems" class="section-scroll" style="margin-top: 1rem;"><div class="loading"><div class="spinner"></div> Loading your claimed items...</div></div>
 </div>
 
 <!-- Items I'm Helping With -->
@@ -409,7 +431,7 @@ var userName = Context.Session.GetString("UserFullName") ?? "Student";
         <h3><i class="fas fa-hand-holding-heart"></i> Items I'm Helping With <small style="font-size: 0.7rem; color: #6b7280; font-weight: 400; margin-left: 0.5rem;">Lost items YOU reported having - waiting for owner to contact you</small></h3>
         <a href="/Items/LostItems" class="btn btn-sm btn-outline" style="font-size: 0.75rem;">Browse lost items →</a>
     </div>
-    <div id="myHelpingItems" style="margin-top: 1rem;"><div class="loading"><div class="spinner"></div> Loading items you're helping with...</div></div>
+    <div id="myHelpingItems" class="section-scroll" style="margin-top: 1rem;"><div class="loading"><div class="spinner"></div> Loading items you're helping with...</div></div>
 </div>
 
 <!-- Modals (same as before, required for JS) -->
