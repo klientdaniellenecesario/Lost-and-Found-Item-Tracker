@@ -170,7 +170,10 @@
                     <div class="logo-icon"><i class="fas fa-hand-holding-heart"></i></div>
                     <div class="logo-text"><h1>Campus Lost & Found</h1><p>Reuniting What Matters</p></div>
                 </a>
-                <div class="nav-links">
+                <button class="hamburger" id="hamburgerBtn" aria-label="Toggle navigation">
+                    <span></span><span></span><span></span>
+                </button>
+                <div class="nav-links" id="navLinks">
                     <a href="/Home/Dashboard" class="@(currentController == "Home" && currentAction == "Dashboard" ? "active" : "")"><i class="fas fa-chart-line"></i> Dashboard</a>
                     <a href="/Items/LostItems" class="@(currentController == "Items" && currentAction == "LostItems" ? "active" : "")"><i class="fas fa-frown"></i> Lost Items</a>
                     <a href="/Items/FoundItems" class="@(currentController == "Items" && currentAction == "FoundItems" ? "active" : "")"><i class="fas fa-smile"></i> Found Items</a>
@@ -187,7 +190,6 @@
                         }
                         else
                         {
-
                             <i class="fas fa-user-circle"></i>
                         }
                         @userName
@@ -205,7 +207,10 @@
                     <div class="logo-icon"><i class="fas fa-hand-holding-heart"></i></div>
                     <div class="logo-text"><h1>Campus Lost & Found</h1><p>Reuniting What Matters</p></div>
                 </a>
-                <div class="nav-links">
+                <button class="hamburger" id="hamburgerBtn" aria-label="Toggle navigation">
+                    <span></span><span></span><span></span>
+                </button>
+                <div class="nav-links" id="navLinks">
                     <a href="/Home/Landing">Home</a>
                     <a href="#how-it-works">How It Works</a>
                     <a href="/Account/Login"><i class="fas fa-sign-in-alt"></i> Sign In</a>
@@ -364,5 +369,22 @@
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)
+    <script>
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const navLinks = document.getElementById('navLinks');
+        if (hamburgerBtn && navLinks) {
+        hamburgerBtn.addEventListener('click', function () {
+        navLinks.classList.toggle('open');
+        hamburgerBtn.classList.toggle('active');
+        });
+        // Close menu when a link is clicked
+        navLinks.querySelectorAll('a').forEach(function (link) {
+        link.addEventListener('click', function () {
+        navLinks.classList.remove('open');
+        hamburgerBtn.classList.remove('active');
+        });
+        });
+        }
+    </script>
 </body>
 </html>
